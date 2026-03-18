@@ -1,0 +1,5 @@
+{
+  "name": "Couple Task App",
+  "description": "A collaborative task management app for couples with gamified rewards and QR scanning.",
+  "requestFramePermissions": ["camera", "geolocation"]
+}

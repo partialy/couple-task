@@ -1,0 +1,16 @@
+{
+  "name": "情侣任务",
+  "short_name": "情侣任务",
+  "description": "情侣互动任务清单应用",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ]
+}

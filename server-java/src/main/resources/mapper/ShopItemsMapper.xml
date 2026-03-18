@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.example.dataserver.mapper.ShopItemsMapper">
+
+    <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.ShopItems">
+            <id property="id" column="id" jdbcType="VARCHAR"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="itemType" column="item_type" jdbcType="VARCHAR"/>
+            <result property="pointsCost" column="points_cost" jdbcType="INTEGER"/>
+            <result property="icon" column="icon" jdbcType="VARCHAR"/>
+            <result property="color" column="color" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="VARCHAR"/>
+            <result property="stock" column="stock" jdbcType="INTEGER"/>
+            <result property="version" column="version" jdbcType="INTEGER"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+            <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
+            <result property="deletedAt" column="deleted_at" jdbcType="TIMESTAMP"/>
+            <result property="belongBindingId" column="belong_binding_id" jdbcType="VARCHAR"/>
+            <result property="belongUserId" column="belong_user_id" jdbcType="VARCHAR"/>
+            <result property="publishUserId" column="publish_user_id" jdbcType="VARCHAR"/>
+            <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,name,description,item_type,points_cost,icon,
+        color,status,stock,version,created_at,
+        updated_at,deleted_at,belong_binding_id,belong_user_id,publish_user_id,
+        sort_order
+    </sql>
+</mapper>

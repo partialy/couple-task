@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.example.dataserver.mapper.ItemRedemptionRecordsMapper">
+
+    <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.ItemRedemptionRecords">
+            <id property="id" column="id" jdbcType="VARCHAR"/>
+            <result property="itemType" column="item_type" jdbcType="VARCHAR"/>
+            <result property="instanceId" column="instance_id" jdbcType="VARCHAR"/>
+            <result property="ownerId" column="owner_id" jdbcType="VARCHAR"/>
+            <result property="redeemerId" column="redeemer_id" jdbcType="VARCHAR"/>
+            <result property="code" column="code" jdbcType="VARCHAR"/>
+            <result property="remark" column="remark" jdbcType="VARCHAR"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,item_type,instance_id,owner_id,redeemer_id,code,
+        remark,created_at
+    </sql>
+</mapper>
