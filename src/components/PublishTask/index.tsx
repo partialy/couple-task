@@ -75,20 +75,12 @@ export default function PublishTask({ onBack, onPublish, initialData }: PublishT
   };
 
   // Map store data to local format
-  const categories = storeCategories.length > 0 
-    ? storeCategories.map(c => c.name)
-    : ['旅行', '美食', '日常', '心愿单', '纪念日'];
+  const categories = storeCategories.map(c => c.name);
 
-  const taskLevels = storeTaskLevels.length > 0
-    ? storeTaskLevels.map(l => ({ label: l.name, maxRewards: l.maxRewards }))
-    : [
-        { label: '小事', maxRewards: 1 },
-        { label: '简单', maxRewards: 1 },
-        { label: '中等', maxRewards: 2 },
-        { label: '高级', maxRewards: 3 },
-        { label: '困难', maxRewards: 3 },
-        { label: '极难', maxRewards: 4 },
-      ];
+  const taskLevels = storeTaskLevels.map(l => ({ 
+    label: l.name, 
+    maxRewards: l.maxRewards || 1 
+  }));
 
   const [taskLevel, setTaskLevel] = useState(taskLevels[0]);
 

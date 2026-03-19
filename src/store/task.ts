@@ -10,6 +10,7 @@ interface TaskState {
   taskLevels: TaskLevels[];
   allTags: Tags[];
   loading: boolean;
+  configFetched: boolean;
 
   // Actions
   addTask: (task: any) => void;
@@ -26,10 +27,24 @@ export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
       tasks: initialTasks,
-      categories: [] as Categories[],
-      taskLevels: [] as TaskLevels[],
+      categories: [
+        { id: 'default-1', name: '旅行' },
+        { id: 'default-2', name: '美食' },
+        { id: 'default-3', name: '日常' },
+        { id: 'default-4', name: '心愿单' },
+        { id: 'default-5', name: '纪念日' }
+      ] as Categories[],
+      taskLevels: [
+        { id: 'default-1', name: '小事', maxRewards: 1 },
+        { id: 'default-2', name: '简单', maxRewards: 1 },
+        { id: 'default-3', name: '中等', maxRewards: 2 },
+        { id: 'default-4', name: '高级', maxRewards: 3 },
+        { id: 'default-5', name: '困难', maxRewards: 3 },
+        { id: 'default-6', name: '极难', maxRewards: 4 }
+      ] as TaskLevels[],
       allTags: [] as Tags[],
       loading: false,
+      configFetched: false,
 
       addTask: (task) => {
         set(state => ({ tasks: [task, ...state.tasks] }));
@@ -95,6 +110,12 @@ export const useTaskStore = create<TaskState>()(
       },
 
       fetchPublishConfig: async (bindId) => {
+        const state = get();
+        // 如果已经请求过配置了，就不再请求
+        if (state.configFetched) {
+          return;
+        }
+
         const { userService } = await import('@/api/service/user');
         try {
           const res = await userService.publishConfig(bindId);
@@ -102,7 +123,8 @@ export const useTaskStore = create<TaskState>()(
             set({
               categories: res.data.categories,
               taskLevels: res.data.taskLevels,
-              allTags: res.data.tags
+              allTags: res.data.tags,
+              configFetched: true
             });
           }
         } catch (error) {
