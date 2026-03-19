@@ -7,12 +7,13 @@ import QrScanner from './QrScanner';
 import ProfileEdit from './profile/ProfileEdit';
 import RewardCenter from './RewardCenter';
 import { useUserStore } from '@/store';
+import { UiTask } from '@/types/task';
 
 export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards, onOpenSettings, onOpenPointsDetail, tasks, setTasks }: { onOpenItems?: () => void, onOpenShop?: () => void, onOpenSpecialRewards?: () => void, onOpenSettings?: () => void, onOpenPointsDetail?: () => void, tasks: any[], setTasks: (tasks: any[]) => void }) {
   const { currentUser } = useUserStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeList, setActiveList] = useState<{ title: string, filter: (t: any) => boolean } | null>(null);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
   const [showScanner, setShowScanner] = useState(false);
   const [showPersonalInfo, setShowPersonalInfo] = useState(false);
   const [showRewardCenter, setShowRewardCenter] = useState(false);
@@ -303,7 +304,6 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
             key="task-detail"
             task={selectedTask} 
             onClose={closeModal} 
-            currentUser={currentUser?.username}
             onDeleteTask={(taskId) => {
               setTasks(tasks.filter(t => t.id !== taskId));
               closeModal();

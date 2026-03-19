@@ -36,4 +36,15 @@ public class TaskCommentController {
     public String create(@RequestHeader("Authorization") String token, @RequestBody TaskCommentCreateDTO createDTO) {
         return taskCommentService.create(token, createDTO);
     }
+
+    /**
+     * 删除任务评论
+     * @param token 认证令牌
+     * @param commentId 评论ID
+     * @return JSON 字符串
+     */
+    @PostMapping("/delete/{commentId}")
+    public String delete(@RequestHeader("Authorization") String token, @PathVariable String commentId) {
+        return taskCommentService.delete(token, commentId);
+    }
 }

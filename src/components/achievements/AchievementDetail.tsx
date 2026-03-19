@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, CheckCircle, Lock, Star, Heart, Award, Plane, Music, Calendar, Gift, Shirt, Utensils, Ticket, Cat, Mail, Waves, Sunrise, Camera, Image as ImageIcon, X } from 'lucide-react';
 import { AchievementCategory, Achievement } from '../../data/achievements';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 
 const icons: Record<string, React.ElementType> = {
   Heart, Award, Plane, Music, Calendar, Gift, Shirt, Utensils, Ticket, Cat, Mail, Waves, Sunrise

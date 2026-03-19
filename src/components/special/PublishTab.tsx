@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Send, Star, Image as ImageIcon, X, Edit2, Trash2, Eye, EyeOff, Crown } from 'lucide-react';
 import { SpecialItem, specialIconMap, specialColorStyles } from './types';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 
 interface PublishTabProps {
   specialItems: SpecialItem[];

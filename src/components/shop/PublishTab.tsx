@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Send, Gift, Image as ImageIcon, X, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { ShopItem, iconMap, colorStyles } from './types';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 
 interface PublishTabProps {
   shopItems: ShopItem[];

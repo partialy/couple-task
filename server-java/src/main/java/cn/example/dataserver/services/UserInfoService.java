@@ -50,6 +50,7 @@ public class UserInfoService {
             String bindUserId = bind.getUserId().equals(user.getId()) ? bind.getTargetId() : bind.getUserId();
             bindUser = usersService.getById(bindUserId);
         }
+        user.setPassword(null);
         UserInitDTO userInitDTO = UserInitDTO.builder()
                 .user(user)
                 .bindUser(bindUser)

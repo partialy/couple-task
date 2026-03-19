@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { authService } from '@/api/service/auth';
 import { userService } from '@/api/service/user';
 import { BindingRelations, Users } from '@/api/sql_models';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 import { ApiResponse, UserLoginResponse } from '@/api/types';
 
 interface UserState {

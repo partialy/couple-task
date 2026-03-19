@@ -4,17 +4,17 @@ import { Tag, ChevronLeft, Star, Calendar, X, Hash } from 'lucide-react';
 import DatePicker from './DatePicker';
 
 interface TaskSettingsProps {
-  category: string;
-  setCategory: (c: string) => void;
+  categoryId: string;
+  setCategoryId: (id: string) => void;
   showCategoryPicker: boolean;
   setShowCategoryPicker: (s: boolean) => void;
-  categories: string[];
+  categories: { id: string; name: string }[];
   
-  taskLevel: TaskLevel;
-  setTaskLevel: (l: TaskLevel) => void;
+  taskLevelId: string;
+  setTaskLevelId: (id: string) => void;
   showLevelPicker: boolean;
   setShowLevelPicker: (s: boolean) => void;
-  taskLevels: TaskLevel[];
+  taskLevels: { id: string; name: string; maxRewards: number }[];
   rewards: RewardDraft[];
   setRewards: (r: RewardDraft[]) => void;
   
@@ -37,11 +37,6 @@ interface TaskSettingsProps {
   allTags: string[];
 }
 
-type TaskLevel = {
-  label: string;
-  maxRewards: number;
-};
-
 type TaskType = {
   label: string;
   value: 'one-time' | 'daily' | 'weekly' | 'monthly';
@@ -56,14 +51,16 @@ type RewardDraft = {
 };
 
 export default function TaskSettings({
-  category, setCategory, showCategoryPicker, setShowCategoryPicker, categories,
-  taskLevel, setTaskLevel, showLevelPicker, setShowLevelPicker, taskLevels, rewards, setRewards,
+  categoryId, setCategoryId, showCategoryPicker, setShowCategoryPicker, categories,
+  taskLevelId, setTaskLevelId, showLevelPicker, setShowLevelPicker, taskLevels, rewards, setRewards,
   taskType, setTaskType, showTypePicker, setShowTypePicker, taskTypes,
   selectedDays, setSelectedDays,
   deadline, setDeadline,
   tags, setTags, tagInput, setTagInput, allTags
 }: TaskSettingsProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const selectedCategory = categories.find(c => c.id === categoryId);
+  const selectedLevel = taskLevels.find(l => l.id === taskLevelId);
 
   return (
     <div className="space-y-3">
@@ -83,7 +80,7 @@ export default function TaskSettings({
             onClick={() => setShowCategoryPicker(true)}
             className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-sm font-bold text-slate-700 dark:text-slate-200"
           >
-            <span>{category}</span>
+            <span>{selectedCategory?.name || '未选择'}</span>
             <ChevronLeft className={`w-4 h-4 transition-transform ${showCategoryPicker ? 'rotate-90' : '-rotate-90'}`} />
           </button>
 
@@ -101,18 +98,18 @@ export default function TaskSettings({
               >
                 {categories.map(cat => (
                   <button
-                    key={cat}
+                    key={cat.id}
                     onClick={() => {
-                      setCategory(cat);
+                      setCategoryId(cat.id);
                       setShowCategoryPicker(false);
                     }}
                     className={`px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors ${
-                      category === cat
+                      categoryId === cat.id
                         ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    {cat}
+                    {cat.name}
                   </button>
                 ))}
                 {/* 小箭头 */}
@@ -134,7 +131,7 @@ export default function TaskSettings({
             onClick={() => setShowLevelPicker(true)}
             className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-sm font-bold text-slate-700 dark:text-slate-200"
           >
-            <span>{taskLevel.label} ({taskLevel.maxRewards})</span>
+            <span>{selectedLevel ? `${selectedLevel.name} (${selectedLevel.maxRewards})` : '未选择'}</span>
             <ChevronLeft className={`w-4 h-4 transition-transform ${showLevelPicker ? 'rotate-90' : '-rotate-90'}`} />
           </button>
 
@@ -152,21 +149,19 @@ export default function TaskSettings({
               >
                 {taskLevels.map(level => (
                   <button
-                    key={level.label}
+                    key={level.id}
                     onClick={() => {
-                      setTaskLevel(level);
+                      setTaskLevelId(level.id);
                       setShowLevelPicker(false);
-                      if (rewards.length > level.maxRewards) {
-                        setRewards(rewards.slice(0, level.maxRewards));
-                      }
+                      if (rewards.length > level.maxRewards) setRewards(rewards.slice(0, level.maxRewards));
                     }}
                     className={`px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors ${
-                      taskLevel.label === level.label
+                      taskLevelId === level.id
                         ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    {level.label} ({level.maxRewards})
+                    {level.name} ({level.maxRewards})
                   </button>
                 ))}
                 {/* 小箭头 */}

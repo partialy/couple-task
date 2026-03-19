@@ -18,6 +18,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -80,6 +81,8 @@ public class TaskServiceImplements {
         task.setTitle(taskDTO.getTitle());
         task.setDescription(taskDTO.getDescription());
         task.setCoverImage(taskDTO.getCoverImage());
+        task.setCategoryId(taskDTO.getCategoryId());
+        task.setLevelId(taskDTO.getLevelId());
         task.setStatus("pending"); // 初始状态为待处理
         task.setIsPrivate(taskDTO.getIsPrivate() ? 1 : 0);
         task.setIsPrivileged(taskDTO.getIsPrivileged() ? 1 : 0);
@@ -89,10 +92,9 @@ public class TaskServiceImplements {
         task.setUpdatedAt(new Date());
         
         // 解析截止日期
-        if (StrUtil.isNotBlank(taskDTO.getDeadline()) && !taskDTO.getDeadline().equals("不限时间")) {
+        if (StrUtil.isNotBlank(taskDTO.getDeadline())) {
             try {
-                // 这里简单处理，实际可能需要更复杂的日期解析
-                // task.setDeadline(new SimpleDateFormat("yyyy-MM-dd").parse(taskDTO.getDeadline()));
+                task.setDeadline(new SimpleDateFormat("yyyy-MM-dd").parse(taskDTO.getDeadline()));
             } catch (Exception e) {
                 log.error("解析截止日期出错：", e);
             }

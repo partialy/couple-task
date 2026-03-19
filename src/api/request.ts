@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import eventBus from '../utils/eventBus';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 const request = axios.create({
     baseURL: '/api',
     timeout: 15000,

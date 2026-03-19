@@ -542,7 +542,7 @@ export interface Tasks {
     /**
      * 任务类型 (one-time, daily, weekly, monthly)
      */
-    taskType?: string; // 可选字段
+    repeatType?: string; // 可选字段
 
     /**
      * 重复规则配置（如周一、周三）

@@ -6,9 +6,9 @@ import { ApiResponse, TaskCommentCreateDTO, TaskCommentVO, TaskDetailVO, TaskVO 
 export interface TaskCreateDTO {
   title: string;
   description: string;
-  category: string;
-  level: string;
-  deadline: string;
+  categoryId: string;
+  levelId: string;
+  deadline?: string;
   coverImage: string;
   otherImages: string[];
   tags: string[];
@@ -87,6 +87,14 @@ const taskService = {
    */
   async createComment(payload: TaskCommentCreateDTO): Promise<ApiResponse<TaskCommentVO>> {
     return await request.post('/task/comment/create', payload);
+  },
+
+  /**
+   * 删除任务评论
+   * @param commentId 评论ID
+   */
+  async deleteComment(commentId: string): Promise<ApiResponse<null>> {
+    return await request.post(`/task/comment/delete/${commentId}`);
   }
 };
 

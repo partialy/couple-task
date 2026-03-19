@@ -127,4 +127,30 @@ public class TaskCommentServiceImplements {
 
         return Result.success("评论成功", result).toJson();
     }
+
+    /**
+     * 删除任务评论
+     * @param token 认证令牌
+     * @param commentId 评论ID
+     * @return JSON 字符串
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String delete(String token, String commentId) {
+        Users currentUser = authService.checkToken(token);
+        if (StrUtil.isBlank(commentId)) {
+            return Result.fail("评论ID不能为空").toJson();
+        }
+
+        TaskComments comment = taskCommentsService.getById(commentId);
+        if (ObjectUtil.isNull(comment) || ObjectUtil.isNotNull(comment.getDeletedAt())) {
+            return Result.fail("评论不存在").toJson();
+        }
+        if (!currentUser.getId().equals(comment.getUserId())) {
+            return Result.fail("无权删除该评论").toJson();
+        }
+
+        comment.setDeletedAt(new Date());
+        taskCommentsService.updateById(comment);
+        return Result.success("删除成功").toJson();
+    }
 }

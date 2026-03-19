@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Categories, TaskLevels, Tags, Tasks, Result } from '@/api/sql_models';
-import { initialTasks } from '@/data/tasks';
 import taskService, { TaskCreateDTO } from '@/api/service/task';
+import { UiTask } from '@/types/task';
+import { mapTaskVOToUiTask } from '@/mappers/task';
 
 interface TaskState {
-  tasks: any[]; // Using any[] to match initialTasks structure for now
+  tasks: UiTask[];
   categories: Categories[];
   taskLevels: TaskLevels[];
   allTags: Tags[];
@@ -13,7 +14,7 @@ interface TaskState {
   configFetched: boolean;
 
   // Actions
-  addTask: (task: any) => void;
+  addTask: (task: UiTask) => void;
   createTask: (taskData: TaskCreateDTO) => Promise<Result<string>>;
   fetchTasks: () => Promise<void>;
   acceptTask: (taskId: string) => Promise<Result<string>>;
@@ -23,14 +24,14 @@ interface TaskState {
   deleteTask: (taskId: string | number) => void;
   toggleBookmark: (taskId: string | number) => void;
   getTaskById: (id: string | number) => any | undefined;
-  setTasks: (tasks: any[]) => void;
+  setTasks: (tasks: UiTask[]) => void;
   fetchPublishConfig: (bindId: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
-      tasks: initialTasks,
+      tasks: [] as UiTask[],
       categories: [
         { id: 'default-1', name: '旅行' },
         { id: 'default-2', name: '美食' },
@@ -73,20 +74,7 @@ export const useTaskStore = create<TaskState>()(
           const result = await taskService.list();
           if (result.success && result.data) {
             // Map TaskVO to local task structure
-            const mappedTasks = result.data.map((task: any) => ({
-              id: task.id,
-              title: task.title,
-              desc: task.description,
-              img: task.coverImage || 'https://picsum.photos/seed/new/400/600',
-              tags: task.tags || [],
-              rewards: task.rewards || [],
-              status: task.status,
-              author: task.authorId, // TODO: map from actual author info
-              isPrivate: task.isPrivate === 1,
-              isPrivileged: task.isPrivileged === 1,
-              taskType: task.repeatType,
-              deadline: task.deadline
-            }));
+            const mappedTasks = result.data.map(mapTaskVOToUiTask);
             set({ tasks: mappedTasks });
           }
         } finally {

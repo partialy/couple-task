@@ -4,7 +4,7 @@ import { Lock, Eye, EyeOff, Mail, ShieldCheck, Check, Smartphone, ChevronLeft } 
 import { authService } from '@/api/service/auth';
 import { useUserStore } from '@/store/index';
 import { Users } from '@/api/sql_models';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 
 export default function RegisterForm({ onSwitch, onBack }: { onSwitch: () => void; onBack: () => void; key?: string }) {
   const [tab, setTab] = useState<'phone' | 'email'>('phone');

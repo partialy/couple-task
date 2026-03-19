@@ -20,7 +20,7 @@ import { useUserStore, useTaskStore } from './store';
 import { initialShopItems } from './data/shopItems';
 import eventBus from './utils/eventBus';
 import shopItemsService, { ShopItem as ApiShopItem } from './api/service/shopItems';
-import message from './utils/message/message';
+import { message } from '@/utils/pure/message';
 
 
 export default function App() {
@@ -226,7 +226,7 @@ export default function App() {
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 isLoggedIn={isLoggedIn}
-                currentUser={currentUser?.username || null}
+                currentUser={currentUser || null}
                 onLoginPrompt={() => navigateTo('login')}
                 onOpenBindingPage={() => setShowBindingPage(true)}
               />

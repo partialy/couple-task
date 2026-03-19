@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Gift, Copy, CheckCircle, ImagePlus, Heart, Star, Coffee, Plane, Music, ShoppingBag, Sparkles, Package, X } from 'lucide-react';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 
 const icons: Record<string, React.ElementType> = {
   Gift, Heart, Star, Coffee, Plane, Music, ShoppingBag, Sparkles, Package

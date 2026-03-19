@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useTaskStore, useUserStore } from "../../store";
-import message from "../../utils/message/message";
+import { message } from "@/utils/pure/message";
 import { uploadToQiniu, revokeLocalPreview } from "@/utils/qiniu";
 
 import Header from "./Header";
@@ -35,7 +35,7 @@ export default function PublishTask({
 }: PublishTaskProps) {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [category, setCategory] = useState("日常");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [rewardType, setRewardType] = useState<"normal" | "wildcard">("normal");
@@ -96,15 +96,14 @@ export default function PublishTask({
     setOtherImages(previewUrls);
   };
 
-  // Map store data to local format
-  const categories = storeCategories.map((c) => c.name);
-
+  const categories = storeCategories.map((c) => ({ id: c.id, name: c.name }));
   const taskLevels = storeTaskLevels.map((l) => ({
-    label: l.name,
+    id: l.id,
+    name: l.name,
     maxRewards: l.maxRewards || 1,
   }));
 
-  const [taskLevel, setTaskLevel] = useState(taskLevels[0]);
+  const [taskLevelId, setTaskLevelId] = useState<string>("");
 
   // Fetch config on mount
   useEffect(() => {
@@ -115,9 +114,8 @@ export default function PublishTask({
 
   // Update taskLevel when taskLevels change (e.g. after fetch)
   useEffect(() => {
-    if (taskLevels.length > 0 && !initialData) {
-      setTaskLevel(taskLevels[0]);
-    }
+    if (categories.length > 0 && !categoryId && !initialData) setCategoryId(categories[0].id);
+    if (taskLevels.length > 0 && !taskLevelId && !initialData) setTaskLevelId(taskLevels[0].id);
   }, [storeTaskLevels]);
   const [showLevelPicker, setShowLevelPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -137,13 +135,10 @@ export default function PublishTask({
     if (initialData) {
       setTitle(initialData.title || "");
       setDesc(initialData.desc || "");
-      setCategory(initialData.category || "日常");
+      if (initialData.categoryId) setCategoryId(initialData.categoryId);
       setTags(initialData.tags || []);
 
-      if (initialData.level) {
-        const level = taskLevels.find((l) => l.label === initialData.level);
-        if (level) setTaskLevel(level);
-      }
+      if (initialData.levelId) setTaskLevelId(initialData.levelId);
 
       if (initialData.taskType) {
         const type = taskTypes.find((t) => t.value === initialData.taskType);
@@ -296,9 +291,9 @@ export default function PublishTask({
       const taskData = {
         title,
         description: desc,
-        category,
-        level: taskLevel.label,
-        deadline: deadline || "不限时间",
+        categoryId,
+        levelId: taskLevelId,
+        ...(deadline ? { deadline } : {}),
         coverImage: finalCoverImage || "https://picsum.photos/seed/new/400/600",
         otherImages: finalOtherImages,
         tags: tags,
@@ -361,13 +356,13 @@ export default function PublishTask({
         />
 
         <TaskSettings
-          category={category}
-          setCategory={setCategory}
+          categoryId={categoryId}
+          setCategoryId={setCategoryId}
           showCategoryPicker={showCategoryPicker}
           setShowCategoryPicker={setShowCategoryPicker}
           categories={categories}
-          taskLevel={taskLevel}
-          setTaskLevel={setTaskLevel}
+          taskLevelId={taskLevelId}
+          setTaskLevelId={setTaskLevelId}
           showLevelPicker={showLevelPicker}
           setShowLevelPicker={setShowLevelPicker}
           taskLevels={taskLevels}
@@ -392,7 +387,10 @@ export default function PublishTask({
         <TaskRewards
           rewardType={rewardType}
           setRewardType={setRewardType}
-          taskLevel={taskLevel}
+          taskLevel={(() => {
+            const level = taskLevels.find((l) => l.id === taskLevelId) || taskLevels[0];
+            return { label: level?.name || "默认", maxRewards: level?.maxRewards || 1 };
+          })()}
           rewards={rewards}
           setRewards={setRewards}
           wildcardAmount={wildcardAmount}

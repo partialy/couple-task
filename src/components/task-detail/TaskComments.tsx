@@ -3,17 +3,23 @@ import { MessageCircle, Trash2, Send } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/date';
 import taskService from '@/api/service/task';
 import { TaskCommentVO } from '@/api/types';
+import { message } from '@/utils/pure/message';
+import { useUserStore } from '@/store/user';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface TaskCommentsProps {
   taskId: string;
-  currentUser: string | null;
 }
 
-export default function TaskComments({ taskId, currentUser }: TaskCommentsProps) {
+export default function TaskComments({ taskId }: TaskCommentsProps) {
   const [comments, setComments] = useState<TaskCommentVO[]>([]);
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [sending, setSending] = useState(false);
+  const [pendingDeleteComment, setPendingDeleteComment] = useState<TaskCommentVO | null>(null);
+  const [confirmStep, setConfirmStep] = useState<1 | 2>(1);
+  const [deleting, setDeleting] = useState(false);
+  const currentUserId = useUserStore(state => state.currentUser?.id);
 
   const fetchComments = async () => {
     if (!taskId) return;
@@ -51,6 +57,44 @@ export default function TaskComments({ taskId, currentUser }: TaskCommentsProps)
     }
   };
 
+  const handleDelete = async (comment: TaskCommentVO) => {
+    if (comment.userId !== currentUserId) {
+      message.error('只能删除自己的评论');
+      return;
+    }
+    setPendingDeleteComment(comment);
+    setConfirmStep(1);
+  };
+
+  const handleCancelDelete = () => {
+    if (deleting) return;
+    setPendingDeleteComment(null);
+    setConfirmStep(1);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteComment || deleting) return;
+    if (confirmStep === 1) {
+      setConfirmStep(2);
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const res = await taskService.deleteComment(pendingDeleteComment.id);
+      if (res.success) {
+        setComments(prev => prev.filter(item => item.id !== pendingDeleteComment.id));
+        message.success('删除成功');
+        setPendingDeleteComment(null);
+        setConfirmStep(1);
+        return;
+      }
+      message.error(res.msg || '删除失败');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="mb-8">
       <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center">
@@ -72,8 +116,12 @@ export default function TaskComments({ taskId, currentUser }: TaskCommentsProps)
                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{comment.userName || '匿名用户'}</span>
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-slate-400">{formatRelativeTime(comment.createdAt)}</span>
-                  {(comment.userId === currentUser || comment.userName === currentUser) && (
-                    <button disabled className="text-slate-300 dark:text-slate-600 transition-colors p-1 cursor-not-allowed" title="删除功能稍后开放">
+                  {comment.userId === currentUserId && (
+                    <button
+                      onClick={() => handleDelete(comment)}
+                      className="text-rose-500 hover:text-rose-600 transition-colors p-1"
+                      title="删除评论"
+                    >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -109,6 +157,17 @@ export default function TaskComments({ taskId, currentUser }: TaskCommentsProps)
           <Send className="w-4 h-4 ml-0.5" />
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={!!pendingDeleteComment}
+        title={confirmStep === 1 ? '确认删除评论？' : '再次确认删除？'}
+        message={confirmStep === 1 ? '删除后将无法恢复，是否继续？' : '此操作不可撤销，请再次确认删除。'}
+        confirmText={deleting ? '删除中...' : '删除'}
+        cancelText="取消"
+        confirmColor="bg-rose-500 hover:bg-rose-600"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 }

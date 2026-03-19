@@ -16,6 +16,8 @@ import TaskWaterfall, { categories as squareCategories } from './components/Task
 import ScrollToTopFab from './components/ScrollToTopFab';
 import BottomTabBar from './components/BottomTabBar';
 import useScrollCollapse from './hooks/useScrollCollapse';
+import { Users } from '@/api/sql_models';
+import { UiTask } from '@/types/task';
 
 interface HomeProps {
   key?: string;
@@ -33,7 +35,7 @@ interface HomeProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
-  currentUser?: string | null;
+  currentUser?: Users | null;
   onLoginPrompt?: () => void;
   onOpenBindingPage?: () => void;
 }
@@ -58,7 +60,7 @@ export default function Home({
   onOpenBindingPage,
 }: HomeProps) {
   const [activeCategory, setActiveCategory] = useState('全部');
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { acceptTask, completeTask, abandonTask } = useTaskStore();
@@ -219,7 +221,7 @@ export default function Home({
             {!isLoggedIn ? (
               renderLoginPrompt('消息列表')
             ) : (
-              <Messages currentUser={currentUser || null} />
+              <Messages />
             )}
           </motion.div>
         )}
@@ -246,7 +248,6 @@ export default function Home({
             key="task-detail"
             task={selectedTask}
             onClose={handleCloseTaskDetail}
-            currentUser={currentUser}
             onDeleteTask={(taskId) => {
               setTasks(tasks.filter((t) => t.id !== taskId));
               handleCloseTaskDetail();

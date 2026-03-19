@@ -108,7 +108,7 @@ export default function TaskCard({ task, onClick }: { task: any, onClick?: () =>
         {task.rewards && task.rewards.length > 0 && (() => {
           const reward = task.rewards[0];
           const isObj = typeof reward === 'object';
-          const text = isObj ? reward.text : reward;
+          const text = isObj ? reward.content : reward;
           const color = isObj ? reward.color : 'amber';
           const iconName = isObj ? reward.icon : 'Gift';
           

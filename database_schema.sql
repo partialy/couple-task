@@ -28,6 +28,53 @@ create table achievements
 create index category_id
     on achievements (category_id);
 
+create table categories
+(
+    id                varchar(36)   not null comment 'ID，全局唯一'
+        primary key,
+    name              varchar(50)   not null comment '分类名称',
+    sort_order        int default 0 null comment '排序权重',
+    belong_binding_id varchar(36)   null comment '所属绑定ID',
+    constraint uk_name_binding
+        unique (name, belong_binding_id)
+)
+    comment '任务分类表' collate = utf8mb4_unicode_ci;
+
+create index belong_binding_id
+    on categories (belong_binding_id);
+
+create table shop_items
+(
+    id                varchar(36)                           not null comment 'ID，全局唯一'
+        primary key,
+    name              varchar(50)                           not null comment '商品名称',
+    description       text                                  null comment '商品描述',
+    item_type         varchar(20) default 'prop'            null comment '道具类型 (prop, wildcard, other)',
+    points_cost       int                                   not null comment '兑换所需积分',
+    icon              varchar(50)                           null comment '图标标识符',
+    color             varchar(50)                           null comment '颜色样式',
+    status            varchar(20) default 'active'          null comment '状态 (active, inactive)',
+    stock             int         default -1                null comment '库存数量，-1为不限量',
+    version           int         default 0                 null comment '乐观锁版本号',
+    created_at        datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_at        datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    deleted_at        datetime                              null comment '逻辑删除时间',
+    belong_binding_id varchar(36)                           null comment '所属绑定ID',
+    belong_user_id    varchar(36)                           null comment '所属用户ID',
+    publish_user_id   varchar(36)                           null comment '发布者ID',
+    sort_order        int         default 0                 null comment '排序权重'
+)
+    comment '商店商品表' collate = utf8mb4_unicode_ci;
+
+create index shop_items_ibfk_1
+    on shop_items (belong_binding_id);
+
+create index shop_items_ibfk_2
+    on shop_items (belong_user_id);
+
+create index shop_items_ibfk_3
+    on shop_items (publish_user_id);
+
 create table system_config
 (
     id           bigint auto_increment comment '主键ID'
@@ -50,6 +97,20 @@ create index idx_category
 
 create index idx_config_key
     on system_config (config_key);
+
+create table tags
+(
+    id                varchar(36) not null comment 'ID，全局唯一'
+        primary key,
+    name              varchar(30) not null comment '标签名称',
+    belong_binding_id varchar(36) null comment '所属绑定ID',
+    constraint uk_name_binding
+        unique (name, belong_binding_id)
+)
+    comment '标签表' collate = utf8mb4_unicode_ci;
+
+create index belong_binding_id
+    on tags (belong_binding_id);
 
 create table task_levels
 (
@@ -89,9 +150,9 @@ create table users
     deleted_at    datetime                                   null comment '逻辑删除时间',
     status        varchar(20) default 'active'               null comment '用户账号状态',
     block_end_at  datetime                                   null comment '用户账号封禁结束时间',
-    invite_code   varchar(18)                                null comment '唯一邀请码',
-    constraint uk_invite_code
-        unique (invite_code)
+    invite_code   varchar(18)                                not null comment '邀请码（唯一）',
+    constraint idx_code
+        unique (invite_code) comment '邀请码索引'
 )
     comment '用户表' collate = utf8mb4_unicode_ci;
 
@@ -137,24 +198,6 @@ create table card_transactions
 
 create index idx_user_id
     on card_transactions (user_id);
-
-create table categories
-(
-    id                varchar(36)   not null comment 'ID，全局唯一'
-        primary key,
-    name              varchar(50)   not null comment '分类名称',
-    sort_order        int default 0 null comment '排序权重',
-    belong_binding_id varchar(36)   null comment '所属绑定ID',
-    constraint uk_name_binding
-        unique (name, belong_binding_id),
-    constraint categories_ibfk_1
-        foreign key (belong_binding_id) references binding_relations (id)
-            on delete cascade
-)
-    comment '任务分类表' collate = utf8mb4_unicode_ci;
-
-create index belong_binding_id
-    on categories (belong_binding_id);
 
 create table conversations
 (
@@ -230,6 +273,32 @@ create index idx_owner_id
 
 create index idx_redeemer_id
     on item_redemption_records (redeemer_id);
+
+create table item_transactions
+(
+    id               int auto_increment comment 'ID，自增'
+        primary key,
+    user_id          varchar(36)                        not null comment '用户ID',
+    item_id          varchar(36)                        not null comment '商品ID',
+    quantity         int                                not null comment '变动数量（正数为获得，负数为消耗）',
+    transaction_type varchar(50)                        not null comment '交易类型',
+    reference_id     varchar(36)                        null comment '关联的业务ID',
+    description      varchar(255)                       null comment '流水描述',
+    created_at       datetime default CURRENT_TIMESTAMP null comment '发生时间',
+    constraint item_transactions_ibfk_1
+        foreign key (user_id) references users (id)
+            on delete cascade,
+    constraint item_transactions_ibfk_2
+        foreign key (item_id) references shop_items (id)
+            on delete cascade
+)
+    comment '道具流水表' collate = utf8mb4_unicode_ci;
+
+create index idx_item_id
+    on item_transactions (item_id);
+
+create index idx_user_id
+    on item_transactions (user_id);
 
 create table messages
 (
@@ -328,73 +397,6 @@ create index idx_creator_id
 create index redeemer_id
     on reward_codes (redeemer_id);
 
-create table shop_items
-(
-    id                varchar(36)                           not null comment 'ID，全局唯一'
-        primary key,
-    name              varchar(50)                           not null comment '商品名称',
-    description       text                                  null comment '商品描述',
-    item_type         varchar(20) default 'prop'            null comment '道具类型 (prop, wildcard, other)',
-    points_cost       int                                   not null comment '兑换所需积分',
-    icon              varchar(50)                           null comment '图标标识符',
-    color             varchar(50)                           null comment '颜色样式',
-    status            varchar(20) default 'active'          null comment '状态 (active, inactive)',
-    stock             int         default -1                null comment '库存数量，-1为不限量',
-    version           int         default 0                 null comment '乐观锁版本号',
-    created_at        datetime    default CURRENT_TIMESTAMP null comment '创建时间',
-    updated_at        datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
-    deleted_at        datetime                              null comment '逻辑删除时间',
-    belong_binding_id varchar(36)                           null comment '所属绑定ID',
-    belong_user_id    varchar(36)                           null comment '所属用户ID',
-    publish_user_id   varchar(36)                           null comment '发布者ID',
-    sort_order        int         default 0                 null comment '排序权重',
-    constraint shop_items_ibfk_1
-        foreign key (belong_binding_id) references binding_relations (id)
-            on delete cascade,
-    constraint shop_items_ibfk_2
-        foreign key (belong_user_id) references users (id)
-            on delete cascade,
-    constraint shop_items_ibfk_3
-        foreign key (publish_user_id) references users (id)
-            on delete cascade
-)
-    comment '商店商品表' collate = utf8mb4_unicode_ci;
-
-create table item_transactions
-(
-    id               int auto_increment comment 'ID，自增'
-        primary key,
-    user_id          varchar(36)                        not null comment '用户ID',
-    item_id          varchar(36)                        not null comment '商品ID',
-    quantity         int                                not null comment '变动数量（正数为获得，负数为消耗）',
-    transaction_type varchar(50)                        not null comment '交易类型',
-    reference_id     varchar(36)                        null comment '关联的业务ID',
-    description      varchar(255)                       null comment '流水描述',
-    created_at       datetime default CURRENT_TIMESTAMP null comment '发生时间',
-    constraint item_transactions_ibfk_1
-        foreign key (user_id) references users (id)
-            on delete cascade,
-    constraint item_transactions_ibfk_2
-        foreign key (item_id) references shop_items (id)
-            on delete cascade
-)
-    comment '道具流水表' collate = utf8mb4_unicode_ci;
-
-create index idx_item_id
-    on item_transactions (item_id);
-
-create index idx_user_id
-    on item_transactions (user_id);
-
-create index belong_binding_id
-    on shop_items (belong_binding_id);
-
-create index belong_user_id
-    on shop_items (belong_user_id);
-
-create index publish_user_id
-    on shop_items (publish_user_id);
-
 create table special_items
 (
     id                varchar(36)                           not null comment 'ID，全局唯一'
@@ -427,23 +429,6 @@ create index belong_binding_id
 
 create index publish_user_id
     on special_items (publish_user_id);
-
-create table tags
-(
-    id                varchar(36) not null comment 'ID，全局唯一'
-        primary key,
-    name              varchar(30) not null comment '标签名称',
-    belong_binding_id varchar(36) null comment '所属绑定ID',
-    constraint uk_name_binding
-        unique (name, belong_binding_id),
-    constraint tags_ibfk_1
-        foreign key (belong_binding_id) references binding_relations (id)
-            on delete cascade
-)
-    comment '标签表' collate = utf8mb4_unicode_ci;
-
-create index belong_binding_id
-    on tags (belong_binding_id);
 
 create table task_templates
 (
@@ -648,7 +633,8 @@ create table task_tags
 (
     task_id varchar(36) not null,
     tag_id  varchar(36) not null,
-    primary key (task_id, tag_id),
+    id      int auto_increment comment '主键'
+        primary key,
     constraint task_tags_ibfk_1
         foreign key (task_id) references tasks (id)
             on delete cascade,

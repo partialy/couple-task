@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { ChevronLeft, Camera, User, Phone, Mail, Calendar, Heart, Smile, MapPin } from 'lucide-react';
 import DatePicker from '../PublishTask/DatePicker';
 import { useUserStore } from '@/store';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 import { uploadToQiniu, createLocalPreview, revokeLocalPreview } from '@/utils/qiniu';
 
 interface ProfileEditProps {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import pointsService, { PointTransaction } from '@/api/service/points';
-import message from '@/utils/message/message';
+import { message } from '@/utils/pure/message';
 import { useUserStore } from './user';
 
 interface PointsState {

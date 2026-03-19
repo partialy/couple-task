@@ -12,6 +12,8 @@ public class TaskDTO {
     private String description;    // 任务描述
     private String category;       // 任务分类名称
     private String level;          // 任务等级名称
+    private String categoryId;     // 任务分类ID
+    private String levelId;        // 任务等级ID
     private String deadline;       // 截止日期
     private String coverImage;     // 封面图
     private List<String> otherImages; // 其他图片
