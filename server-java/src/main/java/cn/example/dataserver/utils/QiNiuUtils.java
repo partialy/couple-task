@@ -4,6 +4,7 @@ import com.qiniu.common.QiniuException;
 import com.qiniu.storage.DownloadUrl;
 import com.qiniu.util.Auth;
 import lombok.Builder;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -57,6 +58,7 @@ public class QiNiuUtils {
         return new DownloadUrl(domain, false, fileName).buildURL();
     }
 
+    @Data
     @Builder
     public static class UploadInfo {
         private String uploadToken;

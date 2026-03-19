@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { Result } from '../sql_models';
+import request from '../request';
+import { ApiResponse, TaskVO } from '../types';
 
 // 任务发布数据结构
 export interface TaskCreateDTO {
@@ -29,14 +29,15 @@ const taskService = {
    * 发布新任务
    * @param taskData 任务数据
    */
-  async create(taskData: TaskCreateDTO): Promise<Result<string>> {
-    const token = localStorage.getItem('token');
-    const response = await axios.post('/task/create', taskData, {
-      headers: {
-        'Authorization': token
-      }
-    });
-    return response.data;
+  async create(taskData: TaskCreateDTO): Promise<ApiResponse<string>> {
+    return await request.post('/task/create', taskData);
+  },
+
+  /**
+   * 获取任务列表
+   */
+  async list(): Promise<ApiResponse<TaskVO[]>> {
+    return await request.get('/task/list');
   }
 };
 
