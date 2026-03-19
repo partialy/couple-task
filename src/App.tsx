@@ -5,7 +5,7 @@ import { Moon, Sun, CheckCircle } from 'lucide-react';
 // Standard imports instead of lazy load
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
-import Home from './components/Home';
+import Home from './components/home';
 import PublishTask from './components/PublishTask';
 import Shop from './components/Shop';
 import SpecialRewards from './components/SpecialRewards';
@@ -168,7 +168,7 @@ export default function App() {
   });
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden font-sans transition-colors duration-500 bg-gradient-to-br from-pink-50 via-white to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="h-screen w-screen relative overflow-hidden font-sans transition-colors duration-500 bg-linear-to-br from-pink-50 via-white to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       
       {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-pink-200 dark:bg-pink-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob transition-colors duration-500"></div>
@@ -304,9 +304,9 @@ export default function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.9 }}
               transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="fixed top-12 left-1/2 -translate-x-1/2 z-[100] px-5 py-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl text-slate-800 dark:text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center space-x-3 border border-white/40 dark:border-slate-700/50"
+              className="fixed top-12 left-1/2 -translate-x-1/2 z-100 px-5 py-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl text-slate-800 dark:text-white rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center space-x-3 border border-white/40 dark:border-slate-700/50"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-400 flex items-center justify-center shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-linear-to-tr from-emerald-400 to-cyan-400 flex items-center justify-center shadow-sm">
                 <CheckCircle className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-sm tracking-tight">{toast.message}</span>

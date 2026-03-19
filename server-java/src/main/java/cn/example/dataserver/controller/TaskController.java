@@ -1,13 +1,9 @@
 package cn.example.dataserver.controller;
 
-import cn.example.dataserver.common.Result;
 import cn.example.dataserver.dto.TaskDTO;
 import cn.example.dataserver.services.TaskServiceImplements;
-import cn.example.dataserver.vo.TaskVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 任务控制器
@@ -39,6 +35,17 @@ public class TaskController {
     @GetMapping("/list")
     public String list(@RequestHeader("Authorization") String token) {
         return taskService.list(token);
+    }
+
+    /**
+     * 获取任务详情
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @GetMapping("/detail/{taskId}")
+    public String detail(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.detail(token, taskId);
     }
 
     /**

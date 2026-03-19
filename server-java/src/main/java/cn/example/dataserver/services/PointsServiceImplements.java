@@ -16,7 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PointsServiceImplements {
 
-    private final AuthServiceImplements authService;
+    private final AuthService authService;
     private final PointTransactionsService pointTransactionsService;
     private final RewardCodesService rewardCodesService;
     private final ShopItemsService shopItemsService;
@@ -25,10 +25,6 @@ public class PointsServiceImplements {
 
     public String getHistory(String token) {
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
-
         List<PointTransactions> history = pointTransactionsService.lambdaQuery()
                 .eq(PointTransactions::getUserId, currentUser.getId())
                 .orderByDesc(PointTransactions::getCreatedAt)
@@ -40,10 +36,6 @@ public class PointsServiceImplements {
     @Transactional(rollbackFor = Exception.class)
     public String redeemCode(String token, String code) {
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
-
         RewardCodes rewardCode = rewardCodesService.lambdaQuery()
                 .eq(RewardCodes::getCode, code)
                 .one();
@@ -99,10 +91,6 @@ public class PointsServiceImplements {
     @Transactional(rollbackFor = Exception.class)
     public String redeemItem(String token, String itemId) {
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
-
         ShopItems shopItem = shopItemsService.getById(itemId);
         if (ObjectUtil.isNull(shopItem)) {
             return Result.fail("商品不存在").toJson();

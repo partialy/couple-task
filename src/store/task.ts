@@ -59,23 +59,7 @@ export const useTaskStore = create<TaskState>()(
         try {
           const result = await taskService.create(taskData);
           if (result.success) {
-            // 这里可以根据需要决定是否立即更新本地列表，或者等下次刷新
-            // 为了体验好，我们可以手动构造一个本地任务对象加入列表
-            const newTask = {
-              id: result.data,
-              title: taskData.title,
-              desc: taskData.description,
-              img: taskData.coverImage || 'https://picsum.photos/seed/new/400/600',
-              tags: [taskData.category, ...taskData.tags],
-              rewards: taskData.rewards,
-              status: 'pending',
-              author: '兔兔', // 实际应从 userStore 获取
-              isPrivate: taskData.isPrivate,
-              isPrivileged: taskData.isPrivileged,
-              taskType: taskData.taskType,
-              deadline: taskData.deadline
-            };
-            set(state => ({ tasks: [newTask, ...state.tasks] }));
+            get().fetchTasks();
           }
           return result;
         } finally {

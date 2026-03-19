@@ -77,7 +77,7 @@ public class AuthService {
         if(!PasswordEncoder.matches(userInput.getPassword(), user.getPassword())) {
             throw new BusinessException("密码错误");
         }
-        String token = JwtUtil.createToken(user.getId(), JWT_EXPIRATION);
+        String token = JwtUtil.createToken(user.getId(), JWT_EXPIRATION * 1000L);
         user.setLastLoginAt(new Date());
         usersService.updateById(user);
         user.setPassword(null);

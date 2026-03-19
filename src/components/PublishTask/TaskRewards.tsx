@@ -2,12 +2,27 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Gift, Sparkles, X, Plus } from 'lucide-react';
 
+type RewardDraft = {
+  text: string;
+  color: string;
+  icon: string;
+  /** 普通奖励时固定为 false（万能卡由 rewardType==='wildcard' 统一处理） */
+  isWildcard: false;
+  /** 非万能卡默认数量为 1（后端 DTO 字段为 amount） */
+  amount: number;
+};
+
+type TaskLevel = {
+  label: string;
+  maxRewards: number;
+};
+
 interface TaskRewardsProps {
   rewardType: 'normal' | 'wildcard';
   setRewardType: (t: 'normal' | 'wildcard') => void;
-  taskLevel: any;
-  rewards: any[];
-  setRewards: (r: any[]) => void;
+  taskLevel: TaskLevel;
+  rewards: RewardDraft[];
+  setRewards: (r: RewardDraft[]) => void;
   wildcardAmount: number;
   setWildcardAmount: (a: number) => void;
   activeIconPicker: number | null;
@@ -29,7 +44,8 @@ export default function TaskRewards({
     if (rewards.length < taskLevel.maxRewards) {
       const nextColor = rewardColors[rewards.length % rewardColors.length];
       const nextIcon = rewardIcons[rewards.length % rewardIcons.length];
-      setRewards([...rewards, { text: '', color: nextColor, icon: nextIcon }]);
+      // 普通奖励：默认数量 1，且不是万能卡
+      setRewards([...rewards, { text: '', color: nextColor, icon: nextIcon, isWildcard: false, amount: 1 }]);
     }
   };
 
@@ -157,7 +173,7 @@ export default function TaskRewards({
                             
                             {/* 自定义颜色选择器 */}
                             <div className={`relative w-8 h-8 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-transform hover:scale-110 ${!colorStyles[reward.color] ? 'ring-2 ring-offset-1 ring-slate-300 dark:ring-slate-600' : ''}`}>
-                              <div className="w-full h-full bg-gradient-to-br from-red-500 via-green-500 to-blue-500 absolute inset-0"></div>
+                              <div className="w-full h-full bg-linear-to-br from-red-500 via-green-500 to-blue-500 absolute inset-0"></div>
                               <input 
                                 type="color" 
                                 value={reward.color.startsWith('#') ? reward.color : '#ff0000'}

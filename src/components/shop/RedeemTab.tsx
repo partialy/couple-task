@@ -79,7 +79,7 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
                   <span className="text-[10px] font-bold text-slate-400">积分</span>
                 </div>
                 <button 
-                  onClick={() => redeemItem(item.id)}
+                  onClick={() => redeemItem(String(item.id))}
                   className="w-full py-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 font-bold rounded-xl transition-colors text-xs focus:outline-none"
                 >
                   立即兑换

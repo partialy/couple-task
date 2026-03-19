@@ -26,6 +26,9 @@ importers:
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
+      dayjs:
+        specifier: ^1.11.20
+        version: 1.11.20
       dotenv:
         specifier: ^17.2.3
         version: 17.3.1
@@ -52,7 +55,7 @@ importers:
         version: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
       zustand:
         specifier: ^5.0.11
-        version: 5.0.11(react@19.2.4)
+        version: 5.0.11(@types/react@19.2.14)(react@19.2.4)
     devDependencies:
       '@types/canvas-confetti':
         specifier: ^1.9.0
@@ -63,6 +66,9 @@ importers:
       '@types/node':
         specifier: ^22.14.0
         version: 22.19.15
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.27(postcss@8.5.8)
@@ -816,6 +822,9 @@ packages:
   '@types/range-parser@1.2.7':
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
 
+  '@types/react@19.2.14':
+    resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
+
   '@types/retry@0.12.0':
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
 
@@ -970,9 +979,15 @@ packages:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
+  csstype@3.2.3:
+    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
     engines: {node: '>= 12'}
+
+  dayjs@1.11.20:
+    resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -2398,6 +2413,10 @@ snapshots:
 
   '@types/range-parser@1.2.7': {}
 
+  '@types/react@19.2.14':
+    dependencies:
+      csstype: 3.2.3
+
   '@types/retry@0.12.0': {}
 
   '@types/send@0.17.6':
@@ -2570,7 +2589,11 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
+  csstype@3.2.3: {}
+
   data-uri-to-buffer@4.0.1: {}
+
+  dayjs@1.11.20: {}
 
   debug@2.6.9:
     dependencies:
@@ -3452,6 +3475,7 @@ snapshots:
 
   yallist@3.1.1: {}
 
-  zustand@5.0.11(react@19.2.4):
+  zustand@5.0.11(@types/react@19.2.14)(react@19.2.4):
     optionalDependencies:
+      '@types/react': 19.2.14
       react: 19.2.4

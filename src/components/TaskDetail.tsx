@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Gift, Heart, Calendar, ImageIcon, ShieldCheck, Star, Coffee, Plane, Music, ShoppingBag, Trophy } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
@@ -6,6 +6,9 @@ import confetti from 'canvas-confetti';
 import TaskHeader from './task-detail/TaskHeader';
 import TaskBottomBar from './task-detail/TaskBottomBar';
 import TaskComments from './task-detail/TaskComments';
+import taskService from '@/api/service/task';
+import { TaskDetailVO } from '@/api/types';
+import { formatRelativeTime } from '@/utils/date';
 
 const icons: Record<string, React.ElementType> = {
   Gift, Heart, Star, Coffee, Plane, Music, ShoppingBag
@@ -23,6 +26,8 @@ const colorStyles: Record<string, { bg: string, text: string, border: string }> 
 export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookmark, onDeleteTask, onUnpublishTask, currentUser }: { task: any, onClose: () => void, onUpdateTask?: (taskId: string, newStatus: string) => Promise<boolean> | boolean, onToggleBookmark?: (taskId: string) => void, onDeleteTask?: (taskId: string) => void, onUnpublishTask?: (taskId: string) => void, currentUser?: string | null, key?: string }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [detail, setDetail] = useState<TaskDetailVO | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     type: 'accept' | 'complete' | 'abandon' | null;
@@ -78,9 +83,48 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
     }
   };
 
-  if (!task) return null;
+  useEffect(() => {
+    const fetchDetail = async () => {
+      if (!task?.id) return;
+      setDetailLoading(true);
+      try {
+        const res = await taskService.detail(task.id);
+        if (res.success && res.data) {
+          setDetail(res.data);
+        } else {
+          setDetail(null);
+        }
+      } catch (error) {
+        setDetail(null);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [task?.id]);
 
-  const isMyTask = currentUser === task.author;
+  const displayTask = useMemo(() => {
+    if (!task) return null;
+    if (!detail) return task;
+    return {
+      ...task,
+      desc: detail.description ?? task.desc,
+      img: detail.coverImage || task.img,
+      tags: detail.tags || task.tags || [],
+      rewards: detail.rewards || task.rewards || [],
+      otherImages: (detail.images || []).map((item: any) => item.imageUrl).filter(Boolean),
+      deadline: detail.deadline || task.deadline,
+      taskType: detail.repeatType || task.taskType,
+      repeatConfig: detail.repeatConfig || task.repeatConfig,
+      author: detail.publisher?.nickname || task.author,
+      authorAvatar: detail.publisher?.avatar || null,
+      createdAt: detail.createdAt || task.createdAt
+    };
+  }, [detail, task]);
+
+  if (!displayTask) return null;
+
+  const isMyTask = currentUser === displayTask.author;
 
   return (
     <motion.div
@@ -91,8 +135,8 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
       className="absolute inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden"
     >
       <TaskHeader 
-        taskId={task.id}
-        isBookmarked={task.isBookmarked}
+        taskId={displayTask.id}
+        isBookmarked={displayTask.isBookmarked}
         isMyTask={isMyTask}
         onClose={onClose}
         onToggleBookmark={onToggleBookmark}
@@ -104,9 +148,9 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
         {/* 封面图 */}
         <div className="relative w-full h-[45vh] flex-shrink-0 overflow-hidden">
           <img 
-            src={task.img} 
-            alt={task.title} 
-            className={`w-full h-full object-cover transition-all duration-700 ${task.isPrivate && !isRevealed ? 'blur-2xl scale-110' : ''}`}
+            src={displayTask.img} 
+            alt={displayTask.title} 
+            className={`w-full h-full object-cover transition-all duration-700 ${displayTask.isPrivate && !isRevealed ? 'blur-2xl scale-110' : ''}`}
             referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent dark:from-slate-900"></div>
@@ -117,30 +161,32 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
         {/* 标题与作者 */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-3 leading-tight">
-            {task.isPrivate && !isRevealed ? '🔒 隐私任务' : task.title}
+            {displayTask.isPrivate && !isRevealed ? '🔒 隐私任务' : displayTask.title}
           </h1>
           
           {/* 标签 */}
-          {(task.tags && task.tags.length > 0) || task.isPrivileged || (task.taskType && task.taskType !== 'one-time') ? (
+          {(displayTask.tags && displayTask.tags.length > 0) || displayTask.isPrivileged || (displayTask.taskType && displayTask.taskType !== 'one-time') ? (
             <div className="flex flex-wrap gap-2 mb-4">
-              {task.isPrivileged && (
+              {displayTask.isPrivileged && (
                 <span className="px-2.5 py-1 rounded-lg text-xs font-bold border shadow-sm bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 flex items-center">
                   <Star className="w-3 h-3 mr-1" />
                   特权任务
                 </span>
               )}
-              {task.taskType && task.taskType !== 'one-time' && (
+              {displayTask.taskType && displayTask.taskType !== 'one-time' && (
                 <span className="px-2.5 py-1 rounded-lg text-xs font-bold border shadow-sm bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30 flex items-center">
                   <Calendar className="w-3 h-3 mr-1" />
-                  {task.taskType === 'daily' ? '每日任务' : task.taskType === 'weekly' ? '每周任务' : '每月任务'}
-                  {task.repeatConfig && (() => {
+                  {displayTask.taskType === 'daily' ? '每日任务' : displayTask.taskType === 'weekly' ? '每周任务' : '每月任务'}
+                  {displayTask.repeatConfig && (() => {
                     try {
-                      const config = JSON.parse(task.repeatConfig);
+                      const config = typeof displayTask.repeatConfig === 'string'
+                        ? JSON.parse(displayTask.repeatConfig)
+                        : displayTask.repeatConfig;
                       if (config.days && config.days.length > 0) {
-                        if (task.taskType === 'weekly') {
+                        if (displayTask.taskType === 'weekly') {
                           const dayMap = ['一', '二', '三', '四', '五', '六', '日'];
                           return ` (周${config.days.map((d: number) => dayMap[d - 1]).join('、')})`;
-                        } else if (task.taskType === 'monthly') {
+                        } else if (displayTask.taskType === 'monthly') {
                           return ` (${config.days.join('、')}号)`;
                         }
                       }
@@ -151,7 +197,7 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
                   })()}
                 </span>
               )}
-              {task.tags && task.tags.map((tag: string, idx: number) => {
+              {displayTask.tags && displayTask.tags.map((tag: string, idx: number) => {
                 const colors = [
                   'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border-rose-200 dark:border-rose-500/30',
                   'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/30',
@@ -172,18 +218,20 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-800">
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${task.author}`} alt="author" className="w-full h-full object-cover bg-slate-100 dark:bg-slate-800" />
+                <img src={displayTask.authorAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayTask.author}`} alt="author" className="w-full h-full object-cover bg-slate-100 dark:bg-slate-800" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-white">{task.author}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">发布于 2 小时前</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-white">{displayTask.author}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {displayTask.createdAt ? `发布于 ${formatRelativeTime(displayTask.createdAt)}` : '发布者'}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {/* 隐私遮罩 */}
-        {task.isPrivate && !isRevealed ? (
+        {displayTask.isPrivate && !isRevealed ? (
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 border border-slate-100 dark:border-slate-700/50 my-4">
             <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-500">
               <ShieldCheck className="w-8 h-8" />
@@ -204,22 +252,19 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
             {/* 任务详情 */}
             <div className="prose prose-slate dark:prose-invert max-w-none mb-8">
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[15px]">
-                {task.desc}
-              </p>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[15px] mt-4">
-                这是一段详细的任务描述。在这里可以写下更多关于这个任务的细节、要求或者期待。比如：我们需要在周末早上9点出发，带上相机和好心情。
+                {detailLoading ? '正在加载任务详情...' : displayTask.desc}
               </p>
             </div>
 
             {/* 更多图片 */}
-            {task.otherImages && task.otherImages.length > 0 && (
+            {displayTask.otherImages && displayTask.otherImages.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center">
                   <ImageIcon className="w-4 h-4 mr-2 text-slate-400" />
                   更多图片
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
-                  {task.otherImages.map((img: string, idx: number) => (
+                  {displayTask.otherImages.map((img: string, idx: number) => (
                     <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800">
                       <img 
                         src={img} 
@@ -243,22 +288,22 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
             </div>
             <div className="flex-1">
               <p className="text-xs text-slate-400 dark:text-slate-500">截止时间</p>
-              <p className="text-sm font-medium">{task.deadline || '不限时间'}</p>
+              <p className="text-sm font-medium">{displayTask.deadline || '不限时间'}</p>
             </div>
           </div>
         </div>
 
         {/* 奖励区块 */}
-        {task.rewards && task.rewards.length > 0 && (
+        {displayTask.rewards && displayTask.rewards.length > 0 && (
           <div className="mb-8">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center">
               <Gift className="w-5 h-5 mr-2 text-amber-500" />
               任务奖励
             </h3>
-            <div className={task.rewards.length > 2 ? "flex flex-col gap-3" : "flex flex-wrap gap-3"}>
-              {task.rewards.map((reward: any, idx: number) => {
+            <div className={displayTask.rewards.length > 2 ? "flex flex-col gap-3" : "flex flex-wrap gap-3"}>
+              {displayTask.rewards.map((reward: any, idx: number) => {
                 const isObj = typeof reward === 'object';
-                const text = isObj ? reward.text : reward;
+                const text = isObj ? (reward.text || reward.content) : reward;
                 const color = isObj ? reward.color : 'amber';
                 const iconName = isObj ? reward.icon : 'Gift';
                 
@@ -268,7 +313,7 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
                 return (
                   <div key={idx} className={`flex items-center space-x-2 bg-gradient-to-r ${style.bg} ${style.text} px-4 py-2.5 rounded-xl border ${style.border} shadow-sm`}>
                     <IconComponent className="w-4 h-4" />
-                    <span className="font-bold text-sm">{task.isPrivate && !isRevealed ? '***' : text}</span>
+                    <span className="font-bold text-sm">{displayTask.isPrivate && !isRevealed ? '***' : text}</span>
                   </div>
                 );
               })}
@@ -277,12 +322,12 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
         )}
 
         {/* 评论区 */}
-        <TaskComments taskId={task.id} currentUser={currentUser || null} />
+        <TaskComments taskId={displayTask.id} currentUser={currentUser || null} />
         </div>
       </div>
 
       <TaskBottomBar 
-        status={task.status} 
+        status={displayTask.status} 
         isMyTask={isMyTask} 
         onAction={handleAction} 
       />

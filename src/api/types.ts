@@ -40,3 +40,34 @@ export interface TaskVO extends Tasks {
     images: TaskImages[];
 }
 
+export interface PublisherVO {
+    id: string;
+    nickname?: string;
+    avatar?: string;
+    level?: number;
+    title?: string;
+}
+
+export interface TaskDetailVO extends TaskVO {
+    publisher?: PublisherVO;
+    commentCount?: number;
+    repeatType?: string;
+}
+
+export interface TaskCommentVO {
+    id: string;
+    taskId: string;
+    userId: string;
+    content: string;
+    replyToId?: string;
+    createdAt: string;
+    userName?: string;
+    userAvatar?: string;
+}
+
+export interface TaskCommentCreateDTO {
+    taskId: string;
+    content: string;
+    replyToId?: string;
+}
+

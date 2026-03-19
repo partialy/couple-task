@@ -5,6 +5,8 @@ import cn.example.dataserver.dto.TaskDTO;
 import cn.example.dataserver.entity.*;
 import cn.example.dataserver.enums.BindingRelation;
 import cn.example.dataserver.service.*;
+import cn.example.dataserver.vo.PublisherVO;
+import cn.example.dataserver.vo.TaskDetailVO;
 import cn.example.dataserver.vo.TaskVO;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -40,6 +42,7 @@ public class TaskServiceImplements {
     private final PointTransactionsService pointTransactionsService;
     private final UserItemsService userItemsService;
     private final TaskLogsService taskLogsService;
+    private final TaskCommentsService taskCommentsService;
 
     /**
      * 发布新任务
@@ -157,9 +160,6 @@ public class TaskServiceImplements {
     public String list(String token) {
         // 1. 验证用户
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
         String userId = currentUser.getId();
 
         // 2. 获取当前用户的绑定关系
@@ -213,6 +213,71 @@ public class TaskServiceImplements {
     }
 
     /**
+     * 获取任务详情
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    public String detail(String token, String taskId) {
+        authService.checkToken(token);
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+
+        TaskDetailVO detailVO = new TaskDetailVO();
+        BeanUtils.copyProperties(task, detailVO);
+
+        // 获取奖励
+        List<TaskRewards> rewards = taskRewardsService.lambdaQuery()
+                .eq(TaskRewards::getTaskId, task.getId())
+                .list();
+        detailVO.setRewards(rewards);
+
+        // 获取标签
+        List<TaskTags> taskTags = taskTagsService.lambdaQuery()
+                .eq(TaskTags::getTaskId, task.getId())
+                .list();
+        if (CollUtil.isNotEmpty(taskTags)) {
+            List<String> tagIds = taskTags.stream().map(TaskTags::getTagId).collect(Collectors.toList());
+            List<Tags> tags = tagsService.lambdaQuery().in(Tags::getId, tagIds).list();
+            detailVO.setTags(tags.stream().map(Tags::getName).collect(Collectors.toList()));
+        }
+
+        // 获取图片
+        List<TaskImages> images = taskImagesService.lambdaQuery()
+                .eq(TaskImages::getTaskId, task.getId())
+                .list();
+        detailVO.setImages(images);
+
+        // 获取发布人公开信息
+        Users author = usersService.getById(task.getAuthorId());
+        if (ObjectUtil.isNotNull(author)) {
+            String nickname = StrUtil.isNotBlank(author.getNickname()) ? author.getNickname() : author.getUsername();
+            detailVO.setPublisher(PublisherVO.builder()
+                    .id(author.getId())
+                    .nickname(nickname)
+                    .avatar(author.getAvatar())
+                    .level(author.getLevel())
+                    .title(author.getTitle())
+                    .build());
+        }
+
+        // 获取评论数量
+        long commentCount = taskCommentsService.lambdaQuery()
+                .eq(TaskComments::getTaskId, task.getId())
+                .isNull(TaskComments::getDeletedAt)
+                .count();
+        detailVO.setCommentCount(commentCount);
+
+        return Result.success(detailVO).toJson();
+    }
+
+    /**
      * 接取任务
      * @param token 认证令牌
      * @param taskId 任务ID
@@ -221,10 +286,6 @@ public class TaskServiceImplements {
     @Transactional(rollbackFor = Exception.class)
     public String acceptTask(String token, String taskId) {
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
-
         Tasks task = tasksService.getById(taskId);
         if (ObjectUtil.isNull(task)) {
             return Result.fail("任务不存在").toJson();
@@ -266,10 +327,6 @@ public class TaskServiceImplements {
     @Transactional(rollbackFor = Exception.class)
     public String abandonTask(String token, String taskId) {
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
-
         Tasks task = tasksService.getById(taskId);
         if (ObjectUtil.isNull(task)) {
             return Result.fail("任务不存在").toJson();
@@ -311,10 +368,6 @@ public class TaskServiceImplements {
     @Transactional(rollbackFor = Exception.class)
     public String completeTask(String token, String taskId) {
         Users currentUser = authService.checkToken(token);
-        if (ObjectUtil.isNull(currentUser)) {
-            return Result.unauthorized("登录已过期，请重新登录").toJson();
-        }
-
         Tasks task = tasksService.getById(taskId);
         if (ObjectUtil.isNull(task)) {
             return Result.fail("任务不存在").toJson();

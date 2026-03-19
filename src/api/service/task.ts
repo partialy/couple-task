@@ -1,6 +1,6 @@
 import request from '../request';
 import { Result } from '../sql_models';
-import { ApiResponse, TaskVO } from '../types';
+import { ApiResponse, TaskCommentCreateDTO, TaskCommentVO, TaskDetailVO, TaskVO } from '../types';
 
 // 任务发布数据结构
 export interface TaskCreateDTO {
@@ -42,6 +42,14 @@ const taskService = {
   },
 
   /**
+   * 获取任务详情
+   * @param taskId 任务ID
+   */
+  async detail(taskId: string): Promise<ApiResponse<TaskDetailVO>> {
+    return await request.get(`/task/detail/${taskId}`);
+  },
+
+  /**
    * 接取任务
    * @param taskId 任务ID
    */
@@ -63,6 +71,22 @@ const taskService = {
    */
   async complete(taskId: string): Promise<ApiResponse<string>> {
     return await request.post(`/task/complete/${taskId}`);
+  },
+
+  /**
+   * 获取任务评论列表
+   * @param taskId 任务ID
+   */
+  async listComments(taskId: string): Promise<ApiResponse<TaskCommentVO[]>> {
+    return await request.get('/task/comment/list', { params: { taskId } });
+  },
+
+  /**
+   * 创建任务评论
+   * @param payload 评论创建参数
+   */
+  async createComment(payload: TaskCommentCreateDTO): Promise<ApiResponse<TaskCommentVO>> {
+    return await request.post('/task/comment/create', payload);
   }
 };
 

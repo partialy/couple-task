@@ -1,15 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MessageCircle, Trash2, Send } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/date';
-
-interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  content: string;
-  createdAt: string;
-}
+import taskService from '@/api/service/task';
+import { TaskCommentVO } from '@/api/types';
 
 interface TaskCommentsProps {
   taskId: string;
@@ -17,43 +10,45 @@ interface TaskCommentsProps {
 }
 
 export default function TaskComments({ taskId, currentUser }: TaskCommentsProps) {
-  // Mock comments data
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: '1',
-      userId: 'user1',
-      userName: '小明',
-      userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=小明',
-      content: '今天太累了，明天再做可以吗？',
-      createdAt: '2026-02-03 17:55:23'
-    },
-    {
-      id: '2',
-      userId: currentUser || 'user2',
-      userName: currentUser || '我',
-      userAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser || '我'}`,
-      content: '没问题，好好休息！',
-      createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19) // 1 hour ago
-    }
-  ]);
+  const [comments, setComments] = useState<TaskCommentVO[]>([]);
+  const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [sending, setSending] = useState(false);
 
-  const handleSend = () => {
-    if (!newComment.trim()) return;
-    const comment: Comment = {
-      id: Date.now().toString(),
-      userId: currentUser || 'anonymous',
-      userName: currentUser || '我',
-      userAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser || '我'}`,
-      content: newComment.trim(),
-      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    };
-    setComments([...comments, comment]);
-    setNewComment('');
+  const fetchComments = async () => {
+    if (!taskId) return;
+    setLoading(true);
+    try {
+      const res = await taskService.listComments(taskId);
+      if (res.success && Array.isArray(res.data)) {
+        setComments(res.data);
+      } else {
+        setComments([]);
+      }
+    } catch (error) {
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setComments(comments.filter(c => c.id !== id));
+  useEffect(() => {
+    fetchComments();
+  }, [taskId]);
+
+  const handleSend = async () => {
+    const content = newComment.trim();
+    if (!content || sending) return;
+    setSending(true);
+    try {
+      const res = await taskService.createComment({ taskId, content });
+      if (res.success && res.data) {
+        setComments(prev => [...prev, res.data]);
+        setNewComment('');
+      }
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -67,14 +62,18 @@ export default function TaskComments({ taskId, currentUser }: TaskCommentsProps)
       <div className="space-y-4 mb-6">
         {comments.map(comment => (
           <div key={comment.id} className="flex space-x-3">
-            <img src={comment.userAvatar} alt={comment.userName} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
+            <img
+              src={comment.userAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userName || comment.userId}`}
+              alt={comment.userName || '用户'}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{comment.userName}</span>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{comment.userName || '匿名用户'}</span>
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-slate-400">{formatRelativeTime(comment.createdAt)}</span>
-                  {comment.userId === currentUser && (
-                    <button onClick={() => handleDelete(comment.id)} className="text-slate-400 hover:text-rose-500 transition-colors p-1">
+                  {(comment.userId === currentUser || comment.userName === currentUser) && (
+                    <button disabled className="text-slate-300 dark:text-slate-600 transition-colors p-1 cursor-not-allowed" title="删除功能稍后开放">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -84,8 +83,11 @@ export default function TaskComments({ taskId, currentUser }: TaskCommentsProps)
             </div>
           </div>
         ))}
-        {comments.length === 0 && (
+        {!loading && comments.length === 0 && (
           <p className="text-center text-sm text-slate-400 py-4">暂无评论，来说两句吧~</p>
+        )}
+        {loading && (
+          <p className="text-center text-sm text-slate-400 py-4">评论加载中...</p>
         )}
       </div>
 
@@ -101,7 +103,7 @@ export default function TaskComments({ taskId, currentUser }: TaskCommentsProps)
         />
         <button
           onClick={handleSend}
-          disabled={!newComment.trim()}
+          disabled={!newComment.trim() || sending}
           className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center disabled:opacity-50 disabled:bg-slate-300 dark:disabled:bg-slate-700 transition-colors flex-shrink-0"
         >
           <Send className="w-4 h-4 ml-0.5" />

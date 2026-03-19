@@ -10,19 +10,19 @@ interface TaskSettingsProps {
   setShowCategoryPicker: (s: boolean) => void;
   categories: string[];
   
-  taskLevel: any;
-  setTaskLevel: (l: any) => void;
+  taskLevel: TaskLevel;
+  setTaskLevel: (l: TaskLevel) => void;
   showLevelPicker: boolean;
   setShowLevelPicker: (s: boolean) => void;
-  taskLevels: any[];
-  rewards: any[];
-  setRewards: (r: any[]) => void;
+  taskLevels: TaskLevel[];
+  rewards: RewardDraft[];
+  setRewards: (r: RewardDraft[]) => void;
   
-  taskType: any;
-  setTaskType: (t: any) => void;
+  taskType: TaskType;
+  setTaskType: (t: TaskType) => void;
   showTypePicker: boolean;
   setShowTypePicker: (s: boolean) => void;
-  taskTypes: any[];
+  taskTypes: TaskType[];
   
   selectedDays: number[];
   setSelectedDays: (d: number[]) => void;
@@ -36,6 +36,24 @@ interface TaskSettingsProps {
   setTagInput: (t: string) => void;
   allTags: string[];
 }
+
+type TaskLevel = {
+  label: string;
+  maxRewards: number;
+};
+
+type TaskType = {
+  label: string;
+  value: 'one-time' | 'daily' | 'weekly' | 'monthly';
+};
+
+type RewardDraft = {
+  text: string;
+  color: string;
+  icon: string;
+  isWildcard: false;
+  amount: number;
+};
 
 export default function TaskSettings({
   category, setCategory, showCategoryPicker, setShowCategoryPicker, categories,
