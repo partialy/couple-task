@@ -144,7 +144,7 @@ export default function App() {
 
   eventBus.on("UNAUTHORIZED", (msg: string) => {
     message.error(msg);
-    logout();
+    // logout();
   });
 
   return (
