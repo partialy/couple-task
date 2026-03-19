@@ -325,11 +325,7 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
                 }
                 return t;
               }));
-              if (newStatus !== 'pending') {
-                closeModal();
-              } else {
-                setSelectedTask({ ...selectedTask, status: newStatus });
-              }
+              return true;
             }}
             onToggleBookmark={(taskId) => {
               const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t);

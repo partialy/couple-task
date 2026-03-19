@@ -91,6 +91,7 @@ export default function App() {
   useEffect(() => {
     if (isLoggedIn) {
       fetchUserDetail();
+      useTaskStore.getState().fetchTasks();
     }
   }, [isLoggedIn]);
 

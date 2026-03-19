@@ -40,4 +40,37 @@ public class TaskController {
     public String list(@RequestHeader("Authorization") String token) {
         return taskService.list(token);
     }
+
+    /**
+     * 接取任务
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @PostMapping("/accept/{taskId}")
+    public String acceptTask(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.acceptTask(token, taskId);
+    }
+
+    /**
+     * 放弃任务
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @PostMapping("/abandon/{taskId}")
+    public String abandonTask(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.abandonTask(token, taskId);
+    }
+
+    /**
+     * 完成任务
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @PostMapping("/complete/{taskId}")
+    public String completeTask(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.completeTask(token, taskId);
+    }
 }

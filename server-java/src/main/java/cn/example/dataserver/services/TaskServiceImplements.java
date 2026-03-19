@@ -36,6 +36,10 @@ public class TaskServiceImplements {
     private final TaskImagesService taskImagesService;
     private final BindingRelationsService bindingRelationsService;
     private final AuthService authService;
+    private final UsersService usersService;
+    private final PointTransactionsService pointTransactionsService;
+    private final UserItemsService userItemsService;
+    private final TaskLogsService taskLogsService;
 
     /**
      * 发布新任务
@@ -206,5 +210,176 @@ public class TaskServiceImplements {
         }).collect(Collectors.toList());
 
         return Result.success(taskVOs).toJson();
+    }
+
+    /**
+     * 接取任务
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String acceptTask(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task)) {
+            return Result.fail("任务不存在").toJson();
+        }
+
+        if (!"pending".equals(task.getStatus())) {
+            return Result.fail("任务状态不允许接取").toJson();
+        }
+
+        // 验证权限：只有接收者可以接取
+        if (!currentUser.getId().equals(task.getReceiverId())) {
+            return Result.fail("无权接取该任务").toJson();
+        }
+
+        // 更新状态
+        task.setStatus("in-progress");
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+
+        // 记录日志
+        TaskLogs log = new TaskLogs();
+        log.setTaskId(taskId);
+        log.setUserId(currentUser.getId());
+        log.setAction("accept");
+        log.setPreviousStatus("pending");
+        log.setNewStatus("in-progress");
+        log.setCreatedAt(new Date());
+        taskLogsService.save(log);
+
+        return Result.success("接取成功").toJson();
+    }
+
+    /**
+     * 放弃任务
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String abandonTask(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task)) {
+            return Result.fail("任务不存在").toJson();
+        }
+
+        if (!"in-progress".equals(task.getStatus())) {
+            return Result.fail("任务状态不允许放弃").toJson();
+        }
+
+        // 验证权限：只有接收者可以放弃
+        if (!currentUser.getId().equals(task.getReceiverId())) {
+            return Result.fail("无权放弃该任务").toJson();
+        }
+
+        // 更新状态
+        task.setStatus("pending");
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+
+        // 记录日志
+        TaskLogs log = new TaskLogs();
+        log.setTaskId(taskId);
+        log.setUserId(currentUser.getId());
+        log.setAction("abandon");
+        log.setPreviousStatus("in-progress");
+        log.setNewStatus("pending");
+        log.setCreatedAt(new Date());
+        taskLogsService.save(log);
+
+        return Result.success("放弃成功").toJson();
+    }
+
+    /**
+     * 完成任务
+     * @param token 认证令牌
+     * @param taskId 任务ID
+     * @return JSON 字符串
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String completeTask(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task)) {
+            return Result.fail("任务不存在").toJson();
+        }
+
+        if (!"in-progress".equals(task.getStatus())) {
+            return Result.fail("任务状态不允许完成").toJson();
+        }
+
+        // 验证权限：只有接收者可以完成
+        if (!currentUser.getId().equals(task.getReceiverId())) {
+            return Result.fail("无权完成该任务").toJson();
+        }
+
+        // 更新状态
+        task.setStatus("completed");
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+
+        // 记录日志
+        TaskLogs log = new TaskLogs();
+        log.setTaskId(taskId);
+        log.setUserId(currentUser.getId());
+        log.setAction("complete");
+        log.setPreviousStatus("in-progress");
+        log.setNewStatus("completed");
+        log.setCreatedAt(new Date());
+        taskLogsService.save(log);
+
+        // 发放奖励
+        List<TaskRewards> rewards = taskRewardsService.lambdaQuery()
+                .eq(TaskRewards::getTaskId, taskId)
+                .list();
+
+        if (CollUtil.isNotEmpty(rewards)) {
+            for (TaskRewards reward : rewards) {
+                if ("points".equals(reward.getType()) && reward.getAmount() != null && reward.getAmount() > 0) {
+                    // 增加积分
+                    Integer currentPoints = currentUser.getPoints() == null ? 0 : currentUser.getPoints();
+                    currentUser.setPoints(currentPoints + reward.getAmount());
+                    usersService.updateById(currentUser);
+
+                    // 记录积分流水
+                    PointTransactions pt = new PointTransactions();
+                    pt.setUserId(currentUser.getId());
+                    pt.setAmount(reward.getAmount());
+                    pt.setTransactionType("task_reward");
+                    pt.setReferenceId(taskId);
+                    pt.setDescription("完成任务奖励：" + task.getTitle());
+                    pt.setCreatedAt(new Date());
+                    pointTransactionsService.save(pt);
+                } else if ("wildcard".equals(reward.getType()) || "normal".equals(reward.getType())) {
+                    // 发放道具
+                    UserItems item = new UserItems();
+                    item.setId(UUID.randomUUID().toString());
+                    item.setUserId(currentUser.getId());
+                    item.setItemId(reward.getId()); // 暂时使用 rewardId 作为 itemId
+                    item.setStatus("usable");
+                    item.setQuantity(reward.getAmount() != null ? reward.getAmount() : 1);
+                    item.setAcquiredAt(new Date());
+                    userItemsService.save(item);
+                }
+            }
+        }
+
+        return Result.success("任务完成").toJson();
     }
 }

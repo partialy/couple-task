@@ -20,7 +20,7 @@ const colorStyles: Record<string, { bg: string, text: string, border: string }> 
   rose: { bg: 'from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100/50 dark:border-rose-800/30' },
 };
 
-export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookmark, onDeleteTask, onUnpublishTask, currentUser }: { task: any, onClose: () => void, onUpdateTask?: (taskId: number, newStatus: string) => void, onToggleBookmark?: (taskId: number) => void, onDeleteTask?: (taskId: number) => void, onUnpublishTask?: (taskId: number) => void, currentUser?: string | null, key?: string }) {
+export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookmark, onDeleteTask, onUnpublishTask, currentUser }: { task: any, onClose: () => void, onUpdateTask?: (taskId: string, newStatus: string) => Promise<boolean> | boolean, onToggleBookmark?: (taskId: string) => void, onDeleteTask?: (taskId: string) => void, onUnpublishTask?: (taskId: string) => void, currentUser?: string | null, key?: string }) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
@@ -32,37 +32,50 @@ export default function TaskDetail({ task, onClose, onUpdateTask, onToggleBookma
     setConfirmModal({ isOpen: true, type });
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     if (confirmModal.type && onUpdateTask) {
       let newStatus = '';
+      let success = true;
       if (confirmModal.type === 'accept') newStatus = 'in-progress';
       else if (confirmModal.type === 'complete') {
         newStatus = 'completed';
-        // 触发礼花动画
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
-        });
+        success = await onUpdateTask(task.id, newStatus) ?? true;
         
-        // 显示成功界面
-        setShowSuccess(true);
-        onUpdateTask(task.id, newStatus);
-        setConfirmModal({ isOpen: false, type: null });
-        
-        // 延迟关闭详情页，让用户看一眼成功动画
-        setTimeout(() => {
-          onClose();
-        }, 2000);
+        if (success) {
+          // 触发礼花动画
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
+          });
+          
+          // 显示成功界面
+          setShowSuccess(true);
+          setConfirmModal({ isOpen: false, type: null });
+          
+          // 延迟关闭详情页，让用户看一眼成功动画
+          setTimeout(() => {
+            onClose();
+          }, 2000);
+        } else {
+          setConfirmModal({ isOpen: false, type: null });
+        }
         return;
       }
       else if (confirmModal.type === 'abandon') newStatus = 'pending'; // 放弃后回到广场
       
-      onUpdateTask(task.id, newStatus);
+      success = await onUpdateTask(task.id, newStatus) ?? true;
+      if (success) {
+        setConfirmModal({ isOpen: false, type: null });
+        onClose();
+      } else {
+        setConfirmModal({ isOpen: false, type: null });
+      }
+    } else {
+      setConfirmModal({ isOpen: false, type: null });
+      onClose();
     }
-    setConfirmModal({ isOpen: false, type: null });
-    onClose();
   };
 
   if (!task) return null;

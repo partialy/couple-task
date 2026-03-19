@@ -3,17 +3,21 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Clock, CheckCircle, Calendar as CalendarIcon } from 'lucide-react';
 import TaskCard from './TaskCard';
 import TaskDetail from './TaskDetail';
+import { useTaskStore } from '@/store/task';
 
 export default function InProgress({ tasks, setTasks, currentUser }: { tasks: any[], setTasks: (tasks: any[]) => void, currentUser?: string | null }) {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'in-progress' | 'completed'>('in-progress');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [completingId, setCompletingId] = useState<number | null>(null);
+  const { completeTask, abandonTask } = useTaskStore();
 
   // Handle back button for modal
   React.useEffect(() => {
     if (selectedTask) {
-      window.history.pushState({ modal: 'taskDetail' }, '', '#taskDetail');
+      if (!window.history.state || window.history.state.modal !== 'taskDetail') {
+        window.history.pushState({ modal: 'taskDetail' }, '', '#taskDetail');
+      }
       
       const handlePopState = () => {
         setSelectedTask(null);
@@ -22,7 +26,7 @@ export default function InProgress({ tasks, setTasks, currentUser }: { tasks: an
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
-  }, [selectedTask]);
+  }, [selectedTask?.id]);
 
   const handleCloseTaskDetail = () => {
     if (selectedTask) {
@@ -30,13 +34,18 @@ export default function InProgress({ tasks, setTasks, currentUser }: { tasks: an
     }
   };
 
-  const handleQuickComplete = (taskId: number) => {
+  const handleQuickComplete = async (taskId: number) => {
     setCompletingId(taskId);
-    // Delay to show animation
-    setTimeout(() => {
-      setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
+    const res = await completeTask(taskId.toString());
+    if (res.success) {
+      // Delay to show animation
+      setTimeout(() => {
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
+        setCompletingId(null);
+      }, 600);
+    } else {
       setCompletingId(null);
-    }, 600);
+    }
   };
 
   // Filter tasks based on status
@@ -256,18 +265,38 @@ export default function InProgress({ tasks, setTasks, currentUser }: { tasks: an
               setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'unpublished' } : t));
               handleCloseTaskDetail();
             }}
-            onUpdateTask={(taskId, newStatus) => {
-              setTasks(tasks.map(t => {
-                if (t.id === taskId) {
-                  const updatedTask = { ...t, status: newStatus };
-                  if (newStatus === 'pending') {
-                    delete updatedTask.assignee;
-                  }
-                  return updatedTask;
+            onUpdateTask={async (taskId, newStatus) => {
+              if (newStatus === 'completed') {
+                const res = await completeTask(taskId.toString());
+                if (res.success) {
+                  setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+                  return true;
                 }
-                return t;
-              }));
-              handleCloseTaskDetail(); // 关闭弹窗
+                return false;
+              } else if (newStatus === 'pending') {
+                const res = await abandonTask(taskId.toString());
+                if (res.success) {
+                  setTasks(tasks.map(t => {
+                    if (t.id === taskId) {
+                      const updatedTask = { ...t, status: newStatus };
+                      delete updatedTask.assignee;
+                      return updatedTask;
+                    }
+                    return t;
+                  }));
+                  return true;
+                }
+                return false;
+              } else {
+                setTasks(tasks.map(t => {
+                  if (t.id === taskId) {
+                    const updatedTask = { ...t, status: newStatus };
+                    return updatedTask;
+                  }
+                  return t;
+                }));
+                return true;
+              }
             }}
             onToggleBookmark={(taskId) => {
               const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t);

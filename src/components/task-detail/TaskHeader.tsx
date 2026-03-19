@@ -3,13 +3,13 @@ import { motion } from 'motion/react';
 import { ChevronLeft, Heart, Share2, MoreHorizontal } from 'lucide-react';
 
 interface TaskHeaderProps {
-  taskId: number;
+  taskId: string | number;
   isBookmarked: boolean;
   isMyTask: boolean;
   onClose: () => void;
-  onToggleBookmark?: (taskId: number) => void;
-  onUnpublishTask?: (taskId: number) => void;
-  onDeleteTask?: (taskId: number) => void;
+  onToggleBookmark?: (taskId: string | number) => void;
+  onUnpublishTask?: (taskId: string | number) => void;
+  onDeleteTask?: (taskId: string | number) => void;
 }
 
 export default function TaskHeader({

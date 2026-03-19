@@ -15,6 +15,10 @@ interface TaskState {
   // Actions
   addTask: (task: any) => void;
   createTask: (taskData: TaskCreateDTO) => Promise<Result<string>>;
+  fetchTasks: () => Promise<void>;
+  acceptTask: (taskId: string) => Promise<Result<string>>;
+  abandonTask: (taskId: string) => Promise<Result<string>>;
+  completeTask: (taskId: string) => Promise<Result<string>>;
   updateTaskStatus: (taskId: string | number, status: string) => void;
   deleteTask: (taskId: string | number) => void;
   toggleBookmark: (taskId: string | number) => void;
@@ -72,6 +76,84 @@ export const useTaskStore = create<TaskState>()(
               deadline: taskData.deadline
             };
             set(state => ({ tasks: [newTask, ...state.tasks] }));
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      fetchTasks: async () => {
+        set({ loading: true });
+        try {
+          const result = await taskService.list();
+          if (result.success && result.data) {
+            // Map TaskVO to local task structure
+            const mappedTasks = result.data.map((task: any) => ({
+              id: task.id,
+              title: task.title,
+              desc: task.description,
+              img: task.coverImage || 'https://picsum.photos/seed/new/400/600',
+              tags: task.tags || [],
+              rewards: task.rewards || [],
+              status: task.status,
+              author: task.authorId, // TODO: map from actual author info
+              isPrivate: task.isPrivate === 1,
+              isPrivileged: task.isPrivileged === 1,
+              taskType: task.repeatType,
+              deadline: task.deadline
+            }));
+            set({ tasks: mappedTasks });
+          }
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      acceptTask: async (taskId: string) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.accept(taskId);
+          if (result.success) {
+            set(state => ({
+              tasks: state.tasks.map(t =>
+                t.id === taskId ? { ...t, status: 'in-progress' } : t
+              )
+            }));
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      abandonTask: async (taskId: string) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.abandon(taskId);
+          if (result.success) {
+            set(state => ({
+              tasks: state.tasks.map(t =>
+                t.id === taskId ? { ...t, status: 'pending' } : t
+              )
+            }));
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      completeTask: async (taskId: string) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.complete(taskId);
+          if (result.success) {
+            set(state => ({
+              tasks: state.tasks.map(t =>
+                t.id === taskId ? { ...t, status: 'completed' } : t
+              )
+            }));
           }
           return result;
         } finally {

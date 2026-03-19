@@ -7,6 +7,7 @@ import Profile from './Profile';
 import InProgress from './InProgress';
 import Messages from './Messages';
 import LocationWeather from './LocationWeather';
+import { useTaskStore } from '@/store/task';
 
 // 瀑布流布局的模拟数据
 // Moved to src/data/tasks.ts
@@ -55,12 +56,15 @@ export default function Home({
 }: HomeProps) {
   const [activeCategory, setActiveCategory] = useState('全部');
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const { acceptTask, completeTask, abandonTask } = useTaskStore();
 
   // Handle back button for modal
   useEffect(() => {
     if (selectedTask) {
-      // Push a dummy state so back button can be intercepted
-      window.history.pushState({ modal: 'taskDetail' }, '', '#taskDetail');
+      // Only push state if we are not already in the taskDetail state
+      if (!window.history.state || window.history.state.modal !== 'taskDetail') {
+        window.history.pushState({ modal: 'taskDetail' }, '', '#taskDetail');
+      }
       
       const handlePopState = () => {
         setSelectedTask(null);
@@ -69,7 +73,7 @@ export default function Home({
       window.addEventListener('popstate', handlePopState);
       return () => window.removeEventListener('popstate', handlePopState);
     }
-  }, [selectedTask]);
+  }, [selectedTask?.id]); // Only re-run if the task ID changes, not on status updates
 
   const handleCloseTaskDetail = () => {
     if (selectedTask) {
@@ -346,23 +350,45 @@ export default function Home({
               setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'unpublished' } : t));
               handleCloseTaskDetail();
             }}
-            onUpdateTask={(taskId, newStatus) => {
-              setTasks(tasks.map(t => {
-                if (t.id === taskId) {
-                  const updatedTask = { ...t, status: newStatus };
-                  if (newStatus === 'in-progress') {
-                    updatedTask.assignee = currentUser || '兔兔';
-                  } else if (newStatus === 'pending') {
-                    delete updatedTask.assignee;
-                  }
-                  return updatedTask;
+            onUpdateTask={async (taskId, newStatus) => {
+              if (newStatus === 'in-progress') {
+                const res = await acceptTask(taskId.toString());
+                if (res.success) {
+                  setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus, assignee: currentUser || '兔兔' } : t));
+                  return true;
                 }
-                return t;
-              }));
-              if (newStatus !== 'pending') {
-                setSelectedTask(null); // 接受或放弃后关闭弹窗
+                return false;
+              } else if (newStatus === 'completed') {
+                const res = await completeTask(taskId.toString());
+                if (res.success) {
+                  setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+                  return true;
+                }
+                return false;
+              } else if (newStatus === 'pending') {
+                const res = await abandonTask(taskId.toString());
+                if (res.success) {
+                  setTasks(tasks.map(t => {
+                    if (t.id === taskId) {
+                      const updatedTask = { ...t, status: newStatus };
+                      delete updatedTask.assignee;
+                      return updatedTask;
+                    }
+                    return t;
+                  }));
+                  setSelectedTask({ ...selectedTask, status: newStatus });
+                  return true;
+                }
+                return false;
               } else {
-                setSelectedTask({ ...selectedTask, status: newStatus });
+                setTasks(tasks.map(t => {
+                  if (t.id === taskId) {
+                    const updatedTask = { ...t, status: newStatus };
+                    return updatedTask;
+                  }
+                  return t;
+                }));
+                return true;
               }
             }}
             onToggleBookmark={(taskId) => {
