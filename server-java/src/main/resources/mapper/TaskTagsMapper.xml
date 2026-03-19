@@ -5,11 +5,12 @@
 <mapper namespace="cn.example.dataserver.mapper.TaskTagsMapper">
 
     <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.TaskTags">
-            <id property="taskId" column="task_id" jdbcType="VARCHAR"/>
-            <id property="tagId" column="tag_id" jdbcType="VARCHAR"/>
+            <id property="id" column="id" />
+            <result property="taskId" column="task_id" />
+            <result property="tagId" column="tag_id" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        task_id,tag_id
+        id,task_id,tag_id
     </sql>
 </mapper>

@@ -15,15 +15,21 @@ import lombok.Data;
 @Data
 public class TaskTags implements Serializable {
     /**
+     * 主键
+     */
+    @TableId(value = "id", type = IdType.AUTO)
+    private Integer id;
+
+    /**
      * 
      */
-    @TableId(value = "task_id")
+    @TableField(value = "task_id")
     private String taskId;
 
     /**
      * 
      */
-    @TableId(value = "tag_id")
+    @TableField(value = "tag_id")
     private String tagId;
 
     @TableField(exist = false)

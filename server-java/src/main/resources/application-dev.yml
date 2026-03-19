@@ -27,7 +27,7 @@ qiniu:
     secret-key: 4z_c6h8KVYAcjqUtombnlzQQ8CLKrqp8GAKwoUMf
     bucket: oss-qiniu-partialy
     domain: //partialy.qiniu.partialy.cn
-    cdn-domain: //partialy-cdn.qiniu.partialy.cn
+    cdn-domain: //cdn-partialy-qiniu.partialy.cn
     upload-url: https://upload.qiniup.com
 aes:
     key: 1234567890abcdef1234567890abcdef
