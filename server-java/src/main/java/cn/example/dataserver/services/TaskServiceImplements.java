@@ -368,14 +368,17 @@ public class TaskServiceImplements {
                     pointTransactionsService.save(pt);
                 } else if ("wildcard".equals(reward.getType()) || "normal".equals(reward.getType())) {
                     // 发放道具
-                    UserItems item = new UserItems();
-                    item.setId(UUID.randomUUID().toString());
-                    item.setUserId(currentUser.getId());
-                    item.setItemId(reward.getId()); // 暂时使用 rewardId 作为 itemId
-                    item.setStatus("usable");
-                    item.setQuantity(reward.getAmount() != null ? reward.getAmount() : 1);
-                    item.setAcquiredAt(new Date());
-                    userItemsService.save(item);
+                    int count = reward.getAmount() != null ? reward.getAmount() : 1;
+                    for (int i = 0; i < count; i++) {
+                        UserItems item = new UserItems();
+                        item.setId(UUID.randomUUID().toString());
+                        item.setUserId(currentUser.getId());
+                        item.setItemId(reward.getId()); // 暂时使用 rewardId 作为 itemId
+                        item.setStatus("usable");
+                        item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+                        item.setAcquiredAt(new Date());
+                        userItemsService.save(item);
+                    }
                 }
             }
         }

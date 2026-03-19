@@ -19,6 +19,7 @@ import TaskTemplatesPage from './components/task-templates/TaskTemplatesPage';
 import { useUserStore, useTaskStore } from './store';
 import { initialShopItems } from './data/shopItems';
 import eventBus from './utils/eventBus';
+import shopItemsService, { ShopItem as ApiShopItem } from './api/service/shopItems';
 import message from './utils/message/message';
 
 
@@ -38,7 +39,7 @@ export default function App() {
   const { tasks: storeTasks, setTasks: setStoreTasks } = useTaskStore();
 
   // Local state for non-persisted data or transition
-  const [shopItems, setShopItems] = useState(initialShopItems);
+  const [shopItems, setShopItems] = useState<any[]>(initialShopItems);
   const [specialItems, setSpecialItems] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: '', show: false });
   const [showBindingPage, setShowBindingPage] = useState(false);
@@ -92,6 +93,24 @@ export default function App() {
     if (isLoggedIn) {
       fetchUserDetail();
       useTaskStore.getState().fetchTasks();
+      
+      // Fetch shop items
+      shopItemsService.getShopItems().then(res => {
+        if (res.success && res.data && res.data.length > 0) {
+          // Map backend fields to frontend fields
+          const mappedItems = res.data.map(item => ({
+            id: item.id,
+            name: item.name,
+            desc: item.description,
+            points: item.pointsCost,
+            icon: item.icon || 'Gift',
+            color: item.color || 'bg-pink-100',
+            image: undefined,
+            status: item.status
+          }));
+          setShopItems(mappedItems);
+        }
+      });
     }
   }, [isLoggedIn]);
 

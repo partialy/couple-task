@@ -1,26 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, HelpCircle, X } from 'lucide-react';
+import { usePointsStore } from '../store/points';
+import { useUserStore } from '../store/user';
+import dayjs from 'dayjs';
 
 interface PointsDetailProps {
   onBack: () => void;
+  defaultTab?: 'income' | 'expense';
   key?: string;
 }
 
-export default function PointsDetail({ onBack }: PointsDetailProps) {
-  const [pointsTab, setPointsTab] = useState<'income' | 'expense'>('income');
+export default function PointsDetail({ onBack, defaultTab = 'income' }: PointsDetailProps) {
+  const [pointsTab, setPointsTab] = useState<'income' | 'expense'>(defaultTab);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
+  
+  const { history, fetchHistory, redeemCode: redeemCodeAction, isLoading } = usePointsStore();
+  const { currentUser } = useUserStore();
 
-  const incomeList = [
-    { id: 1, title: '完成任务：做一顿晚餐', points: '+50', date: '2026-03-07 18:30' },
-    { id: 2, title: '完成任务：看周杰伦演唱会', points: '+200', date: '2026-03-05 21:00' },
-    { id: 3, title: '注册奖励', points: '+1000', date: '2026-03-01 10:00' },
-  ];
-  const expenseList = [
-    { id: 1, title: '兑换：特权卡', points: '-200', date: '2026-03-06 14:20' },
-  ];
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const incomeList = history.filter(item => item.amount > 0);
+  const expenseList = history.filter(item => item.amount < 0);
 
   return (
     <motion.div
@@ -50,7 +55,7 @@ export default function PointsDetail({ onBack }: PointsDetailProps) {
         {/* Points Header */}
         <div className="bg-white dark:bg-slate-800 px-3 py-8 rounded-b-[40px] shadow-sm flex flex-col items-center">
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-2">当前可用积分</p>
-          <div className="text-5xl font-black text-amber-500 mb-6">1250</div>
+          <div className="text-5xl font-black text-amber-500 mb-6">{currentUser?.points || 0}</div>
           <button 
             onClick={() => setShowRedeemModal(true)}
             className="px-8 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full font-bold shadow-lg shadow-orange-300/40 dark:shadow-orange-900/40 hover:scale-105 active:scale-95 transition-all outline-none focus:outline-none"
@@ -97,17 +102,23 @@ export default function PointsDetail({ onBack }: PointsDetailProps) {
 
         {/* List */}
         <div className="px-3 mt-4 space-y-3">
-          {(pointsTab === 'income' ? incomeList : expenseList).map(item => (
-            <div key={item.id} className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center">
-              <div>
-                <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-1">{item.title}</h4>
-                <p className="text-xs text-slate-400 dark:text-slate-500">{item.date}</p>
+          {isLoading ? (
+            <div className="text-center py-8 text-slate-400">加载中...</div>
+          ) : (pointsTab === 'income' ? incomeList : expenseList).length === 0 ? (
+            <div className="text-center py-8 text-slate-400">暂无记录</div>
+          ) : (
+            (pointsTab === 'income' ? incomeList : expenseList).map(item => (
+              <div key={item.id} className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm flex justify-between items-center">
+                <div>
+                  <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-1">{item.description}</h4>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">{dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')}</p>
+                </div>
+                <div className={`font-black text-lg ${pointsTab === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>
+                  {item.amount > 0 ? `+${item.amount}` : item.amount}
+                </div>
               </div>
-              <div className={`font-black text-lg ${pointsTab === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>
-                {item.points}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -147,9 +158,13 @@ export default function PointsDetail({ onBack }: PointsDetailProps) {
                 className="w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-slate-800 dark:text-white mb-6"
               />
               <button 
-                onClick={() => {
-                  setShowRedeemModal(false);
-                  setRedeemCode('');
+                onClick={async () => {
+                  if (!redeemCode.trim()) return;
+                  const success = await redeemCodeAction(redeemCode);
+                  if (success) {
+                    setShowRedeemModal(false);
+                    setRedeemCode('');
+                  }
                 }}
                 disabled={!redeemCode.trim()}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-300/40 dark:shadow-orange-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all outline-none focus:outline-none"

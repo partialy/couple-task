@@ -17,6 +17,7 @@
     "axios": "^1.13.6",
     "better-sqlite3": "^12.4.1",
     "canvas-confetti": "^1.9.4",
+    "dayjs": "^1.11.20",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "html5-qrcode": "^2.3.8",

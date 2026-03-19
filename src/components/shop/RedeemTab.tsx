@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Gift } from 'lucide-react';
 import { ShopItem, iconMap, colorStyles } from './types';
+import { usePointsStore } from '../../store/points';
+import { useUserStore } from '../../store/user';
 
 interface RedeemTabProps {
   shopItems: ShopItem[];
@@ -11,6 +13,9 @@ interface RedeemTabProps {
 export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: RedeemTabProps & { key?: string }) {
   // Only show active items in the redeem tab
   const activeItems = shopItems.filter(item => item.status !== 'inactive');
+  
+  const { redeemItem } = usePointsStore();
+  const { currentUser } = useUserStore();
 
   return (
     <motion.div
@@ -28,7 +33,7 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
         <div className="relative z-10">
           <p className="text-white/80 text-sm font-medium mb-1">当前可用积分</p>
           <div className="flex items-baseline space-x-2">
-            <span className="text-4xl font-black">1250</span>
+            <span className="text-4xl font-black">{currentUser?.points || 0}</span>
             <span className="text-sm font-bold">分</span>
           </div>
           
@@ -39,7 +44,10 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
             >
               积分明细
             </button>
-            <button className="bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm outline-none focus:outline-none">
+            <button 
+              onClick={onOpenPointsDetail}
+              className="bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm outline-none focus:outline-none"
+            >
               兑换记录
             </button>
           </div>
@@ -70,7 +78,10 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
                   <span className="text-lg font-black text-amber-500">{item.points}</span>
                   <span className="text-[10px] font-bold text-slate-400">积分</span>
                 </div>
-                <button className="w-full py-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 font-bold rounded-xl transition-colors text-xs focus:outline-none">
+                <button 
+                  onClick={() => redeemItem(item.id)}
+                  className="w-full py-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 font-bold rounded-xl transition-colors text-xs focus:outline-none"
+                >
                   立即兑换
                 </button>
               </div>
