@@ -1,33 +1,31 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import TaskDetail from "./TaskDetail";
 import { useTaskStore } from "@/store/task";
-import { Users } from "@/api/sql_models";
 import { UiTask } from "@/types/task";
 import RoleSwitch from "./in-progress/RoleSwitch";
 import StatsCards from "./in-progress/StatsCards";
 import WeekCalendar from "./in-progress/WeekCalendar";
 import StatusTabs from "./in-progress/StatusTabs";
 import TimelineList from "./in-progress/TimelineList";
+import { useUserStore } from "@/store";
 
 export default function InProgress({
   tasks,
   setTasks,
-  currentUser,
 }: {
   tasks: UiTask[];
   setTasks: (tasks: UiTask[]) => void;
-  currentUser?: Users | null;
 }) {
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
-  const [activeStatusTab, setActiveStatusTab] = useState<"in-progress" | "completed">(
-    "in-progress",
-  );
-  const [roleTab, setRoleTab] = useState<"my" | "ta">(
-    "my",
-  );
+  const [activeStatusTab, setActiveStatusTab] = useState<
+    "in-progress" | "completed"
+  >("in-progress");
+  const [roleTab, setRoleTab] = useState<"my" | "ta">("my");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { completeTask, abandonTask } = useTaskStore();
+  const { completeTask, abandonTask, fetchTasks} = useTaskStore();
+  const currentUser = useUserStore((s) => s.currentUser);
+
 
   // Handle back button for modal
   React.useEffect(() => {
@@ -48,6 +46,10 @@ export default function InProgress({
     }
   }, [selectedTask?.id]);
 
+  useEffect(()=> {
+    fetchTasks()
+  },[currentUser.id])
+
   const handleCloseTaskDetail = () => {
     if (selectedTask) {
       window.history.back();
@@ -58,24 +60,18 @@ export default function InProgress({
   const completedTasks = tasks.filter((t) => t.status === "completed");
 
   const myInProgressTasks =
-    currentUser?.id
-      ? inProgressTasks.filter((t) => t.receiverId === currentUser.id)
-      : [];
+    inProgressTasks.filter((t) => t.receiverId === currentUser.id) || [];
   const taInProgressTasks =
-    currentUser?.id
-      ? inProgressTasks.filter(
-          (t) => t.receiverId && t.receiverId !== currentUser.id,
-        )
-      : [];
+    inProgressTasks.filter(
+      (t) => t.receiverId && t.receiverId !== currentUser.id,
+    ) || [];
 
   const myCompletedTasks =
-    currentUser?.id
-      ? completedTasks.filter((t) => t.receiverId === currentUser.id)
-      : [];
+    completedTasks.filter((t) => t.receiverId === currentUser.id) || [];
   const taCompletedTasks =
-    currentUser?.id
-      ? completedTasks.filter((t) => t.receiverId && t.receiverId !== currentUser.id)
-      : [];
+    completedTasks.filter(
+      (t) => t.receiverId && t.receiverId !== currentUser.id,
+    ) || [];
 
   const displayTasks =
     activeStatusTab === "in-progress"
@@ -107,7 +103,10 @@ export default function InProgress({
           inProgress={inProgressCount}
           completed={completedCount}
         />
-        <WeekCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        <WeekCalendar
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
         <StatusTabs value={activeStatusTab} onChange={setActiveStatusTab} />
         <TimelineList
           tasks={displayTasks}

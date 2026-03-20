@@ -451,6 +451,7 @@ public class TaskServiceImplements {
                     it.setReferenceId(taskId);
                     it.setDescription("任务奖励：" + task.getTitle());
                     it.setCreatedAt(new Date());
+                    it.setQuantity(rewardAmount);
                     itemTransactionsService.save(it);
                 }
             }
