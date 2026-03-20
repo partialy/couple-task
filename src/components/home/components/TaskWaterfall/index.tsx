@@ -1,9 +1,9 @@
 import React from 'react';
 import { Lock, Plus } from 'lucide-react';
 // @ts-ignore
-import emptyStateImage from '@/assets/icon.png';
+import emptyStateImage from '@/assets/icon_256.png';
 
-import TaskCard from '../../../TaskCard';
+import TaskCard from '@/components/TaskCard';
 
 interface TaskWaterfallProps {
   scrollRef: React.RefObject<HTMLDivElement>;

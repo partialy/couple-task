@@ -98,7 +98,7 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
           </button>
         </div>
         
-        <div className="flex items-center space-x-5 mt-4 relative">
+        <div className="flex items-center space-x-5 relative">
           <div 
             className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-lg shadow-cyan-200/50 dark:shadow-cyan-900/50 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => openModal(setShowPersonalInfo, true)}

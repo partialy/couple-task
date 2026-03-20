@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Moon, Sun, CheckCircle } from 'lucide-react';
 
@@ -6,15 +6,16 @@ import { Moon, Sun, CheckCircle } from 'lucide-react';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import Home from './components/home';
-import PublishTask from './components/PublishTask';
-import Shop from './components/Shop';
-import SpecialRewards from './components/SpecialRewards';
-import Settings from './components/Settings';
-import PointsDetail from './components/PointsDetail';
-import Achievements from './components/achievements/Achievements';
 import BindingPage from './components/BindingPage';
-import ItemsDashboard from './components/items/ItemsDashboard';
-import TaskTemplatesPage from './components/task-templates/TaskTemplatesPage';
+
+const PublishTask = lazy(() => import('./components/PublishTask'));
+const Shop = lazy(() => import('./components/Shop'));
+const SpecialRewards = lazy(() => import('./components/SpecialRewards'));
+const Settings = lazy(() => import('./components/Settings'));
+const PointsDetail = lazy(() => import('./components/PointsDetail'));
+const Achievements = lazy(() => import('./components/achievements/Achievements'));
+const ItemsDashboard = lazy(() => import('./components/items/ItemsDashboard'));
+const TaskTemplatesPage = lazy(() => import('./components/task-templates/TaskTemplatesPage'));
 
 import { useUserStore, useTaskStore } from './store';
 import { initialShopItems } from './data/shopItems';
@@ -168,12 +169,12 @@ export default function App() {
   });
 
   return (
-    <div className="h-screen w-screen relative overflow-hidden font-sans transition-colors duration-500 bg-linear-to-br from-pink-50 via-white to-cyan-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="h-screen w-screen relative overflow-hidden font-sans transition-colors duration-500 bg-white dark:bg-slate-900">
       
       {/* Decorative background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-pink-200 dark:bg-pink-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob transition-colors duration-500"></div>
+      {/* <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-pink-200 dark:bg-pink-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob transition-colors duration-500"></div>
       <div className="absolute top-[20%] right-[-10%] w-80 h-80 bg-cyan-200 dark:bg-cyan-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob animation-delay-2000 transition-colors duration-500"></div>
-      <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-purple-200 dark:bg-purple-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob animation-delay-4000 transition-colors duration-500"></div>
+      <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-purple-200 dark:bg-purple-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob animation-delay-4000 transition-colors duration-500"></div> */}
 
       {/* Theme Toggle Button */}
       {(view === 'login' || view === 'register') && (
@@ -234,6 +235,13 @@ export default function App() {
           </AnimatePresence>
 
           {/* Overlays Layer - Pages that slide over Home */}
+          <Suspense
+            fallback={
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-pink-500 dark:border-slate-600 dark:border-t-pink-400" />
+              </div>
+            }
+          >
           <AnimatePresence>
             {view === 'publish' && (
               <PublishTask 
@@ -294,6 +302,7 @@ export default function App() {
               />
             )}
           </AnimatePresence>
+          </Suspense>
         </div>
 
         {/* Toast Notification */}
