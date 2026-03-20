@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useMemo, useState } from 'react';
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 interface UseScrollCollapseOptions {
   /** 折叠阈值（超过该值进入折叠态） */
@@ -18,6 +18,7 @@ export default function useScrollCollapse(
 ): UseScrollCollapseResult {
   const [collapsed, setCollapsed] = useState(false);
   const [scrollTop, setScrollTop] = useState(0);
+  const boundElRef = useRef<HTMLElement | null>(null);
 
   const thresholds = useMemo(
     () => ({
@@ -28,22 +29,17 @@ export default function useScrollCollapse(
   );
 
   useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
+    const currentEl = scrollContainerRef.current;
+    if (!currentEl || boundElRef.current === currentEl) return;
 
+    boundElRef.current = currentEl;
     let rafId: number | null = null;
 
     const update = () => {
       rafId = null;
-      const top = el.scrollTop ?? 0;
+      const top = currentEl.scrollTop ?? 0;
       setScrollTop(top);
-
-      setCollapsed((prev) => {
-        if (prev) {
-          return top > thresholds.expand;
-        }
-        return top > thresholds.collapse;
-      });
+      setCollapsed((prev) => (prev ? top > thresholds.expand : top > thresholds.collapse));
     };
 
     const onScroll = () => {
@@ -51,15 +47,17 @@ export default function useScrollCollapse(
       rafId = window.requestAnimationFrame(update);
     };
 
-    // 初始化一次，确保首次渲染状态正确
     update();
-    el.addEventListener('scroll', onScroll, { passive: true });
+    currentEl.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
       if (rafId != null) window.cancelAnimationFrame(rafId);
-      el.removeEventListener('scroll', onScroll);
+      currentEl.removeEventListener('scroll', onScroll);
+      if (boundElRef.current === currentEl) {
+        boundElRef.current = null;
+      }
     };
-  }, [scrollContainerRef, thresholds.collapse, thresholds.expand]);
+  });
 
   return { collapsed, scrollTop };
 }

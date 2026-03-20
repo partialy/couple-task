@@ -32,9 +32,11 @@ export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: ()
           src={task.img} 
           alt={task.title} 
           className={`w-full h-auto object-cover transition-all duration-500 min-h-48   ${task.isPrivate ? 'blur-xl scale-110' : ''}`} 
+          loading="lazy"
+          decoding="async"
           referrerPolicy="no-referrer" 
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent"></div>
         
         {/* 标签显示在图片上方 */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
@@ -58,7 +60,7 @@ export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: ()
         </div>
 
         {/* 底部黑色渐变遮罩，带有模糊效果，越往上越白/透明 */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/90 via-black/40 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_top,black_20%,transparent_100%)] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-black/90 via-black/40 to-transparent backdrop-blur-md [mask:linear-gradient(to_top,black_20%,transparent_100%)] pointer-events-none"></div>
 
         {/* 作者信息胶囊 */}
         <div className="absolute bottom-3 left-3 right-3 flex justify-start z-10">
@@ -117,7 +119,7 @@ export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: ()
           const style = colorStyles[color] || colorStyles.amber;
           
           return (
-            <div className={`mt-auto flex items-center space-x-1.5 bg-gradient-to-r ${style.bg} ${style.text} px-2.5 py-1.5 rounded-xl w-fit border ${style.border} shadow-sm`}>
+            <div className={`mt-auto flex items-center space-x-1.5 bg-linear-to-r ${style.bg} ${style.text} px-2.5 py-1.5 rounded-xl w-fit border ${style.border} shadow-sm`}>
               <IconComponent className="w-3.5 h-3.5" />
               <span className="text-[10px] font-bold line-clamp-1">{task.isPrivate ? '***' : text}</span>
             </div>
