@@ -73,10 +73,11 @@ public class PointsServiceImplements {
                 pt.setDescription("兑换码奖励：" + rewardCode.getRewardName());
                 pt.setCreatedAt(new Date());
                 pointTransactionsService.save(pt);
-            } else if (RewardType.WILD_CARD.getValue().equals(rewardCode.getRewardType())) {
-                // 万能卡
+            }
+        } else if (RewardType.WILD_CARD.getValue().equals(rewardCode.getRewardType())) {
+            Integer count = rewardCode.getRewardCount() != null ? rewardCode.getRewardCount() : 0;
+            if (count > 0) {
                 Integer cards = currentUser.getCards() == null ? 0 : currentUser.getCards();
-                Integer count = rewardCode.getRewardCount();
                 currentUser.setCards(cards + count);
                 usersService.updateById(currentUser);
 

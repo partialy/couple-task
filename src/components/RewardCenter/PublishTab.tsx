@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Gift, Copy, CheckCircle, ImagePlus, Heart, Star, Coffee, Plane, Music, ShoppingBag, Sparkles, Package, X } from 'lucide-react';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
 import { message } from '@/utils/pure/message';
+import rewardCodesService from '@/api/service/rewardCodes';
 
 const icons: Record<string, React.ElementType> = {
   Gift, Heart, Star, Coffee, Plane, Music, ShoppingBag, Sparkles, Package
@@ -20,8 +21,9 @@ const colorStyles: Record<string, { bg: string, text: string, ring: string }> = 
 const rewardColors = Object.keys(colorStyles);
 
 export default function PublishTab() {
-  const [rewardType, setRewardType] = useState('prop');
+  const [rewardType, setRewardType] = useState<'prop' | 'points' | 'wild_card'>('prop');
   const [rewardName, setRewardName] = useState('');
+  const [rewardDescription, setRewardDescription] = useState('');
   const [rewardCount, setRewardCount] = useState(1);
   const [generatedCode, setGeneratedCode] = useState('');
   const [copied, setCopied] = useState(false);
@@ -33,6 +35,7 @@ export default function PublishTab() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const isAutoPresetType = rewardType === 'points' || rewardType === 'wild_card';
 
   // Cleanup on unmount
   useEffect(() => {
@@ -43,27 +46,65 @@ export default function PublishTab() {
     };
   }, [uploadedImage]);
 
+  useEffect(() => {
+    if(rewardType == 'points') {
+      setRewardCount(100)
+    } else {
+      setRewardCount(1)
+    }
+  },[rewardType])
+
   const handleGenerate = async () => {
-    if (!rewardName) return;
+    const safeCount = Math.max(1, Math.floor(rewardCount) || 1);
+    const finalRewardName =
+      rewardType === 'points'
+        ? '积分'
+        : rewardType === 'wild_card'
+          ? '万能卡'
+          : rewardName.trim();
+    const finalRewardDescription =
+      rewardType === 'points'
+        ? `${safeCount}积分`
+        : rewardType === 'wild_card'
+          ? `${safeCount}张万能卡`
+          : rewardDescription.trim();
+
+    if (!finalRewardName) return;
     setIsGenerating(true);
 
     try {
-      let finalImageUrl = uploadedImage;
+      let imageUrlForPayload: string | undefined;
       if (imageFile) {
         try {
-          finalImageUrl = await uploadToQiniu(imageFile, 'reward');
-          setUploadedImage(finalImageUrl);
+          const uploaded = await uploadToQiniu(imageFile, 'reward');
+          imageUrlForPayload = uploaded;
+          setUploadedImage(uploaded);
           setImageFile(null);
         } catch (error) {
           message.error('图片上传失败');
           setIsGenerating(false);
           return;
         }
+      } else if (uploadedImage && !uploadedImage.startsWith('blob:')) {
+        imageUrlForPayload = uploadedImage;
       }
 
-      // Generate a random 8-character alphanumeric code
-      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-      setGeneratedCode(code);
+      const res = await rewardCodesService.publish({
+        rewardName: finalRewardName,
+        rewardType,
+        rewardCount: safeCount,
+        icon: imageUrlForPayload ? undefined : selectedIcon || 'Gift',
+        color: selectedColor,
+        imageUrl: imageUrlForPayload,
+        description: finalRewardDescription || undefined,
+      });
+
+      if (!res.success || !res.data) {
+        message.error(res.msg || '发布失败');
+        return;
+      }
+
+      setGeneratedCode(res.data.code);
       setCopied(false);
       setShowResultModal(true);
     } catch (error) {
@@ -150,14 +191,14 @@ export default function PublishTab() {
                 积分
               </button>
               <button
-                onClick={() => setRewardType('special')}
+                onClick={() => setRewardType('wild_card')}
                 className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                  rewardType === 'special' 
+                  rewardType === 'wild_card' 
                     ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm' 
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                 }`}
               >
-                特殊奖励
+                万能卡
               </button>
             </div>
           </div>
@@ -225,7 +266,7 @@ export default function PublishTab() {
                 ))}
                 
                 <div className={`relative w-6 h-6 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-transform hover:scale-110 ${!colorStyles[selectedColor] ? 'ring-2 ring-offset-1 ring-slate-300 dark:ring-slate-600' : ''}`}>
-                  <div className="w-full h-full bg-gradient-to-br from-red-500 via-green-500 to-blue-500 absolute inset-0"></div>
+                  <div className="w-full h-full bg-linear-to-br from-red-500 via-green-500 to-blue-500 absolute inset-0"></div>
                   <input 
                     type="color" 
                     value={selectedColor.startsWith('#') ? selectedColor : '#6366f1'}
@@ -237,18 +278,35 @@ export default function PublishTab() {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              奖励名称
-            </label>
-            <input 
-              type="text"
-              value={rewardName}
-              onChange={(e) => setRewardName(e.target.value)}
-              placeholder="例如：免做家务卡"
-              className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+          {!isAutoPresetType && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  奖励名称
+                </label>
+                <input 
+                  type="text"
+                  value={rewardName}
+                  onChange={(e) => setRewardName(e.target.value)}
+                  placeholder="例如：免做家务卡"
+                  className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  描述（可选）
+                </label>
+                <textarea
+                  value={rewardDescription}
+                  onChange={(e) => setRewardDescription(e.target.value)}
+                  placeholder="补充说明，将保存到兑换码记录中"
+                  rows={3}
+                  className="w-full resize-none bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -265,7 +323,7 @@ export default function PublishTab() {
 
           <button 
             onClick={handleGenerate}
-            disabled={!rewardName || isGenerating}
+            disabled={(!isAutoPresetType && !rewardName.trim()) || isGenerating}
             className="w-full py-3.5 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
           >
             {isGenerating ? '生成中...' : '生成兑换码'}
@@ -275,7 +333,7 @@ export default function PublishTab() {
 
       {/* Result Modal */}
       {showResultModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200">
             <button 
               onClick={() => setShowResultModal(false)}

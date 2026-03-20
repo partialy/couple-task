@@ -28,7 +28,7 @@ public class RewardCodes implements Serializable {
     private String code;
 
     /**
-     * 奖励类型 (prop, points, special)
+     * 奖励类型 (prop, points, wild_card)
      */
     @TableField(value = "reward_type")
     private String rewardType;

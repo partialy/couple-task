@@ -72,12 +72,12 @@ class MessageManager {
 
     const messageEl = document.createElement('div');
     // Base classes for the message card
-    messageEl.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl rounded-2xl min-w-[300px] max-w-[90vw] transition-all duration-500 ease-out opacity-0 -translate-y-5 scale-95';
+    messageEl.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl rounded-2xl min-w-[50px] max-w-[90vw] transition-all duration-500 ease-out opacity-0 -translate-y-5 scale-95';
 
     const iconPart = this.createIcon(type, color);
     const textPart = document.createElement('span');
     textPart.className = 'flex-grow text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed';
-    textPart.textContent = content;
+    textPart.textContent = content || "message";
 
     messageEl.appendChild(iconPart);
     messageEl.appendChild(textPart);

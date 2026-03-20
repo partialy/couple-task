@@ -369,8 +369,9 @@ create table reward_codes
     id           varchar(36)                           not null comment 'ID，全局唯一'
         primary key,
     code         varchar(20)                           not null comment '兑换码',
-    reward_type  varchar(20)                           not null comment '奖励类型 (prop, points, special)',
+    reward_type  varchar(20)                           not null comment '奖励类型 (prop, points, wild_card)',
     reward_name  varchar(50)                           not null comment '奖励名称',
+    description  text                                  null comment '描述',
     reward_count int         default 1                 null comment '奖励数量',
     icon         varchar(50)                           null comment '图标',
     color        varchar(50)                           null comment '颜色样式',
