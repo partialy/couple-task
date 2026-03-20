@@ -4,10 +4,12 @@ import cn.example.dataserver.common.BusinessException;
 import cn.example.dataserver.common.Result;
 import cn.example.dataserver.dto.UserLoginDTO;
 import cn.example.dataserver.entity.BindingRelations;
+import cn.example.dataserver.entity.PointTransactions;
 import cn.example.dataserver.entity.Users;
 import cn.example.dataserver.enums.BindingRelation;
 import cn.example.dataserver.enums.UserGender;
 import cn.example.dataserver.service.BindingRelationsService;
+import cn.example.dataserver.service.PointTransactionsService;
 import cn.example.dataserver.service.UsersService;
 import cn.example.dataserver.utils.JwtUtil;
 import cn.example.dataserver.utils.PasswordEncoder;
@@ -15,6 +17,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.Map;
@@ -31,6 +34,7 @@ public class AuthService {
     private long JWT_EXPIRATION;
 
     private final UsersService usersService;
+    private final PointTransactionsService pointTransactionsService;
 
     // 存储验证码及其过期时间 (简单内存实现)
     private final Map<String, String> codeMap = new ConcurrentHashMap<>();
@@ -117,6 +121,7 @@ public class AuthService {
         return Result.success().toJson();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public String register(Users users, String code) {
         // 验证验证码
         String target = users.getPhone() != null ? users.getPhone() : users.getEmail();
@@ -158,6 +163,16 @@ public class AuthService {
             throw new BusinessException("该手机号/邮箱已注册");
         }
         usersService.save(user);
+
+        PointTransactions pointTransaction = new PointTransactions();
+        pointTransaction.setUserId(user.getId());
+        pointTransaction.setAmount(100);
+        pointTransaction.setTransactionType("register_reward");
+        pointTransaction.setReferenceId(user.getId());
+        pointTransaction.setDescription("注册赠送100积分");
+        pointTransaction.setCreatedAt(new Date());
+        pointTransactionsService.save(pointTransaction);
+
         user.setPassword(plainPass);
         // 验证通过，清除验证码
         codeMap.remove(target);
