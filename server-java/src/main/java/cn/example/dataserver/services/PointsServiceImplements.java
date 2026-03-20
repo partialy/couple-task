@@ -93,14 +93,16 @@ public class PointsServiceImplements {
             // 兑换道具
             int count = rewardCode.getRewardCount() != null ? rewardCode.getRewardCount() : 1;
             for (int i = 0; i < count; i++) {
-                UserItems item = new UserItems();
-                item.setId(UUID.randomUUID().toString());
-                item.setUserId(currentUser.getId());
-                item.setItemId(rewardCode.getCode());
-                item.setStatus(ItemStatus.USABLE.getValue());
-                item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-                item.setAcquiredAt(new Date());
-                userItemsService.save(item);
+                saveUserItem(
+                        currentUser,
+                        rewardCode.getCode(),
+                        rewardCode.getRewardName(),
+                        rewardCode.getDescription(),
+                        rewardCode.getIcon(),
+                        rewardCode.getRewardType(),
+                        rewardCode.getColor(),
+                        userItemsService
+                );
 
                 ItemTransactions it = new ItemTransactions();
                 it.setUserId(currentUser.getId());
@@ -154,7 +156,16 @@ public class PointsServiceImplements {
         pointTransactionsService.save(pt);
 
         // 增加道具
-        saveUserItem(currentUser, shopItem.getId(), userItemsService);
+        saveUserItem(
+                currentUser,
+                shopItem.getId(),
+                shopItem.getName(),
+                shopItem.getDescription(),
+                shopItem.getIcon(),
+                shopItem.getItemType(),
+                shopItem.getColor(),
+                userItemsService
+        );
 
         // 库存减一
         if (shopItem.getStock() != null && shopItem.getStock() > 0) {
@@ -165,14 +176,28 @@ public class PointsServiceImplements {
         return Result.success("兑换成功").toJson();
     }
 
-    static void saveUserItem(Users currentUser, String id, UserItemsService userItemsService) {
+    static void saveUserItem(
+            Users currentUser,
+            String itemId,
+            String name,
+            String description,
+            String icon,
+            String type,
+            String color,
+            UserItemsService userItemsService
+    ) {
         UserItems item = new UserItems();
         item.setId(UUID.randomUUID().toString());
         item.setUserId(currentUser.getId());
-        item.setItemId(id);
+        item.setItemId(itemId);
         item.setStatus(ItemStatus.USABLE.getValue());
         item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         item.setAcquiredAt(new Date());
+        item.setName(name);
+        item.setDescription(description);
+        item.setIcon(icon);
+        item.setType(type);
+        item.setColor(color);
         userItemsService.save(item);
     }
 }

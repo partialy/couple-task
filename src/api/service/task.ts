@@ -14,6 +14,7 @@ export interface TaskCreateDTO {
   tags: string[];
   rewards: {
     text: string;
+    description?: string;
     color: string;
     icon: string;
     type: 'normal' | 'wild_card' | 'points';

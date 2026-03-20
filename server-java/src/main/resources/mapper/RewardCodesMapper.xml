@@ -5,24 +5,25 @@
 <mapper namespace="cn.example.dataserver.mapper.RewardCodesMapper">
 
     <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.RewardCodes">
-            <id property="id" column="id" jdbcType="VARCHAR"/>
-            <result property="code" column="code" jdbcType="VARCHAR"/>
-            <result property="rewardType" column="reward_type" jdbcType="VARCHAR"/>
-            <result property="rewardName" column="reward_name" jdbcType="VARCHAR"/>
-            <result property="rewardCount" column="reward_count" jdbcType="INTEGER"/>
-            <result property="icon" column="icon" jdbcType="VARCHAR"/>
-            <result property="color" column="color" jdbcType="VARCHAR"/>
-            <result property="imageUrl" column="image_url" jdbcType="VARCHAR"/>
-            <result property="creatorId" column="creator_id" jdbcType="VARCHAR"/>
-            <result property="status" column="status" jdbcType="VARCHAR"/>
-            <result property="redeemerId" column="redeemer_id" jdbcType="VARCHAR"/>
-            <result property="redeemedAt" column="redeemed_at" jdbcType="TIMESTAMP"/>
-            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+            <id property="id" column="id" />
+            <result property="code" column="code" />
+            <result property="rewardType" column="reward_type" />
+            <result property="rewardName" column="reward_name" />
+            <result property="rewardCount" column="reward_count" />
+            <result property="icon" column="icon" />
+            <result property="color" column="color" />
+            <result property="imageUrl" column="image_url" />
+            <result property="creatorId" column="creator_id" />
+            <result property="status" column="status" />
+            <result property="redeemerId" column="redeemer_id" />
+            <result property="redeemedAt" column="redeemed_at" />
+            <result property="createdAt" column="created_at" />
+            <result property="description" column="description" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,code,reward_type,reward_name,reward_count,icon,
         color,image_url,creator_id,status,redeemer_id,
-        redeemed_at,created_at
+        redeemed_at,created_at,description
     </sql>
 </mapper>

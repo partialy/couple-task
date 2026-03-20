@@ -31,5 +31,6 @@ public class TaskDTO {
         private String icon;       // 图标
         private String type;        // 类型points、wild_card、normal
         private Integer amount;    // 数量
+        private String description; // 描述
     }
 }

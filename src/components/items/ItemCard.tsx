@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import * as Icons from 'lucide-react';
-import { UserItem } from '../../data/userItems';
+import { UserItemRecord } from '@/api/service/userItems';
 
 interface ItemCardProps {
   key?: string | React.Key;
-  item: UserItem;
-  onClick: (item: UserItem) => void;
+  item: UserItemRecord;
+  onClick: (item: UserItemRecord) => void;
 }
 
 export default function ItemCard({ item, onClick }: ItemCardProps) {
@@ -35,7 +35,7 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
       }`}
     >
       <div className="flex items-center space-x-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${isUsed ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : colorClasses}`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isUsed ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : colorClasses}`}>
           <IconComponent className="w-6 h-6" />
         </div>
         <div>
@@ -48,7 +48,7 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
         </div>
       </div>
       
-      <div className="flex flex-col items-end flex-shrink-0 pl-2">
+      <div className="flex flex-col items-end shrink-0 pl-2">
         {isUsed ? (
           <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-full">
             已使用

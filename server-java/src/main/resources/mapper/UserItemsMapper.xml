@@ -5,17 +5,23 @@
 <mapper namespace="cn.example.dataserver.mapper.UserItemsMapper">
 
     <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.UserItems">
-            <id property="id" column="id" jdbcType="VARCHAR"/>
-            <result property="userId" column="user_id" jdbcType="VARCHAR"/>
-            <result property="itemId" column="item_id" jdbcType="VARCHAR"/>
-            <result property="status" column="status" jdbcType="VARCHAR"/>
-            <result property="code" column="code" jdbcType="VARCHAR"/>
-            <result property="acquiredAt" column="acquired_at" jdbcType="TIMESTAMP"/>
-            <result property="usedAt" column="used_at" jdbcType="TIMESTAMP"/>
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="itemId" column="item_id" />
+            <result property="status" column="status" />
+            <result property="code" column="code" />
+            <result property="acquiredAt" column="acquired_at" />
+            <result property="usedAt" column="used_at" />
+            <result property="name" column="name" />
+            <result property="description" column="description" />
+            <result property="icon" column="icon" />
+            <result property="type" column="type" />
+            <result property="color" column="color" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,user_id,item_id,status,code,acquired_at,
-        used_at
+        used_at,name,description,icon,type,
+        color
     </sql>
 </mapper>

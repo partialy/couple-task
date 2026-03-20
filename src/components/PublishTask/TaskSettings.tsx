@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Tag, ChevronLeft, Star, Calendar, X, Hash } from 'lucide-react';
 import DatePicker from './DatePicker';
+import { RewardDraft } from './TaskRewards';
 
 interface TaskSettingsProps {
   categoryId: string;
@@ -42,13 +43,7 @@ type TaskType = {
   value: 'one-time' | 'daily' | 'weekly' | 'monthly';
 };
 
-type RewardDraft = {
-  text: string;
-  color: string;
-  icon: string;
-  isWildcard: false;
-  amount: number;
-};
+
 
 export default function TaskSettings({
   categoryId, setCategoryId, showCategoryPicker, setShowCategoryPicker, categories,

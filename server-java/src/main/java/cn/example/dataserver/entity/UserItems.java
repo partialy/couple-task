@@ -57,6 +57,36 @@ public class UserItems implements Serializable {
     @TableField(value = "used_at")
     private Date usedAt;
 
+    /**
+     * 名称
+     */
+    @TableField(value = "name")
+    private String name;
+
+    /**
+     * 描述
+     */
+    @TableField(value = "description")
+    private String description;
+
+    /**
+     * 图标
+     */
+    @TableField(value = "icon")
+    private String icon;
+
+    /**
+     * 类型
+     */
+    @TableField(value = "type")
+    private String type;
+
+    /**
+     * 颜色
+     */
+    @TableField(value = "color")
+    private String color;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

@@ -93,6 +93,12 @@ public class RewardCodes implements Serializable {
     @TableField(value = "created_at")
     private Date createdAt;
 
+    /**
+     * 描述
+     */
+    @TableField(value = "description")
+    private String description;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

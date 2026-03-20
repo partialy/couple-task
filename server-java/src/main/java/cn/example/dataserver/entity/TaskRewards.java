@@ -62,6 +62,12 @@ public class TaskRewards implements Serializable {
     @TableField(value = "sort_order")
     private Integer sortOrder;
 
+    /**
+     * 奖励描述
+     */
+    @TableField(value = "description")
+    private String description;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

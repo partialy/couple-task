@@ -2,12 +2,12 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Gift, Sparkles, X, Plus } from 'lucide-react';
 
-type RewardDraft = {
+export type RewardDraft = {
   text: string;
   color: string;
   icon: string;
-  /** 普通奖励时固定为 false（万能卡由 rewardType==='wildcard' 统一处理） */
-  isWildcard: false;
+  description: string;
+  type: string;
   /** 非万能卡默认数量为 1（后端 DTO 字段为 amount） */
   amount: number;
 };
@@ -47,7 +47,7 @@ export default function TaskRewards({
       const nextColor = rewardColors[rewards.length % rewardColors.length];
       const nextIcon = rewardIcons[rewards.length % rewardIcons.length];
       // 普通奖励：默认数量 1，且不是万能卡
-      setRewards([...rewards, { text: '', color: nextColor, icon: nextIcon, isWildcard: false, amount: 1 }]);
+      setRewards([...rewards, { text: '',description: '', color: nextColor, icon: nextIcon, type: 'normal', amount: 1 }]);
     }
   };
 
@@ -58,6 +58,12 @@ export default function TaskRewards({
   const handleRewardChange = (index: number, value: string) => {
     const newRewards = [...rewards];
     newRewards[index].text = value;
+    setRewards(newRewards);
+  };
+
+  const handleRewardDescriptionChange = (index: number, value: string) => {
+    const newRewards = [...rewards];
+    newRewards[index].description = value;
     setRewards(newRewards);
   };
 
@@ -112,7 +118,7 @@ export default function TaskRewards({
                   className={`p-2 rounded-lg shrink-0 transition-colors ${colorStyle.className}`}
                   style={colorStyle.style}
                 >
-                  <IconComponent className="w-4 h-4" />
+                  <IconComponent className="w-6 h-6" />
                 </button>
                 
                 {activeIconPicker === index && (
@@ -175,13 +181,22 @@ export default function TaskRewards({
                   </>
                 )}
 
-                <input
-                  type="text"
-                  value={reward.text}
-                  onChange={(e) => handleRewardChange(index, e.target.value)}
-                  placeholder={`奖励 ${index + 1} (例如: 请吃大餐)`}
-                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
-                />
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="text"
+                    value={reward.text}
+                    onChange={(e) => handleRewardChange(index, e.target.value)}
+                    placeholder={`奖励标题 ${index + 1}（必填）`}
+                    className="w-full bg-white dark:bg-slate-800/60 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/20 text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                  />
+                  <textarea
+                    value={reward.description}
+                    onChange={(e) => handleRewardDescriptionChange(index, e.target.value)}
+                    placeholder="奖励描述（可选）"
+                    rows={2}
+                    className="w-full resize-none bg-white dark:bg-slate-800/60 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/20 text-xs text-slate-600 dark:text-slate-300 placeholder:text-slate-400"
+                  />
+                </div>
                 {rewards.length > 1 && (
                   <button
                     onClick={() => handleRemoveReward(index)}
@@ -262,7 +277,7 @@ export default function TaskRewards({
               <h4 className="text-slate-800 dark:text-white font-bold mb-1">奖励积分</h4>
               <p className="text-xs text-slate-400 dark:text-slate-500">对方完成任务后将获得积分</p>
             </div>
-            <div className="w-full max-w-xs space-y-2">
+            <div className="w-full max-w-xs space-y-2 flex justify-center flex-col items-center">
               <input
                 type="number"
                 min={1}
@@ -271,7 +286,7 @@ export default function TaskRewards({
                 value={pointsAmount}
                 onChange={(e) => handlePointsInput(e.target.value)}
                 onBlur={(e) => handlePointsInput(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-center text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                className="w-[50%] rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-center text-sm font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
               <p className="text-[11px] text-center text-slate-400 dark:text-slate-500">
                 默认 100，最大 1000，仅支持整数

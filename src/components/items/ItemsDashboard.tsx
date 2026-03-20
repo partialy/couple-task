@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, PackageSearch, ScanLine, Search } from 'lucide-react';
 import DashboardStats from './DashboardStats';
@@ -7,32 +7,88 @@ import ItemCard from './ItemCard';
 import ItemRedemptionModal from './ItemRedemptionModal';
 import RedeemInputModal from './RedeemInputModal';
 import QrScanner from '../QrScanner';
-import { mockUserItems, UserItem } from '../../data/userItems';
+import { useUserStore } from '@/store';
+import userItemsService, { UserItemRecord } from '@/api/service/userItems';
+import { message } from '@/utils/pure/message';
 
 interface ItemsDashboardProps {
   onBack: () => void;
 }
 
 export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
+  const PAGE_SIZE = 10;
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedItem, setSelectedItem] = useState<UserItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<UserItemRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [items, setItems] = useState<UserItemRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
-  // Mock balances (these would normally come from a store or API)
-  const pointsBalance = 1250;
-  const wildcardBalance = 3;
+  const currentUser = useUserStore((state) => state.currentUser);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const filteredItems = mockUserItems.filter((item) => {
-    const matchesFilter = activeFilter === 'all' || item.status === activeFilter;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  const mapToUserItem = (record: UserItemRecord): UserItemRecord => ({
+    id: record.id,
+    itemId: record.itemId,
+    name: record.name,
+    description: record.description,
+    icon: record.icon || 'Package',
+    type: record.type,
+    status: record.status,
+    code: record.code,
+    acquiredAt: record.acquiredAt,
+    usedAt: record.usedAt,
+    color: record.color || 'cyan',
   });
 
-  const handleItemClick = (item: UserItem) => {
+  const fetchItems = async (targetPage: number, append = false) => {
+    setLoading(true);
+    try {
+      const res = await userItemsService.page({
+        page: targetPage,
+        size: PAGE_SIZE,
+        status: activeFilter === 'all' ? undefined : activeFilter,
+        keyword: debouncedSearch || undefined,
+      });
+      if (!res.success) {
+        message.error(res.msg || '加载道具失败');
+        return;
+      }
+      const pageData = res.data;
+      const nextItems = (pageData.records || []).map(mapToUserItem);
+      setItems((prev) => (append ? [...prev, ...nextItems] : nextItems));
+      setCurrentPage(Number(pageData.current || targetPage));
+      setHasMore(Number(pageData.current || targetPage) * Number(pageData.size || PAGE_SIZE) < Number(pageData.total || 0));
+    } catch (error) {
+      console.error('Failed to fetch user items:', error);
+      message.error('加载道具失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems(1, false);
+  }, [activeFilter, debouncedSearch]);
+
+  const pointsBalance = currentUser?.points || 0;
+  const wildcardBalance = useMemo(
+    () => items.filter((item) => item.type === 'wildcard' && item.status === 'usable').length,
+    [items]
+  );
+
+  const handleItemClick = (item: UserItemRecord) => {
     if (item.status === 'usable') {
       setSelectedItem(item);
       setIsModalOpen(true);
@@ -79,7 +135,7 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
         <DashboardStats
           pointsBalance={pointsBalance}
           wildcardBalance={wildcardBalance}
-          totalItems={mockUserItems.length}
+          totalItems={items.length}
         />
 
         {/* Search Bar */}
@@ -98,11 +154,20 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
 
         <ItemFilter activeFilter={activeFilter} onFilterChange={setActiveFilter} />
 
-        {filteredItems.length > 0 ? (
+        {items.length > 0 ? (
           <div className="space-y-3">
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <ItemCard key={item.id} item={item} onClick={handleItemClick} />
             ))}
+            {hasMore && (
+              <button
+                onClick={() => fetchItems(currentPage + 1, true)}
+                disabled={loading}
+                className="w-full py-3 rounded-2xl border border-dashed border-cyan-200 dark:border-cyan-700 text-cyan-600 dark:text-cyan-400 font-bold text-sm hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors disabled:opacity-60"
+              >
+                {loading ? '加载中...' : '展开更多'}
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-64 text-slate-400 dark:text-slate-500">

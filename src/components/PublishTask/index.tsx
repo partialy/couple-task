@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Sparkles,
 } from "lucide-react";
-import { useTaskStore, useUserStore } from "../../store";
+import { TaskReward, useTaskStore, useUserStore } from "../../store";
 import { message } from "@/utils/pure/message";
 import { uploadToQiniu, revokeLocalPreview } from "@/utils/qiniu";
 
@@ -18,8 +18,9 @@ import Header from "./Header";
 import ImageUpload from "./ImageUpload";
 import BasicInfo from "./BasicInfo";
 import TaskSettings from "./TaskSettings";
-import TaskRewards from "./TaskRewards";
+import TaskRewards, { RewardDraft } from "./TaskRewards";
 import ExtraSettings from "./ExtraSettings";
+
 
 interface PublishTaskProps {
   onBack: () => void;
@@ -41,15 +42,9 @@ export default function PublishTask({
   const [rewardType, setRewardType] = useState<"wild_card" | "points">("wild_card");
   const [wildcardAmount, setWildcardAmount] = useState<number>(1);
   const [pointsAmount, setPointsAmount] = useState<number>(100);
-  type RewardDraft = {
-    text: string;
-    color: string;
-    icon: string;
-    isWildcard: false;
-    amount: number;
-  };
+
   const [rewards, setRewards] = useState<RewardDraft[]>([
-    { text: "", color: "pink", icon: "Gift", isWildcard: false, amount: 1 },
+    { text: "", color: "pink", icon: "Gift", type: 'normal',description: "", amount: 1 },
   ]);
   const [activeIconPicker, setActiveIconPicker] = useState<number | null>(null);
   const [usePrivilegeCard, setUsePrivilegeCard] = useState(false);
@@ -168,8 +163,8 @@ export default function PublishTask({
 
       if (initialData.rewards && initialData.rewards.length > 0) {
         const formattedRewards = initialData.rewards.map(
-          (r: string, idx: number) => ({
-            text: r,
+          (r: any, idx: number) => ({
+            text: typeof r === "string" ? r : String(r?.content ?? r?.text ?? ""),
             color: ["pink", "cyan", "amber", "emerald", "purple", "rose"][
               idx % 6
             ],
@@ -183,8 +178,8 @@ export default function PublishTask({
               "ShoppingBag",
               "Sparkles",
             ][idx % 8],
-            // 非万能卡奖励：默认数量 1，isWildcard=false
-            isWildcard: false as const,
+            description: typeof r === "string" ? "" : String(r?.description ?? ""),
+            type: "normal",
             amount: 1,
           }),
         );
@@ -286,20 +281,6 @@ export default function PublishTask({
         }
       }
 
-      // 2. 准备任务数据
-      // const finalRewards =
-      //   rewardType === "wild_card"
-      //     ? [
-      //         {
-      //           text: `${wildcardAmount} 张万能卡`,
-      //           color: "purple",
-      //           icon: "Sparkles",
-      //           type: "wild_card",
-      //           amount: wildcardAmount,
-      //         },
-      //       ]
-      //     : rewards.filter((r) => r.text.trim() !== "");
-
       const safeWildcardAmount = Math.max(1, Math.min(10, Math.floor(wildcardAmount || 1)));
       const safePointsAmount = Math.max(1, Math.min(1000, Math.floor(pointsAmount || 100)));
       const normalRewards = rewards
@@ -310,6 +291,7 @@ export default function PublishTask({
           icon: r.icon,
           type: "normal" as const,
           amount: 1,
+          description: r.description,
         }));
       const extraReward =
         rewardType === "wild_card"
@@ -319,6 +301,7 @@ export default function PublishTask({
               icon: "Sparkles",
               type: "wild_card" as const,
               amount: safeWildcardAmount,
+              description: `${safeWildcardAmount} 张万能卡`,
             }
           : {
               text: `${safePointsAmount} 积分`,
@@ -326,6 +309,7 @@ export default function PublishTask({
               icon: "Star",
               type: "points" as const,
               amount: safePointsAmount,
+              description: `${safePointsAmount} 积分`,
             };
       const finalRewards = [...normalRewards, extraReward];
 

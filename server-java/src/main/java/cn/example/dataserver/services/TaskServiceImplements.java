@@ -126,6 +126,7 @@ public class TaskServiceImplements {
         if (CollUtil.isNotEmpty(taskDTO.getRewards())) {
             List<TaskRewards> rewards = taskDTO.getRewards().stream().map(r -> {
                 TaskRewards reward = new TaskRewards();
+                String desc = r.getDescription() == null ? r.getText() : r.getDescription();
                 reward.setId(UUID.randomUUID().toString());
                 reward.setTaskId(taskId);
                 reward.setType(r.getType());
@@ -133,6 +134,7 @@ public class TaskServiceImplements {
                 reward.setIcon(r.getIcon());
                 reward.setColor(r.getColor());
                 reward.setAmount(r.getAmount());
+                reward.setDescription(desc);
                 return reward;
             }).collect(Collectors.toList());
             taskRewardsService.saveBatch(rewards);
@@ -442,7 +444,16 @@ public class TaskServiceImplements {
                     cardTransactionsService.save(ct);
                 } else if (RewardType.NORMAL.getValue().equals(reward.getType())) {
                     // 发放道具
-                    PointsServiceImplements.saveUserItem(receiver, reward.getId(), userItemsService);
+                    PointsServiceImplements.saveUserItem(
+                            receiver,
+                            reward.getId(),
+                            reward.getContent(),
+                            reward.getDescription(),
+                            reward.getIcon(),
+                            RewardType.NORMAL.getValue(),
+                            reward.getColor(),
+                            userItemsService
+                    );
                     // 流水
                     ItemTransactions it = new ItemTransactions();
                     it.setUserId(currentUser.getId());

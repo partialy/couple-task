@@ -22,7 +22,6 @@ public class UserInfoService {
     private final UsersService usersService;
     private final CategoriesService categoriesService;
     private final TaskLevelsService taskLevelsService;
-    private final TasksService tasksService;
 
     public String update(Users user, UserUpdateDTO updateDTO) {
         if (updateDTO.getNickname() != null) user.setNickname(updateDTO.getNickname());
@@ -58,20 +57,6 @@ public class UserInfoService {
                 .build();
         return Result.success(userInitDTO).toJson();
     }
-
-    public String tasks(Users user, Map<String, String> params) {
-        String status = params.get("status");
-        int page = Integer.parseInt(params.get("page"));
-        int size = Integer.parseInt(params.get("size"));
-
-        Page<Tasks> tasksPage = tasksService.lambdaQuery()
-                .eq(Tasks::getReceiverId, user.getId())
-                .eq(Tasks::getStatus, status)
-                .orderByDesc(Tasks::getCreatedAt)
-                .page(new Page<>(page, size));
-        return Result.success(tasksPage).toJson();
-    }
-
 
     public String publishConfig(Users user, String bindId) {
         List<Categories> categoriesList = categoriesService.lambdaQuery()
