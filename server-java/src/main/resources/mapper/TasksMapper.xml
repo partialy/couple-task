@@ -5,31 +5,32 @@
 <mapper namespace="cn.example.dataserver.mapper.TasksMapper">
 
     <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.Tasks">
-            <id property="id" column="id" jdbcType="VARCHAR"/>
-            <result property="authorId" column="author_id" jdbcType="VARCHAR"/>
-            <result property="receiverId" column="receiver_id" jdbcType="VARCHAR"/>
-            <result property="categoryId" column="category_id" jdbcType="VARCHAR"/>
-            <result property="levelId" column="level_id" jdbcType="VARCHAR"/>
-            <result property="title" column="title" jdbcType="VARCHAR"/>
-            <result property="description" column="description" jdbcType="VARCHAR"/>
-            <result property="coverImage" column="cover_image" jdbcType="VARCHAR"/>
-            <result property="deadline" column="deadline" jdbcType="DATE"/>
-            <result property="location" column="location" jdbcType="VARCHAR"/>
-            <result property="status" column="status" jdbcType="VARCHAR"/>
-            <result property="isPrivate" column="is_private" jdbcType="TINYINT"/>
-            <result property="isPrivileged" column="is_privileged" jdbcType="TINYINT"/>
-            <result property="repeatType" column="repeat_type" jdbcType="VARCHAR"/>
-            <result property="repeatConfig" column="repeat_config" jdbcType="OTHER"/>
-            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
-            <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
-            <result property="deletedAt" column="deleted_at" jdbcType="TIMESTAMP"/>
-            <result property="belongBindingId" column="belong_binding_id" jdbcType="VARCHAR"/>
+            <id property="id" column="id" />
+            <result property="authorId" column="author_id" />
+            <result property="receiverId" column="receiver_id" />
+            <result property="categoryId" column="category_id" />
+            <result property="levelId" column="level_id" />
+            <result property="title" column="title" />
+            <result property="description" column="description" />
+            <result property="coverImage" column="cover_image" />
+            <result property="deadline" column="deadline" />
+            <result property="location" column="location" />
+            <result property="status" column="status" />
+            <result property="isPrivate" column="is_private" />
+            <result property="isPrivileged" column="is_privileged" />
+            <result property="repeatType" column="repeat_type" />
+            <result property="repeatConfig" column="repeat_config" />
+            <result property="createdAt" column="created_at" />
+            <result property="updatedAt" column="updated_at" />
+            <result property="deletedAt" column="deleted_at" />
+            <result property="belongBindingId" column="belong_binding_id" />
+            <result property="tags" column="tags" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,author_id,receiver_id,category_id,level_id,title,
         description,cover_image,deadline,location,status,
         is_private,is_privileged,repeat_type,repeat_config,created_at,
-        updated_at,deleted_at,belong_binding_id
+        updated_at,deleted_at,belong_binding_id,tags
     </sql>
 </mapper>

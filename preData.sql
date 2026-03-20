@@ -15,13 +15,6 @@ INSERT INTO `task_levels` (`id`, `name`, `max_rewards`, `sort_order`, `belong_bi
 (UUID(), '困难', 3, 5, ''),
 (UUID(), '极难', 4, 6, '');
 
--- 预制数据：标签
-INSERT INTO `tags` (`id`, `name`, `belong_binding_id`) VALUES
-(UUID(), '浪漫', ''),
-(UUID(), '宅家', ''),
-(UUID(), '音乐', ''),
-(UUID(), '游乐园', ''),
-(UUID(), '宠物', '');
 
 -- 预制数据：商店道具
 INSERT INTO `shop_items` (`id`, `name`, `description`, `points_cost`, `icon`, `color`, `status`, `created_at`, `belong_binding_id`) VALUES

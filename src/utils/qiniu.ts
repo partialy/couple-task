@@ -31,7 +31,8 @@ export const uploadToQiniu = async (file: File, prefix: string = 'yutask'): Prom
         const uploadRes = await axios.post(uploadUrl, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
-            }
+            },
+            timeout: 15000
         });
 
         if (uploadRes.status !== 200) {

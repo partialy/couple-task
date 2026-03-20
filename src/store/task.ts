@@ -1,15 +1,16 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Categories, TaskLevels, Tags, Tasks, Result } from '@/api/sql_models';
-import taskService, { TaskCreateDTO } from '@/api/service/task';
-import { UiTask } from '@/types/task';
-import { mapTaskVOToUiTask } from '@/mappers/task';
+import { create } from "zustand";
+import { Categories, TaskLevels, Tasks, Result } from "@/api/sql_models";
+import taskService, { TaskCreateDTO } from "@/api/service/task";
+import { UiTask } from "@/types/task";
+import { mapTaskVOToUiTask } from "@/mappers/task";
+
+const DEFAULT_TASK_TAGS = ["浪漫", "宅家", "音乐", "游乐园", "宠物"];
 
 interface TaskState {
   tasks: UiTask[];
   categories: Categories[];
   taskLevels: TaskLevels[];
-  allTags: Tags[];
+  allTags: string[];
   loading: boolean;
   configFetched: boolean;
 
@@ -28,31 +29,16 @@ interface TaskState {
   fetchPublishConfig: (bindId: string) => Promise<void>;
 }
 
-export const useTaskStore = create<TaskState>()(
-  persist(
-    (set, get) => ({
+export const useTaskStore = create<TaskState>()((set, get) => ({
       tasks: [] as UiTask[],
-      categories: [
-        { id: 'default-1', name: '旅行' },
-        { id: 'default-2', name: '美食' },
-        { id: 'default-3', name: '日常' },
-        { id: 'default-4', name: '心愿单' },
-        { id: 'default-5', name: '纪念日' }
-      ] as Categories[],
-      taskLevels: [
-        { id: 'default-1', name: '小事', maxRewards: 1 },
-        { id: 'default-2', name: '简单', maxRewards: 1 },
-        { id: 'default-3', name: '中等', maxRewards: 2 },
-        { id: 'default-4', name: '高级', maxRewards: 3 },
-        { id: 'default-5', name: '困难', maxRewards: 3 },
-        { id: 'default-6', name: '极难', maxRewards: 4 }
-      ] as TaskLevels[],
-      allTags: [] as Tags[],
+      categories: [] as Categories[],
+      taskLevels: [] as TaskLevels[],
+      allTags: DEFAULT_TASK_TAGS,
       loading: false,
       configFetched: false,
 
       addTask: (task) => {
-        set(state => ({ tasks: [task, ...state.tasks] }));
+        set((state) => ({ tasks: [task, ...state.tasks] }));
       },
 
       createTask: async (taskData) => {
@@ -87,10 +73,10 @@ export const useTaskStore = create<TaskState>()(
         try {
           const result = await taskService.accept(taskId);
           if (result.success) {
-            set(state => ({
-              tasks: state.tasks.map(t =>
-                t.id === taskId ? { ...t, status: 'in-progress' } : t
-              )
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId ? { ...t, status: "in-progress" } : t,
+              ),
             }));
           }
           return result;
@@ -104,10 +90,10 @@ export const useTaskStore = create<TaskState>()(
         try {
           const result = await taskService.abandon(taskId);
           if (result.success) {
-            set(state => ({
-              tasks: state.tasks.map(t =>
-                t.id === taskId ? { ...t, status: 'pending' } : t
-              )
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId ? { ...t, status: "pending" } : t,
+              ),
             }));
           }
           return result;
@@ -121,10 +107,10 @@ export const useTaskStore = create<TaskState>()(
         try {
           const result = await taskService.complete(taskId);
           if (result.success) {
-            set(state => ({
-              tasks: state.tasks.map(t =>
-                t.id === taskId ? { ...t, status: 'completed' } : t
-              )
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId ? { ...t, status: "completed" } : t,
+              ),
             }));
           }
           return result;
@@ -134,29 +120,29 @@ export const useTaskStore = create<TaskState>()(
       },
 
       updateTaskStatus: (taskId, status) => {
-        set(state => ({
-          tasks: state.tasks.map(t =>
-            t.id === taskId ? { ...t, status: status } : t
-          )
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === taskId ? { ...t, status: status } : t,
+          ),
         }));
       },
 
       deleteTask: (taskId) => {
-        set(state => ({
-          tasks: state.tasks.filter(t => t.id !== taskId)
+        set((state) => ({
+          tasks: state.tasks.filter((t) => t.id !== taskId),
         }));
       },
 
       toggleBookmark: (taskId) => {
-        set(state => ({
-          tasks: state.tasks.map(t =>
-            t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t
-          )
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t,
+          ),
         }));
       },
 
       getTaskById: (id) => {
-        return get().tasks.find(t => t.id === id);
+        return get().tasks.find((t) => t.id === id);
       },
 
       setTasks: (tasks) => {
@@ -165,29 +151,24 @@ export const useTaskStore = create<TaskState>()(
 
       fetchPublishConfig: async (bindId) => {
         const state = get();
-        // 如果已经请求过配置了，就不再请求
+        // 当前页面生命周期内避免重复请求
         if (state.configFetched) {
           return;
         }
 
-        const { userService } = await import('@/api/service/user');
+        const { userService } = await import("@/api/service/user");
         try {
           const res = await userService.publishConfig(bindId);
           if (res.success) {
             set({
               categories: res.data.categories,
               taskLevels: res.data.taskLevels,
-              allTags: res.data.tags,
-              configFetched: true
+              allTags: DEFAULT_TASK_TAGS,
+              configFetched: true,
             });
           }
         } catch (error) {
-          console.error('Failed to fetch publish config', error);
+          console.error("Failed to fetch publish config", error);
         }
-      }
-    }),
-    {
-      name: 'yutask-task-storage-v4',
-    }
-  )
-);
+      },
+    }));

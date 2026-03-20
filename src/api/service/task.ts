@@ -16,7 +16,7 @@ export interface TaskCreateDTO {
     text: string;
     color: string;
     icon: string;
-    isWildcard?: boolean;
+    type: 'normal' | 'wild_card' | 'points';
     amount?: number;
   }[];
   isPrivate: boolean;

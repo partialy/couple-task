@@ -37,7 +37,7 @@ export default function App() {
   
   // Use Stores
   const { currentUser, bindingRelations, isLoggedIn, logout, fetchUserDetail } = useUserStore();
-  const { tasks: storeTasks, setTasks: setStoreTasks } = useTaskStore();
+  const { tasks: storeTasks, setTasks: setStoreTasks, fetchPublishConfig } = useTaskStore();
 
   // Local state for non-persisted data or transition
   const [shopItems, setShopItems] = useState<any[]>(initialShopItems);
@@ -114,6 +114,13 @@ export default function App() {
       });
     }
   }, [isLoggedIn]);
+
+  // 首次进入首页后，拉取发布配置并写入 store（分类、任务等级）
+  useEffect(() => {
+    if (isLoggedIn && bindingRelations?.id) {
+      fetchPublishConfig(bindingRelations.id);
+    }
+  }, [isLoggedIn, bindingRelations?.id, fetchPublishConfig]);
 
   // Custom navigate function that updates history
   const navigateTo = (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates') => {

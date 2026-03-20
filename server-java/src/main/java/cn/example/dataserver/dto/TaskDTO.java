@@ -29,7 +29,7 @@ public class TaskDTO {
         private String text;       // 奖励内容
         private String color;      // 颜色
         private String icon;       // 图标
-        private Boolean isWildcard; // 是否为万能卡
+        private String type;        // 类型points、wild_card、normal
         private Integer amount;    // 数量
     }
 }

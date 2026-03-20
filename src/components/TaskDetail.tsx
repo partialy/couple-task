@@ -130,6 +130,9 @@ export default function TaskDetail({
   }, [detail, task]);
 
   const isMyTask = currentUser?.id === displayTask.authorId;
+  const isAuthorTask = isMyTask;
+  const isReceiverTask =
+    !!displayTask.receiverId && currentUser?.id === displayTask.receiverId;
 
   return (
     <motion.div
@@ -198,7 +201,8 @@ export default function TaskDetail({
 
       <TaskBottomBar
         status={displayTask.status}
-        isMyTask={isMyTask}
+        isAuthorTask={isAuthorTask}
+        isReceiverTask={isReceiverTask}
         onAction={handleAction}
       />
 
@@ -208,22 +212,28 @@ export default function TaskDetail({
           confirmModal.type === "accept"
             ? "确认接受任务？"
             : confirmModal.type === "complete"
-              ? "确认完成任务？"
-              : "确认放弃任务？"
+              ? "确认对方完成任务？"
+              : isAuthorTask
+                ? "确认撤回任务？"
+                : "确认放弃任务？"
         }
         message={
           confirmModal.type === "accept"
             ? '接受后任务将进入你的"进行中"列表，要开始这个心愿吗？'
             : confirmModal.type === "complete"
-              ? "太棒了！确认已经完成这个心愿任务了吗？"
-              : "放弃后任务将重新回到广场，确定要放弃吗？"
+              ? "确认对方已完成该任务后，将发放任务奖励给接取人。"
+              : isAuthorTask
+                ? "撤回后任务将回到待处理状态，等待对方重新接取。"
+                : "放弃后任务将重新回到广场，确定要放弃吗？"
         }
         confirmText={
           confirmModal.type === "accept"
             ? "接受"
             : confirmModal.type === "complete"
               ? "已完成"
-              : "放弃"
+              : isAuthorTask
+                ? "撤回"
+                : "放弃"
         }
         confirmColor={
           confirmModal.type === "accept"
@@ -243,7 +253,7 @@ export default function TaskDetail({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[100] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
+            className="absolute inset-0 z-100 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
           >
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}

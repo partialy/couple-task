@@ -9,116 +9,13 @@ export interface MessageOptions {
   closable?: boolean;
 }
 
-const STYLES = `
-  #message-container {
-    position: fixed;
-    top: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    pointer-events: none;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-
-  .msg-card {
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--dp-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--dp-border);
-    box-shadow: 0 8px 32px var(--dp-shadow);
-    border-radius: 16px;
-    min-width: 300px;
-    max-width: 90vw;
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-
-  .msg-card.msg-show {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .msg-card.msg-hide {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.95);
-  }
-
-  .msg-icon {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .msg-content {
-    flex-grow: 1;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--dp-text);
-    line-height: 1.5;
-  }
-
-  .msg-close {
-    padding: 4px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .msg-close:hover {
-    background: var(--dp-secondary-bg);
-    color: var(--dp-text);
-  }
-
-  .msg-spinner {
-    animation: msg-rotate 1s linear infinite;
-  }
-
-  @keyframes msg-rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  /* Type Colors */
-  .msg-icon-success { color: #10b981; }
-  .msg-icon-error { color: #f43f5e; }
-  .msg-icon-info { color: #3b82f6; }
-  .msg-icon-warning { color: #f59e0b; }
-  .msg-icon-loading { color: #64748b; }
-`;
-
 class MessageManager {
   private container: HTMLDivElement | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.injectStyles();
       this.initContainer();
     }
-  }
-
-  private injectStyles() {
-    if (document.getElementById('message-utility-styles')) return;
-    const styleTag = document.createElement('style');
-    styleTag.id = 'message-utility-styles';
-    styleTag.textContent = STYLES;
-    document.head.appendChild(styleTag);
   }
 
   private initContainer() {
@@ -128,14 +25,23 @@ class MessageManager {
     }
     this.container = document.createElement('div');
     this.container.id = 'message-container';
+    this.container.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-3 pointer-events-none font-sans';
     document.body.appendChild(this.container);
   }
 
   private createIcon(type: MessageType, customColor?: string) {
     const iconWrapper = document.createElement('span');
-    iconWrapper.className = `msg-icon msg-icon-${type}`;
+    const colorClass = {
+      success: 'text-emerald-500',
+      error: 'text-rose-500',
+      info: 'text-blue-500',
+      warning: 'text-amber-500',
+      loading: 'text-slate-400'
+    }[type];
+
+    iconWrapper.className = `flex items-center justify-center shrink-0 ${colorClass}`;
     if (type === 'loading') {
-      iconWrapper.classList.add('msg-spinner');
+      iconWrapper.classList.add('animate-spin');
     }
     if (customColor) {
       iconWrapper.style.color = customColor;
@@ -165,11 +71,12 @@ class MessageManager {
     const { duration = 3000, color, closable = false } = options;
 
     const messageEl = document.createElement('div');
-    messageEl.className = 'msg-card';
+    // Base classes for the message card
+    messageEl.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 shadow-xl rounded-2xl min-w-[300px] max-w-[90vw] transition-all duration-500 ease-out opacity-0 -translate-y-5 scale-95';
 
     const iconPart = this.createIcon(type, color);
     const textPart = document.createElement('span');
-    textPart.className = 'msg-content';
+    textPart.className = 'flex-grow text-sm font-medium text-slate-700 dark:text-slate-200 leading-relaxed';
     textPart.textContent = content;
 
     messageEl.appendChild(iconPart);
@@ -177,7 +84,7 @@ class MessageManager {
 
     if (closable) {
       const closeBtn = document.createElement('button');
-      closeBtn.className = 'msg-close';
+      closeBtn.className = 'p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer';
       closeBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -191,7 +98,8 @@ class MessageManager {
     
     // Trigger entrance animation
     requestAnimationFrame(() => {
-      messageEl.classList.add('msg-show');
+      messageEl.classList.remove('opacity-0', '-translate-y-5', 'scale-95');
+      messageEl.classList.add('opacity-100', 'translate-y-0', 'scale-100');
     });
 
     if (duration > 0) {
@@ -205,8 +113,8 @@ class MessageManager {
   }
 
   private remove(el: HTMLElement) {
-    el.classList.remove('msg-show');
-    el.classList.add('msg-hide');
+    el.classList.remove('opacity-100', 'translate-y-0', 'scale-100');
+    el.classList.add('opacity-0', '-translate-y-2', 'scale-95');
     setTimeout(() => {
       if (el.parentNode === this.container) {
         this.container!.removeChild(el);

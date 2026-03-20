@@ -1,7 +1,6 @@
-import React from 'react';
+import { useTaskStore } from "@/store";
 
 interface CategoryChipsProps {
-  categories: string[];
   activeCategory: string;
   onChange: (category: string) => void;
 }
@@ -9,7 +8,12 @@ interface CategoryChipsProps {
 /**
  * 分类条（横向滚动 chips）
  */
-export default function CategoryChips({ categories, activeCategory, onChange }: CategoryChipsProps) {
+export default function CategoryChips({ activeCategory, onChange }: CategoryChipsProps) {
+
+  const categories = ["全部"].concat(useTaskStore().categories.map(c => {
+    return c.name
+  }))
+
   return (
     <div className="w-full overflow-x-auto no-scrollbar py-4 z-10 flex-shrink-0">
       <div className="flex space-x-3 px-3 w-max">

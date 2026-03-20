@@ -76,7 +76,7 @@ public class Tasks implements Serializable {
     private String location;
 
     /**
-     * 任务状态 (待处理, 已接受, 已完成, 已取消)
+     * 任务状态 (pending, accepted, completed, cancelled)
      */
     @TableField(value = "status")
     private String status;
@@ -94,7 +94,7 @@ public class Tasks implements Serializable {
     private Integer isPrivileged;
 
     /**
-     * 重复类型 (无, 每天, 每周, 每月)
+     * 重复类型 (none, daily, weekly, monthly)
      */
     @TableField(value = "repeat_type")
     private String repeatType;
@@ -128,6 +128,12 @@ public class Tasks implements Serializable {
      */
     @TableField(value = "belong_binding_id")
     private String belongBindingId;
+
+    /**
+     * 标签
+     */
+    @TableField(value = "tags")
+    private Object tags;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

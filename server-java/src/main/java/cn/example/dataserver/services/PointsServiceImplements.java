@@ -2,6 +2,8 @@ package cn.example.dataserver.services;
 
 import cn.example.dataserver.common.Result;
 import cn.example.dataserver.entity.*;
+import cn.example.dataserver.enums.ItemStatus;
+import cn.example.dataserver.enums.RewardType;
 import cn.example.dataserver.service.*;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,8 @@ public class PointsServiceImplements {
     private final ShopItemsService shopItemsService;
     private final UsersService usersService;
     private final UserItemsService userItemsService;
+    private final CardTransactionsService cardTransactionsService;
+    private final ItemTransactionsService itemTransactionsService;
 
     public String getHistory(String token) {
         Users currentUser = authService.checkToken(token);
@@ -44,17 +48,17 @@ public class PointsServiceImplements {
             return Result.fail("兑换码无效").toJson();
         }
 
-        if (!"unused".equals(rewardCode.getStatus())) {
+        if (!ItemStatus.UNUSED.getValue().equals(rewardCode.getStatus())) {
             return Result.fail("兑换码已被使用或已作废").toJson();
         }
 
         // Mark as used
-        rewardCode.setStatus("used");
+        rewardCode.setStatus(ItemStatus.USED.getValue());
         rewardCode.setRedeemerId(currentUser.getId());
         rewardCode.setRedeemedAt(new Date());
         rewardCodesService.updateById(rewardCode);
 
-        if ("points".equals(rewardCode.getRewardType())) {
+        if (RewardType.POINTS.getValue().equals(rewardCode.getRewardType())) {
             Integer pointsToAdd = rewardCode.getRewardCount() != null ? rewardCode.getRewardCount() : 0;
             if (pointsToAdd > 0) {
                 Integer currentPoints = currentUser.getPoints() == null ? 0 : currentUser.getPoints();
@@ -69,19 +73,43 @@ public class PointsServiceImplements {
                 pt.setDescription("兑换码奖励：" + rewardCode.getRewardName());
                 pt.setCreatedAt(new Date());
                 pointTransactionsService.save(pt);
+            } else if (RewardType.WILD_CARD.getValue().equals(rewardCode.getRewardType())) {
+                // 万能卡
+                Integer cards = currentUser.getCards() == null ? 0 : currentUser.getCards();
+                Integer count = rewardCode.getRewardCount();
+                currentUser.setCards(cards + count);
+                usersService.updateById(currentUser);
+
+                CardTransactions ct = new CardTransactions();
+                ct.setUserId(currentUser.getId());
+                ct.setAmount(count);
+                ct.setTransactionType("card_reward");
+                ct.setReferenceId(rewardCode.getCode());
+                ct.setDescription("兑换获得：" + rewardCode.getRewardName());
+                ct.setCreatedAt(new Date());
+                cardTransactionsService.save(ct);
             }
         } else {
-            // Give item
+            // 兑换道具
             int count = rewardCode.getRewardCount() != null ? rewardCode.getRewardCount() : 1;
             for (int i = 0; i < count; i++) {
                 UserItems item = new UserItems();
                 item.setId(UUID.randomUUID().toString());
                 item.setUserId(currentUser.getId());
-                item.setItemId(rewardCode.getId()); // Using reward code ID as item ID for now
-                item.setStatus("usable");
+                item.setItemId(rewardCode.getCode());
+                item.setStatus(ItemStatus.USABLE.getValue());
                 item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
                 item.setAcquiredAt(new Date());
                 userItemsService.save(item);
+
+                ItemTransactions it = new ItemTransactions();
+                it.setUserId(currentUser.getId());
+                it.setItemId(rewardCode.getCode());
+                it.setTransactionType("redeem_code");
+                it.setReferenceId(rewardCode.getCode());
+                it.setDescription("兑换获得道具：" + rewardCode.getRewardName());
+                it.setCreatedAt(new Date());
+                itemTransactionsService.save(it);
             }
         }
 
@@ -111,11 +139,11 @@ public class PointsServiceImplements {
             return Result.fail("积分不足").toJson();
         }
 
-        // Deduct points
+        // 扣除积分
         currentUser.setPoints(currentPoints - cost);
         usersService.updateById(currentUser);
 
-        // Record transaction
+        // 记录积分变动
         PointTransactions pt = new PointTransactions();
         pt.setUserId(currentUser.getId());
         pt.setAmount(-cost);
@@ -125,22 +153,26 @@ public class PointsServiceImplements {
         pt.setCreatedAt(new Date());
         pointTransactionsService.save(pt);
 
-        // Add item to user
-        UserItems item = new UserItems();
-        item.setId(UUID.randomUUID().toString());
-        item.setUserId(currentUser.getId());
-        item.setItemId(shopItem.getId());
-        item.setStatus("usable");
-        item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        item.setAcquiredAt(new Date());
-        userItemsService.save(item);
+        // 增加道具
+        saveUserItem(currentUser, shopItem.getId(), userItemsService);
 
-        // Deduct stock if not unlimited (-1)
+        // 库存减一
         if (shopItem.getStock() != null && shopItem.getStock() > 0) {
             shopItem.setStock(shopItem.getStock() - 1);
             shopItemsService.updateById(shopItem);
         }
 
         return Result.success("兑换成功").toJson();
+    }
+
+    static void saveUserItem(Users currentUser, String id, UserItemsService userItemsService) {
+        UserItems item = new UserItems();
+        item.setId(UUID.randomUUID().toString());
+        item.setUserId(currentUser.getId());
+        item.setItemId(id);
+        item.setStatus(ItemStatus.USABLE.getValue());
+        item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        item.setAcquiredAt(new Date());
+        userItemsService.save(item);
     }
 }

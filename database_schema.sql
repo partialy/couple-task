@@ -497,6 +497,7 @@ create table tasks
     updated_at        datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
     deleted_at        datetime                              null comment '逻辑删除时间',
     belong_binding_id varchar(36)                           null comment '所属绑定ID',
+    tags              json                                  null comment '标签',
     constraint tasks_ibfk_1
         foreign key (author_id) references users (id)
             on delete cascade,

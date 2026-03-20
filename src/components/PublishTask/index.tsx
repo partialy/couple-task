@@ -38,8 +38,9 @@ export default function PublishTask({
   const [categoryId, setCategoryId] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [rewardType, setRewardType] = useState<"normal" | "wildcard">("normal");
+  const [rewardType, setRewardType] = useState<"wild_card" | "points">("wild_card");
   const [wildcardAmount, setWildcardAmount] = useState<number>(1);
+  const [pointsAmount, setPointsAmount] = useState<number>(100);
   type RewardDraft = {
     text: string;
     color: string;
@@ -65,6 +66,17 @@ export default function PublishTask({
   const storeCategories = useTaskStore((state) => state.categories);
   const storeTaskLevels = useTaskStore((state) => state.taskLevels);
   const storeAllTags = useTaskStore((state) => state.allTags);
+  const normalizedAllTags = Array.isArray(storeAllTags)
+    ? storeAllTags
+        .map((tag) =>
+          typeof tag === "string"
+            ? tag
+            : typeof tag === "object" && tag && "name" in tag
+              ? String((tag as { name?: unknown }).name ?? "")
+              : ""
+        )
+        .filter((tag) => tag.trim().length > 0)
+    : [];
 
   const currentUser = useUserStore((state) => state.currentUser);
   const bindingRelations = useUserStore((state) => state.bindingRelations);
@@ -275,18 +287,47 @@ export default function PublishTask({
       }
 
       // 2. 准备任务数据
-      const finalRewards =
-        rewardType === "wildcard"
-          ? [
-              {
-                text: `${wildcardAmount} 张万能卡`,
-                color: "purple",
-                icon: "Sparkles",
-                isWildcard: true,
-                amount: wildcardAmount,
-              },
-            ]
-          : rewards.filter((r) => r.text.trim() !== "");
+      // const finalRewards =
+      //   rewardType === "wild_card"
+      //     ? [
+      //         {
+      //           text: `${wildcardAmount} 张万能卡`,
+      //           color: "purple",
+      //           icon: "Sparkles",
+      //           type: "wild_card",
+      //           amount: wildcardAmount,
+      //         },
+      //       ]
+      //     : rewards.filter((r) => r.text.trim() !== "");
+
+      const safeWildcardAmount = Math.max(1, Math.min(10, Math.floor(wildcardAmount || 1)));
+      const safePointsAmount = Math.max(1, Math.min(1000, Math.floor(pointsAmount || 100)));
+      const normalRewards = rewards
+        .filter((r) => r.text.trim() !== "")
+        .map((r) => ({
+          text: r.text.trim(),
+          color: r.color,
+          icon: r.icon,
+          type: "normal" as const,
+          amount: 1,
+        }));
+      const extraReward =
+        rewardType === "wild_card"
+          ? {
+              text: `${safeWildcardAmount} 张万能卡`,
+              color: "purple",
+              icon: "Sparkles",
+              type: "wild_card" as const,
+              amount: safeWildcardAmount,
+            }
+          : {
+              text: `${safePointsAmount} 积分`,
+              color: "amber",
+              icon: "Star",
+              type: "points" as const,
+              amount: safePointsAmount,
+            };
+      const finalRewards = [...normalRewards, extraReward];
 
       const taskData = {
         title,
@@ -381,7 +422,7 @@ export default function PublishTask({
           setTags={setTags}
           tagInput={tagInput}
           setTagInput={setTagInput}
-          allTags={storeAllTags.map((t) => t.name)}
+          allTags={normalizedAllTags}
         />
 
         <TaskRewards
@@ -395,6 +436,8 @@ export default function PublishTask({
           setRewards={setRewards}
           wildcardAmount={wildcardAmount}
           setWildcardAmount={setWildcardAmount}
+          pointsAmount={pointsAmount}
+          setPointsAmount={setPointsAmount}
           activeIconPicker={activeIconPicker}
           setActiveIconPicker={setActiveIconPicker}
           colorStyles={colorStyles}

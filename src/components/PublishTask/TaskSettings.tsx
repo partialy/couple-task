@@ -62,6 +62,25 @@ export default function TaskSettings({
   const selectedCategory = categories.find(c => c.id === categoryId);
   const selectedLevel = taskLevels.find(l => l.id === taskLevelId);
 
+  // 防御式归一化：确保渲染/比较时始终是 string[]
+  const normalizeToStringTags = (input: unknown): string[] => {
+    if (!Array.isArray(input)) return [];
+    return input
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object' && 'name' in item) {
+          const name = (item as { name?: unknown }).name;
+          return typeof name === 'string' ? name : '';
+        }
+        return '';
+      })
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+  };
+
+  const safeTags = normalizeToStringTags(tags);
+  const safeAllTags = normalizeToStringTags(allTags);
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-bold text-slate-800 dark:text-white px-1">任务设置</h3>
@@ -334,15 +353,15 @@ export default function TaskSettings({
               </div>
               <span className="font-medium">标签</span>
             </div>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{tags.length}/3</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{safeTags.length}/3</span>
           </div>
           
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag, index) => (
+            {safeTags.map((tag, index) => (
               <div key={index} className="flex items-center bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-full text-xs font-medium border border-purple-100 dark:border-purple-500/20">
                 <span>{tag}</span>
                 <button 
-                  onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                  onClick={() => setTags(safeTags.filter((_, i) => i !== index))}
                   className="ml-1.5 p-0.5 hover:bg-purple-200 dark:hover:bg-purple-500/30 rounded-full transition-colors"
                 >
                   <X className="w-3 h-3" />
@@ -351,15 +370,15 @@ export default function TaskSettings({
             ))}
           </div>
           
-          {tags.length < 3 && (
+          {safeTags.length < 3 && (
             <div className="flex flex-col space-y-3">
               {/* 快捷标签 */}
-              {allTags.length > 0 && (
+              {safeAllTags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {allTags.filter(t => !tags.includes(t)).map((tag, index) => (
+                  {safeAllTags.filter(t => !safeTags.includes(t)).map((tag, index) => (
                     <button
                       key={index}
-                      onClick={() => setTags([...tags, tag])}
+                      onClick={() => setTags([...safeTags, tag])}
                       className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-xs font-medium hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400 transition-colors border border-transparent hover:border-purple-100 dark:hover:border-purple-500/20"
                     >
                       + {tag}
@@ -374,10 +393,10 @@ export default function TaskSettings({
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && tagInput.trim() && tags.length < 3) {
+                    if (e.key === 'Enter' && tagInput.trim() && safeTags.length < 3) {
                       e.preventDefault();
-                      if (!tags.includes(tagInput.trim())) {
-                        setTags([...tags, tagInput.trim()]);
+                      if (!safeTags.includes(tagInput.trim())) {
+                        setTags([...safeTags, tagInput.trim()]);
                       }
                       setTagInput('');
                     }
@@ -388,12 +407,12 @@ export default function TaskSettings({
                 />
                 <button
                   onClick={() => {
-                    if (tagInput.trim() && tags.length < 3 && !tags.includes(tagInput.trim())) {
-                      setTags([...tags, tagInput.trim()]);
+                    if (tagInput.trim() && safeTags.length < 3 && !safeTags.includes(tagInput.trim())) {
+                      setTags([...safeTags, tagInput.trim()]);
                       setTagInput('');
                     }
                   }}
-                  disabled={!tagInput.trim()}
+                  disabled={!tagInput.trim() || safeTags.length >= 3}
                   className="px-3 py-2 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors"
                 >
                   添加

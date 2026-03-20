@@ -1,4 +1,4 @@
-import { BindingRelations, Users, Categories, Tags, TaskLevels, Tasks, TaskRewards, TaskImages } from "./sql_models";
+import { BindingRelations, Users, Categories, TaskLevels, Tasks, TaskRewards, TaskImages } from "./sql_models";
 
 export interface ApiResponse<T> {
     code: number;
@@ -30,12 +30,16 @@ export interface UserInitResponse {
 
 export interface PublishConfigResponse {
     categories: Categories[];
-    tags: Tags[];
     taskLevels: TaskLevels[];
 }
 
 export interface TaskVO extends Tasks {
     tags: string[];
+    authorAvatar:string;
+    authorName:string;
+    gender:string;
+    category: string;
+    level: string;
     rewards: TaskRewards[];
     images: TaskImages[];
 }

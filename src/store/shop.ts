@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { ShopItems, UserItems } from '@/api/sql_models';
 
 interface ShopState {
@@ -10,13 +9,8 @@ interface ShopState {
 }
 
 export const useShopStore = create<ShopState>()(
-  persist(
     (set, get) => ({
       shopItems: [] as ShopItems[],
       userInventory: [] as UserItems[],
-    }),
-    {
-      name: 'yutask-shop-storage',
-    }
-  )
+    })
 );

@@ -21,7 +21,6 @@ public class UserInfoService {
     private final BindingRelationsService bindingRelationsService;
     private final UsersService usersService;
     private final CategoriesService categoriesService;
-    private final TagsService tagsService;
     private final TaskLevelsService taskLevelsService;
     private final TasksService tasksService;
 
@@ -82,11 +81,6 @@ public class UserInfoService {
                 .groupBy(Categories::getSortOrder)
                 .orderByAsc(Categories::getSortOrder)
                 .list();
-        List<Tags> tagsList = tagsService.lambdaQuery()
-                .eq(Tags::getBelongBindingId, bindId)
-                .or()
-                .eq(Tags::getBelongBindingId, "")
-                .list();
         List<TaskLevels> taskLevelsList = taskLevelsService.lambdaQuery()
                 .eq(TaskLevels::getBelongBindingId, bindId)
                 .or()
@@ -94,7 +88,6 @@ public class UserInfoService {
                 .list();
         PublishConfigDTO publishConfigDTO = PublishConfigDTO.builder()
                 .categories(categoriesList)
-                .tags(tagsList)
                 .taskLevels(taskLevelsList)
                 .build();
         return Result.success(publishConfigDTO).toJson();

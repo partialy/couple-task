@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { authService } from '@/api/service/auth';
 import { userService } from '@/api/service/user';
 import { BindingRelations, Users } from '@/api/sql_models';
@@ -20,7 +19,6 @@ interface UserState {
 }
 
 export const useUserStore = create<UserState>()(
-  persist(
     (set, get) => ({
       currentUser: null,
       bindingRelations: null,
@@ -93,9 +91,5 @@ export const useUserStore = create<UserState>()(
           });
         }
       },
-    }),
-    {
-      name: 'yutask-user-storage',
-    }
-  )
+    })
 );

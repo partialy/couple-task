@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Gift, Heart, Star, Coffee, Plane, Music, ShoppingBag } from 'lucide-react';
+import { UiTask } from '@/types/task';
 
 const icons: Record<string, React.ElementType> = {
   Gift, Heart, Star, Coffee, Plane, Music, ShoppingBag
@@ -15,7 +16,7 @@ const colorStyles: Record<string, { bg: string, text: string, border: string }> 
   rose: { bg: 'from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100/50 dark:border-rose-800/30' },
 };
 
-export default function TaskCard({ task, onClick }: { task: any, onClick?: () => void, key?: any }) {
+export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: () => void, key?: any }) {
   return (
     <motion.div 
       whileHover={{ scale: 1.02 }}
@@ -38,9 +39,9 @@ export default function TaskCard({ task, onClick }: { task: any, onClick?: () =>
         {/* 标签显示在图片上方 */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
           <div className="flex flex-wrap gap-1.5">
-            {task.tags && task.tags.length > 0 && (
+            {task.category && (
               <span className="text-[10px] font-bold backdrop-blur-md text-white px-2 py-1 rounded-lg shadow-sm border bg-rose-500/80 border-rose-400/50">
-                {task.tags[0]}
+                {task.category}
               </span>
             )}
             {task.taskType && task.taskType !== 'one-time' && (
@@ -70,7 +71,7 @@ export default function TaskCard({ task, onClick }: { task: any, onClick?: () =>
           }`}>
             <img 
               src={task.authorAvatar || `https://picsum.photos/seed/${task.author || 'user'}/32/32`} 
-              alt={task.author || "User"} 
+              alt={task.authorName || "User"} 
               className={`w-4 h-4 rounded-full object-cover border ${
                 task.gender === 'female'
                   ? 'border-pink-200 dark:border-pink-800'
@@ -87,7 +88,7 @@ export default function TaskCard({ task, onClick }: { task: any, onClick?: () =>
                   ? 'text-sky-800 dark:text-sky-200'
                   : 'text-rose-800 dark:text-rose-200'
             }`}>
-              {task.author || "神秘发布者"}
+              {task.authorName || "神秘发布者"}
             </span>
           </div>
         </div>

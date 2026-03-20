@@ -12,7 +12,7 @@ import { useTaskStore } from '@/store/task';
 import SquareHeader from './components/SquareHeader';
 import QuickEntrances from './components/QuickEntrances';
 import CategoryChips from './components/CategoryChips';
-import TaskWaterfall, { categories as squareCategories } from './components/TaskWaterfall';
+import TaskWaterfall from './components/TaskWaterfall';
 import ScrollToTopFab from './components/ScrollToTopFab';
 import BottomTabBar from './components/BottomTabBar';
 import useScrollCollapse from './hooks/useScrollCollapse';
@@ -64,7 +64,6 @@ export default function Home({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { acceptTask, completeTask, abandonTask } = useTaskStore();
-
   const { collapsed: isSquareHeaderCollapsed } = useScrollCollapse(scrollRef, {
     collapseThresholdPx: 120,
     expandThresholdPx: 80,
@@ -86,7 +85,6 @@ export default function Home({
   const handleCloseTaskDetail = () => {
     if (selectedTask) window.history.back();
   };
-
   const squareCollapsed = activeTab === 'square' && isSquareHeaderCollapsed;
 
   const renderLoginPrompt = (pageName: string) => (
@@ -122,24 +120,18 @@ export default function Home({
             exit={{ opacity: 0, x: -20 }}
             className="absolute inset-0 flex flex-col"
           >
-            {/* 顶部区域：搜索常驻；标题/天气 + 快捷入口折叠（CSS 线性过渡） */}
+            {/* 顶部区域：任务广场/天气固定显示 */}
             <div className="shrink-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
               <div className="px-3 pt-3 pb-4">
-                {/* 标题/天气：复用 SquareHeader(full) 的标题/天气布局，但不重复渲染搜索 */}
-                <div
-                  className={[
-                    'overflow-hidden',
-                    'transition-[max-height,opacity,transform,margin-bottom] duration-600 ease-linear',
-                    squareCollapsed ? 'max-h-0 opacity-0 -translate-y-2 mb-0' : 'max-h-[96px] opacity-100 translate-y-0',
-                  ].join(' ')}
-                >
+                {/* 标题/天气固定 */}
+                <div className="mb-3">
                   <SquareHeader onOpenBindingPage={onOpenBindingPage} />
                 </div>
 
                 {/* 搜索框：常驻 */}
                 <SquareHeader onOpenBindingPage={onOpenBindingPage} variant="searchOnly" />
 
-                {/* 快捷入口：折叠 */}
+                {/* 快捷入口折叠 */}
                 <div
                   className={[
                     'overflow-hidden',
@@ -156,7 +148,7 @@ export default function Home({
               </div>
             </div>
 
-            <CategoryChips categories={squareCategories} activeCategory={activeCategory} onChange={setActiveCategory} />
+            <CategoryChips activeCategory={activeCategory} onChange={setActiveCategory} />
 
             <TaskWaterfall
               scrollRef={scrollRef}
@@ -205,7 +197,7 @@ export default function Home({
             {!isLoggedIn ? (
               renderLoginPrompt('任务进度')
             ) : (
-              <InProgress tasks={tasks} setTasks={setTasks} currentUser={currentUser} />
+              <InProgress tasks={tasks} setTasks={setTasks} />
             )}
           </motion.div>
         )}

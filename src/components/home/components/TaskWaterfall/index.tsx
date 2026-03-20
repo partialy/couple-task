@@ -4,22 +4,23 @@ import { Lock, Plus } from 'lucide-react';
 import emptyStateImage from '@/assets/icon_256.png';
 
 import TaskCard from '@/components/TaskCard';
+import { UiTask } from '@/types/task';
 
 interface TaskWaterfallProps {
   scrollRef: React.RefObject<HTMLDivElement>;
   isLoggedIn?: boolean;
-  tasks: any[];
+  tasks: UiTask[];
   activeCategory: string;
-  onSelectTask: (task: any) => void;
+  onSelectTask: (task: UiTask) => void;
   onLoginPrompt?: () => void;
   onPublish?: () => void;
 }
 
 const categories = ['全部', '旅行', '美食', '日常', '心愿单', '纪念日'];
 
-function splitColumns(tasks: any[]) {
-  const leftColumn = tasks.filter((_: any, index: number) => index % 2 === 0);
-  const rightColumn = tasks.filter((_: any, index: number) => index % 2 !== 0);
+function splitColumns(tasks: UiTask[]) {
+  const leftColumn = tasks.filter((_: UiTask, index: number) => index % 2 === 0);
+  const rightColumn = tasks.filter((_: UiTask, index: number) => index % 2 !== 0);
   return { leftColumn, rightColumn };
 }
 
@@ -74,7 +75,7 @@ export default function TaskWaterfall({
 }: TaskWaterfallProps) {
   const pendingTasks = tasks.filter((task) => task.status === 'pending');
   const filteredTasks = pendingTasks
-    .filter((task) => activeCategory === '全部' || task.tags?.includes(activeCategory))
+    .filter((task) => activeCategory === '全部' || task.category === activeCategory)
     .sort((a, b) => {
       if (a.isPrivileged && !b.isPrivileged) return -1;
       if (!a.isPrivileged && b.isPrivileged) return 1;

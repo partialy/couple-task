@@ -4,14 +4,17 @@ import cn.example.dataserver.common.Result;
 import cn.example.dataserver.dto.TaskDTO;
 import cn.example.dataserver.entity.*;
 import cn.example.dataserver.enums.BindingRelation;
+import cn.example.dataserver.enums.RewardType;
+import cn.example.dataserver.enums.TaskStatus;
 import cn.example.dataserver.service.*;
 import cn.example.dataserver.vo.PublisherVO;
 import cn.example.dataserver.vo.TaskDetailVO;
 import cn.example.dataserver.vo.TaskVO;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.TypeReference;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,8 +38,6 @@ public class TaskServiceImplements {
 
     private final TasksService tasksService;
     private final TaskRewardsService taskRewardsService;
-    private final TaskTagsService taskTagsService;
-    private final TagsService tagsService;
     private final TaskImagesService taskImagesService;
     private final BindingRelationsService bindingRelationsService;
     private final AuthService authService;
@@ -44,6 +46,10 @@ public class TaskServiceImplements {
     private final UserItemsService userItemsService;
     private final TaskLogsService taskLogsService;
     private final TaskCommentsService taskCommentsService;
+    private final CategoriesService categoriesService;
+    private final TaskLevelsService taskLevelsService;
+    private final CardTransactionsService cardTransactionsService;
+    private final ItemTransactionsService itemTransactionsService;
 
     /**
      * 发布新任务
@@ -83,11 +89,12 @@ public class TaskServiceImplements {
         task.setCoverImage(taskDTO.getCoverImage());
         task.setCategoryId(taskDTO.getCategoryId());
         task.setLevelId(taskDTO.getLevelId());
-        task.setStatus("pending"); // 初始状态为待处理
+        task.setStatus(TaskStatus.PENDING.getValue()); // 初始状态为待处理
         task.setIsPrivate(taskDTO.getIsPrivate() ? 1 : 0);
         task.setIsPrivileged(taskDTO.getIsPrivileged() ? 1 : 0);
         task.setRepeatType(taskDTO.getTaskType());
         task.setRepeatConfig(taskDTO.getRepeatConfig());
+        task.setTags(CollUtil.isNotEmpty(taskDTO.getTags()) ? JSON.toJSONString(taskDTO.getTags()) : null);
         task.setCreatedAt(new Date());
         task.setUpdatedAt(new Date());
         
@@ -121,7 +128,7 @@ public class TaskServiceImplements {
                 TaskRewards reward = new TaskRewards();
                 reward.setId(UUID.randomUUID().toString());
                 reward.setTaskId(taskId);
-                reward.setType(r.getIsWildcard() ? "wildcard" : "normal");
+                reward.setType(r.getType());
                 reward.setContent(r.getText());
                 reward.setIcon(r.getIcon());
                 reward.setColor(r.getColor());
@@ -129,26 +136,6 @@ public class TaskServiceImplements {
                 return reward;
             }).collect(Collectors.toList());
             taskRewardsService.saveBatch(rewards);
-        }
-
-        // 4. 保存任务标签
-        if (CollUtil.isNotEmpty(taskDTO.getTags())) {
-            for (String tagName : taskDTO.getTags()) {
-                // 查找或创建标签
-                Tags tag = tagsService.getOne(new LambdaQueryWrapper<Tags>().eq(Tags::getName, tagName));
-                if (ObjectUtil.isNull(tag)) {
-                    tag = new Tags();
-                    tag.setId(UUID.randomUUID().toString());
-                    tag.setName(tagName);
-                    tagsService.save(tag);
-                }
-                
-                // 建立关联
-                TaskTags taskTag = new TaskTags();
-                taskTag.setTaskId(taskId);
-                taskTag.setTagId(tag.getId());
-                taskTagsService.save(taskTag);
-            }
         }
 
         return Result.success("任务发布成功", taskId).toJson();
@@ -185,22 +172,34 @@ public class TaskServiceImplements {
         List<TaskVO> taskVOs = tasks.stream().map(task -> {
             TaskVO vo = new TaskVO();
             BeanUtils.copyProperties(task, vo);
-            
+
+            // 获取发布者
+            Users author = usersService.lambdaQuery()
+                    .eq(Users::getId, task.getAuthorId())
+                    .one();
+            vo.setAuthorAvatar(author.getAvatar());
+            vo.setAuthorName(author.getNickname());
+            vo.setGender(author.getGender());
+
+            // 获取分类
+            Categories category = categoriesService.lambdaQuery()
+                    .eq(Categories::getId, task.getCategoryId())
+                    .one();
+            vo.setCategory(category.getName());
+            // 获取等级
+            TaskLevels level = taskLevelsService.lambdaQuery()
+                    .eq(TaskLevels::getId, task.getLevelId())
+                    .one();
+            vo.setLevel(level.getName());
+
             // 获取奖励
             List<TaskRewards> rewards = taskRewardsService.lambdaQuery()
                     .eq(TaskRewards::getTaskId, task.getId())
                     .list();
             vo.setRewards(rewards);
             
-            // 获取标签
-            List<TaskTags> taskTags = taskTagsService.lambdaQuery()
-                    .eq(TaskTags::getTaskId, task.getId())
-                    .list();
-            if (CollUtil.isNotEmpty(taskTags)) {
-                List<String> tagIds = taskTags.stream().map(TaskTags::getTagId).collect(Collectors.toList());
-                List<Tags> tags = tagsService.lambdaQuery().in(Tags::getId, tagIds).list();
-                vo.setTags(tags.stream().map(Tags::getName).collect(Collectors.toList()));
-            }
+            // 从 tasks.tags(json) 读取标签
+            vo.setTags(parseTaskTags(task.getTags()));
             
             // 获取图片
             List<TaskImages> images = taskImagesService.lambdaQuery()
@@ -240,15 +239,8 @@ public class TaskServiceImplements {
                 .list();
         detailVO.setRewards(rewards);
 
-        // 获取标签
-        List<TaskTags> taskTags = taskTagsService.lambdaQuery()
-                .eq(TaskTags::getTaskId, task.getId())
-                .list();
-        if (CollUtil.isNotEmpty(taskTags)) {
-            List<String> tagIds = taskTags.stream().map(TaskTags::getTagId).collect(Collectors.toList());
-            List<Tags> tags = tagsService.lambdaQuery().in(Tags::getId, tagIds).list();
-            detailVO.setTags(tags.stream().map(Tags::getName).collect(Collectors.toList()));
-        }
+        // 从 tasks.tags(json) 读取标签
+        detailVO.setTags(parseTaskTags(task.getTags()));
 
         // 获取图片
         List<TaskImages> images = taskImagesService.lambdaQuery()
@@ -293,7 +285,7 @@ public class TaskServiceImplements {
             return Result.fail("任务不存在").toJson();
         }
 
-        if (!"pending".equals(task.getStatus())) {
+        if (!TaskStatus.PENDING.getValue().equals(task.getStatus())) {
             return Result.fail("任务状态不允许接取").toJson();
         }
 
@@ -303,7 +295,7 @@ public class TaskServiceImplements {
         }
 
         // 更新状态
-        task.setStatus("in-progress");
+        task.setStatus(TaskStatus.IN_PROGRESS.getValue());
         task.setUpdatedAt(new Date());
         tasksService.updateById(task);
 
@@ -312,8 +304,8 @@ public class TaskServiceImplements {
         log.setTaskId(taskId);
         log.setUserId(currentUser.getId());
         log.setAction("accept");
-        log.setPreviousStatus("pending");
-        log.setNewStatus("in-progress");
+        log.setPreviousStatus(TaskStatus.PENDING.getValue());
+        log.setNewStatus(TaskStatus.IN_PROGRESS.getValue());
         log.setCreatedAt(new Date());
         taskLogsService.save(log);
 
@@ -338,9 +330,11 @@ public class TaskServiceImplements {
             return Result.fail("任务状态不允许放弃").toJson();
         }
 
-        // 验证权限：只有接收者可以放弃
-        if (!currentUser.getId().equals(task.getReceiverId())) {
-            return Result.fail("无权放弃该任务").toJson();
+        // 验证权限：作者或接收者都可以撤回到 pending
+        boolean isReceiver = currentUser.getId().equals(task.getReceiverId());
+        boolean isAuthor = currentUser.getId().equals(task.getAuthorId());
+        if (!isReceiver && !isAuthor) {
+            return Result.fail("无权放弃/撤回该任务").toJson();
         }
 
         // 更新状态
@@ -379,9 +373,18 @@ public class TaskServiceImplements {
             return Result.fail("任务状态不允许完成").toJson();
         }
 
-        // 验证权限：只有接收者可以完成
-        if (!currentUser.getId().equals(task.getReceiverId())) {
-            return Result.fail("无权完成该任务").toJson();
+        // 验证权限：只有作者可以确认对方完成
+        if (!currentUser.getId().equals(task.getAuthorId())) {
+            return Result.fail("无权确认对方完成该任务").toJson();
+        }
+
+        String receiverId = task.getReceiverId();
+        if (StrUtil.isBlank(receiverId)) {
+            return Result.fail("任务接收人不存在").toJson();
+        }
+        Users receiver = usersService.getById(receiverId);
+        if (ObjectUtil.isNull(receiver)) {
+            return Result.fail("任务接收人不存在").toJson();
         }
 
         // 更新状态
@@ -406,38 +409,77 @@ public class TaskServiceImplements {
 
         if (CollUtil.isNotEmpty(rewards)) {
             for (TaskRewards reward : rewards) {
-                if ("points".equals(reward.getType()) && reward.getAmount() != null && reward.getAmount() > 0) {
-                    // 增加积分
-                    Integer currentPoints = currentUser.getPoints() == null ? 0 : currentUser.getPoints();
-                    currentUser.setPoints(currentPoints + reward.getAmount());
-                    usersService.updateById(currentUser);
+                Integer rewardAmount = reward.getAmount() == null ? 0 : reward.getAmount();
+                if (RewardType.POINTS.getValue().equals(reward.getType()) && rewardAmount > 0) {
+                    // 增加积分（奖励发给接收人）
+                    Integer currentPoints = receiver.getPoints() == null ? 0 : receiver.getPoints();
+                    receiver.setPoints(currentPoints + rewardAmount);
+                    usersService.updateById(receiver);
 
                     // 记录积分流水
                     PointTransactions pt = new PointTransactions();
-                    pt.setUserId(currentUser.getId());
-                    pt.setAmount(reward.getAmount());
+                    pt.setUserId(receiver.getId());
+                    pt.setAmount(rewardAmount);
                     pt.setTransactionType("task_reward");
                     pt.setReferenceId(taskId);
                     pt.setDescription("完成任务奖励：" + task.getTitle());
                     pt.setCreatedAt(new Date());
                     pointTransactionsService.save(pt);
-                } else if ("wildcard".equals(reward.getType()) || "normal".equals(reward.getType())) {
+                } else if (RewardType.WILD_CARD.getValue().equals(reward.getType())) {
+                    // 万能卡
+                    Integer cards = receiver.getCards() == null ? 0 : receiver.getCards();
+                    receiver.setCards(cards + rewardAmount);
+                    usersService.updateById(receiver);
+
+                    // 流水
+                    CardTransactions ct = new CardTransactions();
+                    ct.setUserId(receiver.getId());
+                    ct.setAmount(rewardAmount);
+                    ct.setTransactionType("card_reward");
+                    ct.setReferenceId(taskId);
+                    ct.setDescription("完成任务奖励：" + task.getTitle());
+                    ct.setCreatedAt(new Date());
+                    cardTransactionsService.save(ct);
+                } else if (RewardType.NORMAL.getValue().equals(reward.getType())) {
                     // 发放道具
-                    int count = reward.getAmount() != null ? reward.getAmount() : 1;
-                    for (int i = 0; i < count; i++) {
-                        UserItems item = new UserItems();
-                        item.setId(UUID.randomUUID().toString());
-                        item.setUserId(currentUser.getId());
-                        item.setItemId(reward.getId()); // 暂时使用 rewardId 作为 itemId
-                        item.setStatus("usable");
-                        item.setCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-                        item.setAcquiredAt(new Date());
-                        userItemsService.save(item);
-                    }
+                    PointsServiceImplements.saveUserItem(receiver, reward.getId(), userItemsService);
+                    // 流水
+                    ItemTransactions it = new ItemTransactions();
+                    it.setUserId(currentUser.getId());
+                    it.setItemId(reward.getId());
+                    it.setTransactionType("task_reward");
+                    it.setReferenceId(taskId);
+                    it.setDescription("任务奖励：" + task.getTitle());
+                    it.setCreatedAt(new Date());
+                    itemTransactionsService.save(it);
                 }
             }
         }
-
         return Result.success("任务完成").toJson();
+    }
+
+    private List<String> parseTaskTags(Object rawTags) {
+        if (ObjectUtil.isNull(rawTags)) {
+            return Collections.emptyList();
+        }
+        try {
+            if (rawTags instanceof String rawJson) {
+                if (StrUtil.isBlank(rawJson)) {
+                    return Collections.emptyList();
+                }
+                return JSON.parseObject(rawJson, new TypeReference<List<String>>() {});
+            }
+            if (rawTags instanceof List<?>) {
+                return ((List<?>) rawTags).stream()
+                        .filter(ObjectUtil::isNotNull)
+                        .map(String::valueOf)
+                        .collect(Collectors.toList());
+            }
+            String normalized = JSON.toJSONString(rawTags);
+            return JSON.parseObject(normalized, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            log.warn("解析任务标签失败, rawTags={}", rawTags, e);
+            return Collections.emptyList();
+        }
     }
 }
