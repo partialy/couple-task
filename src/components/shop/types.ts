@@ -2,7 +2,7 @@ import React from 'react';
 import { Package, Zap, Ticket, Coffee, Gift, Sparkles } from 'lucide-react';
 
 export interface ShopItem {
-  id: number;
+  id: string;
   name: string;
   desc: string;
   points: number;

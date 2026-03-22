@@ -10,9 +10,10 @@ import { message } from '@/utils/pure/message';
 interface RedeemTabProps {
   shopItems: ShopItem[];
   onOpenPointsDetail?: () => void;
+  onRefreshShop?: () => Promise<void>;
 }
 
-export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: RedeemTabProps & { key?: string }) {
+export default function RedeemTab({ shopItems, onOpenPointsDetail, onRefreshShop }: RedeemTabProps) {
   // Only show active items in the redeem tab
   const activeItems = shopItems.filter(item => item.status !== 'inactive');
   
@@ -33,7 +34,10 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
     const item = pendingShopItem;
     setPendingShopItem(null);
     if (item) {
-      await redeemItem(String(item.id));
+      const ok = await redeemItem(String(item.id));
+      if (ok) {
+        await onRefreshShop?.();
+      }
     }
   };
 

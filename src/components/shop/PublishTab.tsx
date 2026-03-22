@@ -4,29 +4,28 @@ import { Sparkles, Send, Gift, Image as ImageIcon, X, Edit2, Trash2, Eye, EyeOff
 import { ShopItem, iconMap, colorStyles } from './types';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
 import { message } from '@/utils/pure/message';
+import shopItemsService from '@/api/service/shopItems';
 
 interface PublishTabProps {
   shopItems: ShopItem[];
-  setShopItems: (items: ShopItem[]) => void;
-  showToast?: (message: string) => void;
+  onRefreshShop: () => Promise<void>;
 }
 
-export default function PublishTab({ shopItems, setShopItems, showToast, key }: PublishTabProps & { key?: string }) {
+export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps) {
   const [publishForm, setPublishForm] = useState({
-    id: null as number | null,
+    id: null as string | null,
     name: '',
     desc: '',
     points: '',
     icon: 'gift',
     color: 'pink',
-    image: null as string | null
+    image: null as string | null,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activePicker, setActivePicker] = useState<'icon' | 'color' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (publishForm.image?.startsWith('blob:')) {
@@ -53,50 +52,51 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
     setIsPublishing(true);
 
     try {
-      let finalImageUrl = publishForm.image;
+      let finalImageUrl: string | null | undefined = publishForm.image || undefined;
       if (imageFile) {
         try {
           finalImageUrl = await uploadToQiniu(imageFile, 'shop');
-        } catch (error) {
+        } catch {
           message.error('图片上传失败');
           setIsPublishing(false);
           return;
         }
       }
+      if (finalImageUrl?.startsWith('blob:')) {
+        finalImageUrl = null;
+      }
+
+      const safePoints = Math.max(0, Math.floor(Number(publishForm.points) || 0));
+      const payload = {
+        name: publishForm.name.trim(),
+        description: publishForm.desc.trim(),
+        itemType: 'prop',
+        pointsCost: safePoints,
+        icon: (finalImageUrl || publishForm.icon || 'gift').trim(),
+        color: publishForm.color,
+        stock: -1,
+        status: 'active',
+      };
 
       if (publishForm.id) {
-        // Edit existing
-        const updatedItems = shopItems.map(item => 
-          item.id === publishForm.id 
-            ? {
-                ...item,
-                name: publishForm.name,
-                desc: publishForm.desc,
-                points: Number(publishForm.points),
-                icon: publishForm.icon,
-                color: colorStyles[publishForm.color]?.bg || item.color,
-                image: finalImageUrl || undefined
-              }
-            : item
-        );
-        setShopItems(updatedItems);
-        message.success('修改成功！');
+        const res = await shopItemsService.update(publishForm.id, payload);
+        if (res.success) {
+          message.success('修改成功！');
+          await onRefreshShop();
+        } else {
+          message.error(res.msg || '修改失败');
+        }
       } else {
-        // Create new
-        const newItem: ShopItem = {
-          id: Date.now(),
-          name: publishForm.name,
-          desc: publishForm.desc,
-          points: Number(publishForm.points),
-          icon: publishForm.icon,
-          color: colorStyles[publishForm.color]?.bg || 'bg-pink-100 dark:bg-pink-900/30',
-          image: finalImageUrl || undefined,
-          status: 'active'
-        };
-        setShopItems([...shopItems, newItem]);
-        message.success('发布成功！TA 的商城已更新。');
+        const res = await shopItemsService.publish(payload);
+        if (res.success) {
+          message.success('发布成功！TA 的商城已更新。');
+          await onRefreshShop();
+        } else {
+          message.error(res.msg || '发布失败');
+        }
       }
       resetForm();
+      setImageFile(null);
     } catch (error) {
       console.error('Failed to publish shop item', error);
       message.error('操作失败，请稍后再试');
@@ -108,10 +108,10 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
   const resetForm = () => {
     setPublishForm({ id: null, name: '', desc: '', points: '', icon: 'gift', color: 'pink', image: null });
     setActivePicker(null);
+    setImageFile(null);
   };
 
   const handleEdit = (item: ShopItem) => {
-    // Find color key from bg string
     const colorKey = Object.keys(colorStyles).find(k => colorStyles[k].bg === item.color) || 'pink';
     setPublishForm({
       id: item.id,
@@ -120,25 +120,42 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
       points: item.points.toString(),
       icon: item.icon,
       color: colorKey,
-      image: item.image || null
+      image: item.image || null,
     });
-    // Scroll to top of the form
+    setImageFile(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('确定要删除这个奖励吗？')) {
-      setShopItems(shopItems.filter(item => item.id !== id));
-      alert('删除成功');
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('确定要删除这个奖励吗？')) return;
+    const res = await shopItemsService.remove(id);
+    if (res.success) {
+      message.success('删除成功');
+      await onRefreshShop();
+    } else {
+      message.error(res.msg || '删除失败');
     }
   };
 
-  const toggleStatus = (id: number) => {
-    setShopItems(shopItems.map(item => 
-      item.id === id 
-        ? { ...item, status: item.status === 'inactive' ? 'active' : 'inactive' } 
-        : item
-    ));
+  const toggleStatus = async (item: ShopItem) => {
+    const newStatus = item.status === 'inactive' ? 'active' : 'inactive';
+    const colorKey = Object.keys(colorStyles).find(k => colorStyles[k].bg === item.color) || 'pink';
+    const res = await shopItemsService.update(item.id, {
+      name: item.name,
+      description: item.desc,
+      itemType: 'prop',
+      pointsCost: item.points,
+      icon: (item.image || item.icon || 'gift').trim(),
+      color: colorKey,
+      stock: -1,
+      status: newStatus,
+    });
+    if (res.success) {
+      message.success(newStatus === 'active' ? '已上架' : '已下架');
+      await onRefreshShop();
+    } else {
+      message.error(res.msg || '操作失败');
+    }
   };
 
   return (
@@ -149,7 +166,6 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
       exit={{ opacity: 0, y: -10 }}
       className="px-3 py-6 space-y-8"
     >
-      {/* Publish Form */}
       <div className="bg-white dark:bg-slate-800 rounded-[32px] p-6 shadow-sm border border-slate-100 dark:border-slate-700/50">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -253,7 +269,6 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
             </div>
           </div>
 
-          {/* Icon & Color Pickers */}
           <AnimatePresence>
             {activePicker === 'icon' && !publishForm.image && (
               <motion.div 
@@ -316,7 +331,6 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
         </form>
       </div>
 
-      {/* Published Items List */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">已发布的商品</h3>
         <div className="space-y-3">
@@ -330,8 +344,7 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
                 key={item.id} 
                 className={`bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex space-x-4 relative transition-opacity ${isInactive ? 'opacity-60' : ''}`}
               >
-                {/* Left: Image/Icon */}
-                <div className={`w-20 h-20 rounded-2xl ${item.color} flex-shrink-0 flex items-center justify-center overflow-hidden`}>
+                <div className={`w-20 h-20 rounded-2xl ${item.color} shrink-0 flex items-center justify-center overflow-hidden`}>
                   {item.image ? (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
@@ -339,28 +352,28 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
                   )}
                 </div>
 
-                {/* Right: Content */}
                 <div className="flex-1 flex flex-col justify-between min-w-0">
                   <div>
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-slate-800 dark:text-white truncate pr-2">{item.name}</h4>
-                      <span className="text-xs font-black text-amber-500 flex-shrink-0">{item.points} 积分</span>
+                      <span className="text-xs font-black text-amber-500 shrink-0">{item.points} 积分</span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center justify-end space-x-1 mt-2">
                     <button 
-                      onClick={() => toggleStatus(item.id)}
+                      type="button"
+                      onClick={() => toggleStatus(item)}
                       className={`p-2 rounded-xl transition-colors ${isInactive ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'text-slate-400 bg-slate-50 dark:bg-slate-700/50 hover:text-amber-500'}`}
                       title={isInactive ? "上架" : "下架"}
                     >
                       {isInactive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                     <button 
+                      type="button"
                       onClick={() => handleEdit(item)}
                       className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:text-blue-500 transition-colors"
                       title="编辑"
@@ -368,6 +381,7 @@ export default function PublishTab({ shopItems, setShopItems, showToast, key }: 
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
+                      type="button"
                       onClick={() => handleDelete(item.id)}
                       className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:text-rose-500 transition-colors"
                       title="删除"

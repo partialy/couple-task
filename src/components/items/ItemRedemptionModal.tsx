@@ -2,12 +2,18 @@ import React from 'react';
 import { Copy, CheckCircle, QrCode } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import Modal from '../ui/Modal';
-import { UserItem } from '../../data/userItems';
+import { UserItemRecord } from '@/api/service/userItems';
+
+function isLikelyImageUrl(s?: string | null): boolean {
+  if (!s || typeof s !== 'string') return false;
+  const t = s.trim();
+  return t.startsWith('http://') || t.startsWith('https://') || t.startsWith('//');
+}
 
 interface ItemRedemptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  item: UserItem | null;
+  item: UserItemRecord | null;
 }
 
 export default function ItemRedemptionModal({ isOpen, onClose, item }: ItemRedemptionModalProps) {
@@ -23,7 +29,11 @@ export default function ItemRedemptionModal({ isOpen, onClose, item }: ItemRedem
     }
   };
 
-  const IconComponent = (Icons as any)[item.icon] || Icons.Package;
+  const imgSrc = isLikelyImageUrl(item.icon) ? item.icon : undefined;
+  const rawIcon = item.icon || 'Package';
+  const pascalIcon = rawIcon.charAt(0).toUpperCase() + rawIcon.slice(1);
+  const IconComponent =
+    (Icons as any)[rawIcon] || (Icons as any)[pascalIcon] || Icons.Package;
 
   const colorClasses = {
     purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500',
@@ -40,8 +50,12 @@ export default function ItemRedemptionModal({ isOpen, onClose, item }: ItemRedem
         
         {/* Item Info Row */}
         <div className="flex items-center space-x-4 w-full bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl mb-4 border border-slate-100 dark:border-slate-700">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClasses}`}>
-            <IconComponent className="w-6 h-6" />
+          <div className={`w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ${colorClasses}`}>
+            {imgSrc ? (
+              <img src={imgSrc} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <IconComponent className="w-6 h-6" />
+            )}
           </div>
           <div className="flex-1 text-left">
             <h4 className="text-base font-bold text-slate-800 dark:text-white leading-tight">{item.name}</h4>

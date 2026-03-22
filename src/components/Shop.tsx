@@ -5,7 +5,21 @@ import { ShopItem } from './shop/types';
 import RedeemTab from './shop/RedeemTab';
 import PublishTab from './shop/PublishTab';
 
-export default function Shop({ onBack, onOpenPointsDetail, shopItems, setShopItems, showToast }: { onBack?: () => void, onOpenPointsDetail?: () => void, shopItems: ShopItem[], setShopItems: (items: ShopItem[]) => void, showToast?: (message: string) => void, key?: string }) {
+interface ShopProps {
+  onBack?: () => void;
+  onOpenPointsDetail?: () => void;
+  redeemItems: ShopItem[];
+  publishItems: ShopItem[];
+  onRefreshShop: () => Promise<void>;
+}
+
+export default function Shop({
+  onBack,
+  onOpenPointsDetail,
+  redeemItems,
+  publishItems,
+  onRefreshShop,
+}: ShopProps) {
   const [activeTab, setActiveTab] = useState<'redeem' | 'publish'>('redeem');
 
   return (
@@ -60,15 +74,15 @@ export default function Shop({ onBack, onOpenPointsDetail, shopItems, setShopIte
           {activeTab === 'redeem' ? (
             <RedeemTab 
               key="shop-redeem"
-              shopItems={shopItems} 
-              onOpenPointsDetail={onOpenPointsDetail} 
+              shopItems={redeemItems} 
+              onOpenPointsDetail={onOpenPointsDetail}
+              onRefreshShop={onRefreshShop}
             />
           ) : (
             <PublishTab 
               key="shop-publish"
-              shopItems={shopItems} 
-              setShopItems={setShopItems} 
-              showToast={showToast}
+              shopItems={publishItems} 
+              onRefreshShop={onRefreshShop}
             />
           )}
         </AnimatePresence>

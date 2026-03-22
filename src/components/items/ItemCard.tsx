@@ -9,9 +9,19 @@ interface ItemCardProps {
   onClick: (item: UserItemRecord) => void;
 }
 
+function isLikelyImageUrl(s?: string | null): boolean {
+  if (!s || typeof s !== 'string') return false;
+  const t = s.trim();
+  return t.startsWith('http://') || t.startsWith('https://') || t.startsWith('//');
+}
+
 export default function ItemCard({ item, onClick }: ItemCardProps) {
-  // Dynamically get the icon component
-  const IconComponent = (Icons as any)[item.icon] || Icons.Package;
+  const imgSrc = isLikelyImageUrl(item.icon) ? item.icon : undefined;
+
+  const rawIcon = item.icon || 'Package';
+  const pascalIcon = rawIcon.charAt(0).toUpperCase() + rawIcon.slice(1);
+  const IconComponent =
+    (Icons as any)[rawIcon] || (Icons as any)[pascalIcon] || Icons.Package;
 
   // Determine color classes based on item.color
   const colorClasses = {
@@ -44,8 +54,17 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
         </div>
       )}
       <div className="flex items-center space-x-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isUsed ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : colorClasses}`}>
-          <IconComponent className="w-6 h-6" />
+        <div className={`w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 ${isUsed ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : colorClasses}`}>
+          {imgSrc ? (
+            <img
+              src={imgSrc}
+              alt=""
+              className={`w-full h-full object-cover ${isUsed ? 'opacity-50 grayscale' : ''}`}
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <IconComponent className="w-6 h-6" />
+          )}
         </div>
         <div>
           <h4 className={`font-bold ${isUsed ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>

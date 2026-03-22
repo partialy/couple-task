@@ -70,7 +70,7 @@ public class UserItems implements Serializable {
     private String description;
 
     /**
-     * 图标
+     * Lucide 图标 key 或图片 URL（前端按 http(s) 区分）
      */
     @TableField(value = "icon")
     private String icon;

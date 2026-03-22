@@ -18,9 +18,10 @@ const ItemsDashboard = lazy(() => import('./components/items/ItemsDashboard'));
 const TaskTemplatesPage = lazy(() => import('./components/task-templates/TaskTemplatesPage'));
 
 import { useUserStore, useTaskStore } from './store';
-import { initialShopItems } from './data/shopItems';
 import eventBus from './utils/eventBus';
-import shopItemsService, { ShopItem as ApiShopItem } from './api/service/shopItems';
+import shopItemsService from './api/service/shopItems';
+import { mapRecordToShopItem } from './components/shop/mapShopItem';
+import type { ShopItem as ShopItemFE } from './components/shop/types';
 import specialItemsService from './api/service/specialItems';
 import { message } from '@/utils/pure/message';
 import { SpecialItem, mapSpecialItemFromApi } from './components/special/types';
@@ -42,9 +43,27 @@ export default function App() {
   const { tasks: storeTasks, setTasks: setStoreTasks, fetchPublishConfig } = useTaskStore();
 
   // Local state for non-persisted data or transition
-  const [shopItems, setShopItems] = useState<any[]>(initialShopItems);
+  const [shopItemsRedeem, setShopItemsRedeem] = useState<ShopItemFE[]>([]);
+  const [shopItemsPublish, setShopItemsPublish] = useState<ShopItemFE[]>([]);
   const [specialItemsSelf, setSpecialItemsSelf] = useState<SpecialItem[]>([]);
   const [specialItemsTarget, setSpecialItemsTarget] = useState<SpecialItem[]>([]);
+
+  const loadShopItems = useCallback(async () => {
+    const [redeemRes, publishRes] = await Promise.all([
+      shopItemsService.listForRedeem(),
+      shopItemsService.listForPublish(),
+    ]);
+    if (redeemRes.success && redeemRes.data) {
+      setShopItemsRedeem(redeemRes.data.map(mapRecordToShopItem));
+    } else {
+      setShopItemsRedeem([]);
+    }
+    if (publishRes.success && publishRes.data) {
+      setShopItemsPublish(publishRes.data.map(mapRecordToShopItem));
+    } else {
+      setShopItemsPublish([]);
+    }
+  }, []);
 
   const loadSpecialItems = useCallback(async (type: 'self' | 'target') => {
     const res = await specialItemsService.page({ page: 1, size: 100, type });
@@ -109,25 +128,14 @@ export default function App() {
       fetchUserDetail();
       useTaskStore.getState().fetchTasks();
       
-      // Fetch shop items
-      shopItemsService.getShopItems().then(res => {
-        if (res.success && res.data && res.data.length > 0) {
-          // Map backend fields to frontend fields
-          const mappedItems = res.data.map(item => ({
-            id: item.id,
-            name: item.name,
-            desc: item.description,
-            points: item.pointsCost,
-            icon: item.icon || 'Gift',
-            color: item.color || 'bg-pink-100',
-            image: undefined,
-            status: item.status
-          }));
-          setShopItems(mappedItems);
-        }
-      });
     }
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn && view === 'shop') {
+      void loadShopItems();
+    }
+  }, [isLoggedIn, view, loadShopItems]);
 
   // 首次进入首页后，拉取发布配置并写入 store（分类、任务等级）
   useEffect(() => {
@@ -290,8 +298,9 @@ export default function App() {
               <Shop 
                 onBack={handleBack} 
                 onOpenPointsDetail={() => navigateTo('points-detail')}
-                shopItems={shopItems}
-                setShopItems={setShopItems}
+                redeemItems={shopItemsRedeem}
+                publishItems={shopItemsPublish}
+                onRefreshShop={loadShopItems}
               />
             )}
             {view === 'special-rewards' && (

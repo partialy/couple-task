@@ -23,6 +23,7 @@ public class PointsServiceImplements {
     private final PointTransactionsService pointTransactionsService;
     private final RewardCodesService rewardCodesService;
     private final ShopItemsService shopItemsService;
+    private final ShopItemsServiceImplements shopItemsServiceImplements;
     private final UsersService usersService;
     private final UserItemsService userItemsService;
     private final CardTransactionsService cardTransactionsService;
@@ -139,6 +140,10 @@ public class PointsServiceImplements {
 
         if (shopItem.getStock() != null && shopItem.getStock() == 0) {
             return Result.fail("商品库存不足").toJson();
+        }
+
+        if (!shopItemsServiceImplements.canRedeem(currentUser, shopItem)) {
+            return Result.fail("无权兑换该商品").toJson();
         }
 
         Integer cost = shopItem.getPointsCost() != null ? shopItem.getPointsCost() : 0;

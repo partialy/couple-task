@@ -46,7 +46,7 @@ public class ShopItems implements Serializable {
     private Integer pointsCost;
 
     /**
-     * 图标标识符
+     * Lucide 图标 key 或图片 URL（前端按 http(s) 区分）
      */
     @TableField(value = "icon")
     private String icon;
