@@ -26,4 +26,9 @@ public class UserItemQueryDTO {
      * 搜索关键字（名称/描述/核销码）
      */
     private String keyword;
+
+    /**
+     * 是否仅特别奖励兑换道具（null 不筛选，0 否，1 是）
+     */
+    private Integer isSpecial;
 }

@@ -726,6 +726,7 @@ create table user_items
     icon        varchar(30)                           null comment '图标',
     type        varchar(30)                           null comment '类型',
     color       varchar(30)                           null comment '颜色',
+    is_special  tinyint(1)    default 0             not null comment '是否来自特别奖励兑换',
     constraint uk_code
         unique (code),
     constraint user_items_ibfk_1

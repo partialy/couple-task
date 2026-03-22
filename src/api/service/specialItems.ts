@@ -59,9 +59,15 @@ const specialItemsService = {
     return await request.post(`/special-items/${id}/status`, { status });
   },
 
-  /** 兑换对方发布的特别奖励（扣万能卡） */
+  /** 兑换对方发布的特别奖励（扣万能卡），落库 user_items */
   async redeem(id: string): Promise<
-    ApiResponse<{ userSpecialItemId: string; verifyCode: string; specialItemId: string }>
+    ApiResponse<{
+      userItemId: string;
+      verifyCode: string;
+      specialItemId: string;
+      /** 兼容旧接口 */
+      userSpecialItemId?: string;
+    }>
   > {
     return await request.post(`/special-items/${id}/redeem`);
   },

@@ -24,16 +24,25 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
   }[item.color] || 'bg-slate-100 dark:bg-slate-900/30 text-slate-500';
 
   const isUsed = item.status === 'used';
+  const isSpecialReward = item.isSpecial === 1;
 
   return (
     <motion.button
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onClick(item)}
-      className={`w-full bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center justify-between text-left border ${
+      className={`relative w-full overflow-hidden bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center justify-between text-left border ${
         isUsed ? 'border-slate-200 dark:border-slate-700 opacity-60' : 'border-transparent'
       }`}
     >
+      {isSpecialReward && (
+        <div
+          className="pointer-events-none absolute -left-8 top-3 z-10 w-28 origin-center -rotate-45 bg-violet-200/90 py-0.5 text-center text-[10px] font-black tracking-wider text-violet-900 shadow-sm dark:bg-violet-900/50 dark:text-violet-100"
+          aria-hidden
+        >
+          SVIP
+        </div>
+      )}
       <div className="flex items-center space-x-4">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isUsed ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : colorClasses}`}>
           <IconComponent className="w-6 h-6" />

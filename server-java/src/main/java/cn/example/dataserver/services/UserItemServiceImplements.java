@@ -42,6 +42,7 @@ public class UserItemServiceImplements {
         Page<UserItems> page = userItemsService.lambdaQuery()
                 .eq(UserItems::getUserId, currentUser.getId())
                 .eq(StrUtil.isNotBlank(query.getStatus()), UserItems::getStatus, query.getStatus())
+                .eq(query.getIsSpecial() != null, UserItems::getIsSpecial, query.getIsSpecial())
                 .and(StrUtil.isNotBlank(keyword), wrapper -> wrapper.like(UserItems::getCode, keyword)
                         .or()
                         .like(UserItems::getName, keyword)
@@ -63,6 +64,7 @@ public class UserItemServiceImplements {
             vo.setIcon(StrUtil.blankToDefault(userItem.getIcon(), "Package"));
             vo.setColor(StrUtil.blankToDefault(userItem.getColor(), "slate"));
             vo.setType(StrUtil.blankToDefault(userItem.getType(), "other"));
+            vo.setIsSpecial(userItem.getIsSpecial() != null ? userItem.getIsSpecial() : 0);
             return vo;
         }).collect(Collectors.toList());
 

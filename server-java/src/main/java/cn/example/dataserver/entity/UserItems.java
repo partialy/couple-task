@@ -88,7 +88,7 @@ public class UserItems implements Serializable {
     private String color;
 
     /**
-     * 
+     * 是否来自特别奖励兑换（0 否，1 是）
      */
     @TableField(value = "is_special")
     private Integer isSpecial;

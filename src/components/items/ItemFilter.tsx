@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type FilterType = 'all' | 'usable' | 'used';
+export type FilterType = 'all' | 'usable' | 'used' | 'special';
 
 interface ItemFilterProps {
   activeFilter: FilterType;
@@ -12,6 +12,7 @@ export default function ItemFilter({ activeFilter, onFilterChange }: ItemFilterP
     { id: 'all', label: '全部' },
     { id: 'usable', label: '可使用' },
     { id: 'used', label: '已使用' },
+    { id: 'special', label: '特别奖励' },
   ];
 
   return (

@@ -716,18 +716,21 @@ create table user_items
     id          varchar(36)                           not null comment 'ID，全局唯一'
         primary key,
     user_id     varchar(36)                           not null comment '用户ID',
-    item_id     varchar(36)                           not null comment '商品ID',
+    item_id     varchar(36)                           not null comment '关联ID：商城 shop_items.id 或特别奖励 special_items.id（无外键，避免混用冲突）',
     status      varchar(20) default 'usable'          null comment '状态 (usable, used)',
     code        varchar(50)                           null comment '核销码',
     acquired_at datetime    default CURRENT_TIMESTAMP null comment '获得时间',
     used_at     datetime                              null comment '核销时间',
+    name        varchar(255)                          null comment '展示名称',
+    description varchar(1024)                         null comment '描述',
+    icon        varchar(64)                           null comment '图标',
+    type        varchar(32)                           null comment '类型 normal/wildcard/special 等',
+    color       varchar(32)                           null comment '颜色',
+    is_special  tinyint(1)    default 0             not null comment '是否来自特别奖励兑换',
     constraint uk_code
         unique (code),
     constraint user_items_ibfk_1
         foreign key (user_id) references users (id)
-            on delete cascade,
-    constraint user_items_ibfk_2
-        foreign key (item_id) references shop_items (id)
             on delete cascade
 )
     comment '用户道具/背包表' collate = utf8mb4_unicode_ci;

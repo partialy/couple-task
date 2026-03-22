@@ -63,4 +63,9 @@ public class UserItemVO {
      * 使用时间
      */
     private Date usedAt;
+
+    /**
+     * 是否来自特别奖励兑换（0 否，1 是）
+     */
+    private Integer isSpecial;
 }

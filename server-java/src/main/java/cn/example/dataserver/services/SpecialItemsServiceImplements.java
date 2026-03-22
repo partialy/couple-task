@@ -6,14 +6,13 @@ import cn.example.dataserver.dto.SpecialItemQueryDTO;
 import cn.example.dataserver.entity.BindingRelations;
 import cn.example.dataserver.entity.CardTransactions;
 import cn.example.dataserver.entity.SpecialItems;
-import cn.example.dataserver.entity.UserSpecialItems;
 import cn.example.dataserver.entity.Users;
 import cn.example.dataserver.enums.BindingRelation;
 import cn.example.dataserver.enums.ItemStatus;
 import cn.example.dataserver.service.BindingRelationsService;
 import cn.example.dataserver.service.CardTransactionsService;
 import cn.example.dataserver.service.SpecialItemsService;
-import cn.example.dataserver.service.UserSpecialItemsService;
+import cn.example.dataserver.service.UserItemsService;
 import cn.example.dataserver.service.UsersService;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -42,7 +41,7 @@ public class SpecialItemsServiceImplements {
     private final SpecialItemsService specialItemsService;
     private final UsersService usersService;
     private final CardTransactionsService cardTransactionsService;
-    private final UserSpecialItemsService userSpecialItemsService;
+    private final UserItemsService userItemsService;
 
     /**
      * 解析当前用户已接受的绑定关系
@@ -315,18 +314,24 @@ public class SpecialItemsServiceImplements {
             specialItemsService.updateById(item);
         }
 
-        UserSpecialItems usi = new UserSpecialItems();
-        usi.setId(UUID.randomUUID().toString());
-        usi.setUserId(current.getId());
-        usi.setSpecialItemId(item.getId());
-        usi.setStatus(ItemStatus.USABLE.getValue());
-        usi.setCode(UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase());
-        usi.setAcquiredAt(new Date());
-        userSpecialItemsService.save(usi);
+        UserItems ui = new UserItems();
+        ui.setId(UUID.randomUUID().toString());
+        ui.setUserId(current.getId());
+        ui.setItemId(item.getId());
+        ui.setStatus(ItemStatus.USABLE.getValue());
+        ui.setCode(UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase());
+        ui.setAcquiredAt(new Date());
+        ui.setName(item.getName());
+        ui.setDescription(StrUtil.isBlank(item.getDescription()) ? "" : item.getDescription());
+        ui.setIcon(StrUtil.isBlank(item.getIcon()) ? "Package" : item.getIcon());
+        ui.setColor(StrUtil.isBlank(item.getColor()) ? "purple" : item.getColor());
+        ui.setType("special");
+        ui.setIsSpecial(1);
+        userItemsService.save(ui);
 
         Map<String, Object> data = new HashMap<>(8);
-        data.put("userSpecialItemId", usi.getId());
-        data.put("verifyCode", usi.getCode());
+        data.put("userItemId", ui.getId());
+        data.put("verifyCode", ui.getCode());
         data.put("specialItemId", item.getId());
         return Result.success(data).toJson();
     }

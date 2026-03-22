@@ -50,15 +50,21 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
     acquiredAt: record.acquiredAt,
     usedAt: record.usedAt,
     color: record.color || 'cyan',
+    isSpecial: record.isSpecial ?? 0,
   });
 
   const fetchItems = async (targetPage: number, append = false) => {
     setLoading(true);
     try {
+      const isSpecialOnly = activeFilter === 'special';
+      const statusParam =
+        activeFilter === 'all' || isSpecialOnly ? undefined : activeFilter;
+
       const res = await userItemsService.page({
         page: targetPage,
         size: PAGE_SIZE,
-        status: activeFilter === 'all' ? undefined : activeFilter,
+        status: statusParam,
+        isSpecial: isSpecialOnly ? 1 : undefined,
         keyword: debouncedSearch || undefined,
       });
       if (!res.success) {

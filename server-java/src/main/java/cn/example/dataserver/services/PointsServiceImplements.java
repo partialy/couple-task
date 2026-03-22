@@ -199,6 +199,7 @@ public class PointsServiceImplements {
         item.setIcon(icon);
         item.setType(type);
         item.setColor(color);
+        item.setIsSpecial(0);
         userItemsService.save(item);
     }
 }

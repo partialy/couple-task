@@ -65,7 +65,12 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
     try {
       const res = await specialItemsService.redeem(item.id);
       if (res.success && res.data) {
-        message.success(`兑换成功！核销码：${res.data.verifyCode}`);
+        const code = res.data.verifyCode;
+        message.success(
+          code != null && code !== ''
+            ? `兑换成功！核销码：${code}`
+            : `兑换成功！道具已放入「我的道具」`
+        );
         await fetchUserDetail();
         await onRefresh();
       } else {

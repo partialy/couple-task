@@ -37,13 +37,15 @@ public class UserItemsController {
             @RequestParam(defaultValue = "1") Long page,
             @RequestParam(defaultValue = "10") Long size,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer isSpecial
     ) {
         UserItemQueryDTO queryDTO = new UserItemQueryDTO();
         queryDTO.setPage(page);
         queryDTO.setSize(size);
         queryDTO.setStatus(status);
         queryDTO.setKeyword(keyword);
+        queryDTO.setIsSpecial(isSpecial);
         return userItemService.listMyItems(token, queryDTO);
     }
 }
