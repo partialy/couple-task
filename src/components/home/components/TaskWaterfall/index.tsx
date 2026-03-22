@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lock, Plus } from 'lucide-react';
 // @ts-ignore
-import emptyStateImage from '@/assets/icon_256.png';
+import emptyStateImage from '@/assets/icon_2_256.png';
 
 import TaskCard from '@/components/TaskCard';
 import { UiTask } from '@/types/task';

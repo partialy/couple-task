@@ -2,6 +2,7 @@ import React from 'react';
 import { Search } from 'lucide-react';
 
 import LocationWeather from '@/components/LocationWeather';
+import { useUserStore } from '@/store';
 
 interface SquareHeaderProps {
   onOpenBindingPage?: () => void;
@@ -12,6 +13,7 @@ interface SquareHeaderProps {
  * 任务广场头部（标题/天气/搜索）
  */
 export default function SquareHeader({ onOpenBindingPage, variant = 'full' }: SquareHeaderProps) {
+  const currentUser = useUserStore(state => state.currentUser);
   return (
     <>
       {/* 头部标题/天气（可选渲染） */}
@@ -21,7 +23,7 @@ export default function SquareHeader({ onOpenBindingPage, variant = 'full' }: Sq
             className="text-2xl font-bold text-slate-800 dark:text-white transition-colors cursor-pointer"
             onClick={onOpenBindingPage}
           >
-            任务广场
+            {currentUser?.nickname ? `欢迎，${currentUser?.nickname}` : '任务广场'}
           </h2>
           <LocationWeather />
         </div>

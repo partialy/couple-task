@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Moon, Sun, CheckCircle } from 'lucide-react';
 
@@ -197,11 +197,17 @@ export default function App() {
     navigateTo('login');
   };
 
+  const handleLogoutRef = useRef(handleLogout);
+  handleLogoutRef.current = handleLogout;
 
-  eventBus.on("UNAUTHORIZED", (msg: string) => {
-    message.error(msg);
-    logout();
-  });
+  useEffect(() => {
+    const onUnauthorized = (msg: string) => {
+      message.error(msg);
+      handleLogoutRef.current();
+    };
+    eventBus.on('UNAUTHORIZED', onUnauthorized);
+    return () => eventBus.off('UNAUTHORIZED', onUnauthorized);
+  }, []);
 
   return (
     <div className="h-screen w-screen relative overflow-hidden font-sans transition-colors duration-500 bg-white dark:bg-slate-900">

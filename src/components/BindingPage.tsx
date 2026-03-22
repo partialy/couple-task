@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { X, Copy, MessageCircle, History } from 'lucide-react';
+import { RefreshCw, Copy, MessageCircle, History } from 'lucide-react';
 import Modal from './ui/Modal';
 import ReceivedInvitesList from './binding/ReceivedInvitesList';
 import SentInvitesList from './binding/SentInvitesList';
 import { bindingService, InviteDTO } from '@/api/service/binding';
 import { useUserStore } from '@/store';
+import { message } from '@/utils/pure/message';
 
 interface BindingPageProps {
   key?: string;
@@ -15,8 +16,8 @@ interface BindingPageProps {
 
 export default function BindingPage({ onClose, currentUser }: BindingPageProps) {
   const [inviteCode, setInviteCode] = useState('');
-  const [myCode] = useState(currentUser?.inviteCode || ''); 
-  const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
+  const [refreshing, setRefreshing] = useState(false);
+  const myCode = currentUser?.inviteCode || '';
   
   const [sentInvites, setSentInvites] = useState<InviteDTO[]>([]);
   const [receivedInvites, setReceivedInvites] = useState<InviteDTO[]>([]);
@@ -43,54 +44,62 @@ export default function BindingPage({ onClose, currentUser }: BindingPageProps) 
     }
   };
 
-  const showToast = (message: string) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 2000);
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchUserDetail(), fetchInvites()]);
+      message.success('已更新为最新数据');
+    } catch {
+      message.error('刷新失败，请稍后重试');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleCopy = () => {
     if (!myCode) return;
     navigator.clipboard.writeText(myCode);
-    showToast('邀请码已复制');
+    message.success('邀请码已复制');
   };
 
   const handleSendInvite = async () => {
     if (!inviteCode.trim()) {
-      showToast('请输入邀请码');
+      message.warning('请输入邀请码');
       return;
     }
     
     const res = await bindingService.invite(inviteCode);
     if (res.success) {
-      showToast('已发送邀请，快去通知TA吧');
+      message.success('已发送邀请，快去通知TA吧');
       setInviteCode('');
       fetchInvites();
     } else {
-      showToast(res.msg || '发送邀请失败');
+      message.error(res.msg || '发送邀请失败');
     }
   };
 
   const handleAccept = async (id: string) => {
     const res = await bindingService.accept(id);
     if (res.success) {
-      showToast('已接受邀请，绑定成功！');
+      message.success('已接受邀请，绑定成功！');
       await fetchUserDetail();
       setTimeout(() => {
         setShowPendingList(false);
         onClose();
       }, 1500);
     } else {
-      showToast(res.msg || '接受邀请失败');
+      message.error(res.msg || '接受邀请失败');
     }
   };
 
   const handleReject = async (id: string) => {
     const res = await bindingService.reject(id);
     if (res.success) {
-      showToast('已拒绝邀请');
+      message.success('已拒绝邀请');
       fetchInvites();
     } else {
-      showToast(res.msg || '拒绝邀请失败');
+      message.error(res.msg || '拒绝邀请失败');
     }
   };
 
@@ -100,14 +109,17 @@ export default function BindingPage({ onClose, currentUser }: BindingPageProps) 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex flex-col items-center p-6 overflow-y-auto"
+      className="fixed inset-0 z-100 bg-white dark:bg-slate-900 flex flex-col items-center p-6 overflow-y-auto"
     >
-      {/* 开发环境关闭按钮 */}
+      {/* 拉取服务器最新用户与邀请列表 */}
       <button
-        onClick={onClose}
-        className="absolute top-6 left-6 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-full transition-colors z-10"
+        type="button"
+        onClick={() => void handleRefresh()}
+        disabled={refreshing}
+        className="absolute top-6 left-6 p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 rounded-full transition-colors z-10 disabled:opacity-50 disabled:pointer-events-none"
+        title="刷新数据"
       >
-        <X className="w-6 h-6" />
+        <RefreshCw className={`w-6 h-6 ${refreshing ? 'animate-spin' : ''}`} />
       </button>
 
       {/* 历史记录按钮 */}
@@ -145,7 +157,7 @@ export default function BindingPage({ onClose, currentUser }: BindingPageProps) 
         {/* 顶部图标与消息角标 */}
         <div className="relative mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg bg-slate-100 flex items-center justify-center">
-            <img src="/icon.png" alt="App Icon" className="w-full h-full object-cover" onError={(e) => {
+            <img src="/icon_128.png" alt="App Icon" className="w-full h-full object-cover" onError={(e) => {
               // Fallback if icon.png is missing
               (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/shapes/svg?seed=love';
             }}/>
@@ -208,13 +220,6 @@ export default function BindingPage({ onClose, currentUser }: BindingPageProps) 
           </div>
         </div>
       </div>
-
-      {/* Toast */}
-      {toast.show && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white text-sm rounded-full shadow-lg z-[140] animate-fade-in">
-          {toast.message}
-        </div>
-      )}
     </motion.div>
   );
 }

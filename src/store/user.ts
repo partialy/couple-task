@@ -52,7 +52,7 @@ export const useUserStore = create<UserState>()(
       },
 
       logout: async () => {
-        await authService.logout();
+        // await authService.logout();
         set({ currentUser: null, bindingRelations: null, isLoggedIn: false });
         localStorage.removeItem('token');
       },

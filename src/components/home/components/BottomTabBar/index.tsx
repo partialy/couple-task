@@ -15,7 +15,7 @@ interface BottomTabBarProps {
 export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPublish, onLoginPrompt }: BottomTabBarProps) {
   return (
     <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl flex items-center justify-around px-3 pb-1 z-20 transition-colors shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
-      <button
+      <button onDoubleClick={ () => window.location.reload() } title="双击刷新"
         onClick={() => setActiveTab('square')}
         className={`p-2 flex flex-col items-center space-y-1 transition-colors ${
           activeTab === 'square'
