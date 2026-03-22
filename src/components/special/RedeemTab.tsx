@@ -1,24 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, Ticket, X, Clock, Info, CheckCircle2 } from 'lucide-react';
-import { SpecialItem, specialIconMap, specialColorStyles } from './types';
+import { SpecialItem, specialIconMap, specialColorStyles, getSpecialItemBgClass } from './types';
+import { useUserStore } from '@/store/user';
+import cardTransactionsService, { CardTransactionRecord } from '@/api/service/cardTransactions';
 
 interface RedeemTabProps {
   specialItems: SpecialItem[];
   key?: string;
 }
 
+function formatCardTxDate(createdAt?: string | number): string {
+  if (createdAt == null) return '';
+  if (typeof createdAt === 'number') {
+    const d = new Date(createdAt);
+    return isNaN(d.getTime()) ? String(createdAt) : d.toLocaleString('zh-CN');
+  }
+  const d = new Date(createdAt);
+  return isNaN(d.getTime()) ? String(createdAt) : d.toLocaleString('zh-CN');
+}
+
 export default function RedeemTab({ specialItems }: RedeemTabProps) {
+  const { currentUser } = useUserStore();
+  const cardBalance = currentUser?.cards ?? 0;
+
   const activeItems = specialItems.filter(item => item.status !== 'inactive');
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showHowToGetModal, setShowHowToGetModal] = useState(false);
+  const [cardRecords, setCardRecords] = useState<CardTransactionRecord[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(false);
 
-  // Mock records data
-  const mockRecords = [
-    { id: 1, type: 'task', title: '完成连续打卡7天', date: '2026-03-08 10:30', amount: '+1' },
-    { id: 2, type: 'code', title: '使用兑换码: SPRING2026', date: '2026-03-05 14:20', amount: '+2' },
-    { id: 3, type: 'redeem', title: '兑换特别奖励: 游乐园门票', date: '2026-03-01 09:15', amount: '-2' },
-  ];
+  useEffect(() => {
+    if (!showRecordModal) return;
+    setRecordsLoading(true);
+    cardTransactionsService
+      .page({ page: 1, size: 50 })
+      .then(res => {
+        if (res.success && res.data?.records) {
+          setCardRecords(res.data.records);
+        } else {
+          setCardRecords([]);
+        }
+      })
+      .finally(() => setRecordsLoading(false));
+  }, [showRecordModal]);
 
   return (
     <motion.div
@@ -39,7 +64,7 @@ export default function RedeemTab({ specialItems }: RedeemTabProps) {
             <p className="text-white/80 text-sm font-medium">万能兑换卡余额</p>
           </div>
           <div className="flex items-baseline space-x-2">
-            <span className="text-4xl font-black">3</span>
+            <span className="text-4xl font-black">{cardBalance}</span>
             <span className="text-sm font-bold">张</span>
           </div>
           
@@ -65,11 +90,11 @@ export default function RedeemTab({ specialItems }: RedeemTabProps) {
       <div className="grid grid-cols-1 gap-4">
         {activeItems.map(item => {
           const IconComponent = specialIconMap[item.icon] || Star;
-          const colorKey = Object.keys(specialColorStyles).find(k => specialColorStyles[k].bg === item.color) || 'indigo';
+          const colorKey = specialColorStyles[item.color] ? item.color : 'indigo';
           
           return (
             <div key={item.id} className="bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm flex items-center space-x-4 relative overflow-hidden group border border-slate-100 dark:border-slate-700/50">
-              <div className={`w-20 h-20 rounded-2xl ${item.color} flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105 overflow-hidden`}>
+              <div className={`w-20 h-20 rounded-2xl ${getSpecialItemBgClass(item.color)} flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105 overflow-hidden`}>
                 {item.image ? (
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
@@ -135,19 +160,42 @@ export default function RedeemTab({ specialItems }: RedeemTabProps) {
               </div>
               
               <div className="p-6 max-h-[60vh] overflow-y-auto">
-                <div className="space-y-4">
-                  {mockRecords.map(record => (
-                    <div key={record.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/50">
-                      <div>
-                        <p className="font-bold text-slate-800 dark:text-white text-sm mb-1">{record.title}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{record.date}</p>
-                      </div>
-                      <div className={`font-black text-lg ${record.amount.startsWith('+') ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300'}`}>
-                        {record.amount}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {recordsLoading ? (
+                  <div className="flex justify-center py-12 text-slate-400 text-sm">加载中...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {cardRecords.length === 0 ? (
+                      <p className="text-center text-sm text-slate-400 py-8">暂无万能卡流水记录</p>
+                    ) : (
+                      cardRecords.map(record => {
+                        const title =
+                          record.description?.trim() ||
+                          (record.transactionType ? `类型：${record.transactionType}` : '万能卡变动');
+                        const amt = record.amount;
+                        const amtStr = amt > 0 ? `+${amt}` : String(amt);
+                        const positive = amt > 0;
+                        return (
+                          <div
+                            key={record.id}
+                            className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700/50"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="font-bold text-slate-800 dark:text-white text-sm mb-1 break-words">{title}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {formatCardTxDate(record.createdAt as string | number)}
+                              </p>
+                            </div>
+                            <div
+                              className={`font-black text-lg flex-shrink-0 ${positive ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300'}`}
+                            >
+                              {amtStr}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="p-6 pt-0">

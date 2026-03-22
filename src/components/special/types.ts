@@ -2,14 +2,50 @@ import React from 'react';
 import { Star, Heart, Trophy, Crown, Gem, Sparkles } from 'lucide-react';
 
 export interface SpecialItem {
-  id: number;
+  /** 后端 UUID */
+  id: string;
   name: string;
   desc: string;
-  cards: number; // Number of Universal Redemption Cards required
+  cards: number;
   icon: string;
+  /** 预设色键，与 specialColorStyles 的 key 对应 */
   color: string;
   image?: string;
   status?: 'active' | 'inactive';
+}
+
+/** 将后端记录转为前端展示结构 */
+export function mapSpecialItemFromApi(row: {
+  id: string;
+  name: string;
+  description?: string | null;
+  cardsCost: number;
+  icon?: string | null;
+  color?: string | null;
+  imageUrl?: string | null;
+  status?: string | null;
+}): SpecialItem {
+  return {
+    id: row.id,
+    name: row.name,
+    desc: row.description ?? '',
+    cards: row.cardsCost,
+    icon: row.icon?.trim() || 'crown',
+    color: row.color?.trim() || 'indigo',
+    image: row.imageUrl || undefined,
+    status: row.status === 'inactive' ? 'inactive' : 'active',
+  };
+}
+
+/** 列表卡片背景 class：兼容历史存完整 Tailwind 类名的数据 */
+export function getSpecialItemBgClass(colorKeyOrClass: string): string {
+  if (specialColorStyles[colorKeyOrClass]) {
+    return specialColorStyles[colorKeyOrClass].bg;
+  }
+  if (colorKeyOrClass?.startsWith('bg-')) {
+    return colorKeyOrClass;
+  }
+  return specialColorStyles.indigo.bg;
 }
 
 export const specialIconMap: Record<string, React.ElementType> = {

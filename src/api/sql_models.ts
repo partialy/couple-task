@@ -99,6 +99,11 @@ export interface Users {
     points?: number; // 可选字段
 
     /**
+     * 万能兑换卡余额
+     */
+    cards?: number;
+
+    /**
      * 创建时间
      */
     createdAt?: string; // 可选字段 (前端通常处理为 ISO 8601 字符串)

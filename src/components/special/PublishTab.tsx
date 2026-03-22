@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Send, Star, Image as ImageIcon, X, Edit2, Trash2, Eye, EyeOff, Crown } from 'lucide-react';
-import { SpecialItem, specialIconMap, specialColorStyles } from './types';
+import { Send, Star, Image as ImageIcon, X, Edit2, Trash2, Eye, EyeOff, Crown } from 'lucide-react';
+import { SpecialItem, specialIconMap, specialColorStyles, getSpecialItemBgClass } from './types';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
 import { message } from '@/utils/pure/message';
+import specialItemsService from '@/api/service/specialItems';
 
 interface PublishTabProps {
   specialItems: SpecialItem[];
-  setSpecialItems: (items: SpecialItem[]) => void;
+  onRefresh: () => Promise<void>;
   key?: string;
 }
 
-export default function PublishTab({ specialItems, setSpecialItems }: PublishTabProps) {
+export default function PublishTab({ specialItems, onRefresh }: PublishTabProps) {
   const [publishForm, setPublishForm] = useState({
-    id: null as number | null,
+    id: null as string | null,
     name: '',
     desc: '',
     cards: '',
@@ -64,39 +65,39 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
         }
       }
 
+      const imageUrl =
+        typeof finalImageUrl === 'string' && finalImageUrl.length > 0 && !finalImageUrl.startsWith('blob:')
+          ? finalImageUrl
+          : null;
+
+      const payload = {
+        name: publishForm.name.trim(),
+        description: publishForm.desc.trim(),
+        cardsCost: Number(publishForm.cards),
+        icon: publishForm.icon,
+        color: publishForm.color,
+        imageUrl,
+      };
+
       if (publishForm.id) {
-        // Edit existing
-        const updatedItems = specialItems.map(item => 
-          item.id === publishForm.id 
-            ? {
-                ...item,
-                name: publishForm.name,
-                desc: publishForm.desc,
-                cards: Number(publishForm.cards),
-                icon: publishForm.icon,
-                color: specialColorStyles[publishForm.color]?.bg || item.color,
-                image: finalImageUrl || undefined
-              }
-            : item
-        );
-        setSpecialItems(updatedItems);
-        message.success('修改成功！');
+        const res = await specialItemsService.update(publishForm.id, payload);
+        if (res.success) {
+          message.success('修改成功！');
+          await onRefresh();
+          resetForm();
+        } else {
+          message.error(res.msg || '修改失败');
+        }
       } else {
-        // Create new
-        const newItem: SpecialItem = {
-          id: Date.now(),
-          name: publishForm.name,
-          desc: publishForm.desc,
-          cards: Number(publishForm.cards),
-          icon: publishForm.icon,
-          color: specialColorStyles[publishForm.color]?.bg || 'bg-indigo-100 dark:bg-indigo-900/30',
-          image: finalImageUrl || undefined,
-          status: 'active'
-        };
-        setSpecialItems([...specialItems, newItem]);
-        message.success('发布成功！TA 的特别商城已更新。');
+        const res = await specialItemsService.publish(payload);
+        if (res.success) {
+          message.success('发布成功！TA 的特别商城已更新。');
+          await onRefresh();
+          resetForm();
+        } else {
+          message.error(res.msg || '发布失败');
+        }
       }
-      resetForm();
     } catch (error) {
       console.error('Failed to publish special item', error);
       message.error('操作失败，请稍后再试');
@@ -106,12 +107,16 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
   };
 
   const resetForm = () => {
+    if (publishForm.image?.startsWith('blob:')) {
+      revokeLocalPreview(publishForm.image);
+    }
     setPublishForm({ id: null, name: '', desc: '', cards: '', icon: 'crown', color: 'indigo', image: null });
+    setImageFile(null);
     setActivePicker(null);
   };
 
   const handleEdit = (item: SpecialItem) => {
-    const colorKey = Object.keys(specialColorStyles).find(k => specialColorStyles[k].bg === item.color) || 'indigo';
+    const colorKey = specialColorStyles[item.color] ? item.color : 'indigo';
     setPublishForm({
       id: item.id,
       name: item.name,
@@ -121,22 +126,30 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
       color: colorKey,
       image: item.image || null
     });
+    setImageFile(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('确定要删除这个特别奖励吗？')) {
-      setSpecialItems(specialItems.filter(item => item.id !== id));
-      alert('删除成功');
+  const handleDelete = async (id: string) => {
+    if (!confirm('确定要删除这个特别奖励吗？')) return;
+    const res = await specialItemsService.remove(id);
+    if (res.success) {
+      message.success('删除成功');
+      await onRefresh();
+    } else {
+      message.error(res.msg || '删除失败');
     }
   };
 
-  const toggleStatus = (id: number) => {
-    setSpecialItems(specialItems.map(item => 
-      item.id === id 
-        ? { ...item, status: item.status === 'inactive' ? 'active' : 'inactive' } 
-        : item
-    ));
+  const toggleStatus = async (item: SpecialItem) => {
+    const next = item.status === 'inactive' ? 'active' : 'inactive';
+    const res = await specialItemsService.updateStatus(item.id, next);
+    if (res.success) {
+      message.success(next === 'active' ? '已上架' : '已下架');
+      await onRefresh();
+    } else {
+      message.error(res.msg || '操作失败');
+    }
   };
 
   return (
@@ -216,7 +229,13 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
                     <img src={publishForm.image} alt="Preview" className="w-full h-full object-cover rounded-2xl border border-slate-200 dark:border-slate-700" />
                     <button 
                       type="button"
-                      onClick={() => setPublishForm({ ...publishForm, image: null })}
+                      onClick={() => {
+                        if (publishForm.image?.startsWith('blob:')) {
+                          revokeLocalPreview(publishForm.image);
+                        }
+                        setPublishForm({ ...publishForm, image: null });
+                        setImageFile(null);
+                      }}
                       className="absolute -top-1 -right-1 bg-black/50 text-white p-1 rounded-full hover:bg-black/70 transition-colors z-10"
                     >
                       <X className="w-3 h-3" />
@@ -320,7 +339,7 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
         <div className="space-y-3">
           {specialItems.map(item => {
             const IconComponent = specialIconMap[item.icon] || Star;
-            const colorKey = Object.keys(specialColorStyles).find(k => specialColorStyles[k].bg === item.color) || 'indigo';
+            const colorKey = specialColorStyles[item.color] ? item.color : 'indigo';
             const isInactive = item.status === 'inactive';
 
             return (
@@ -328,7 +347,7 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
                 key={item.id} 
                 className={`bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex space-x-4 relative transition-opacity ${isInactive ? 'opacity-60' : ''}`}
               >
-                <div className={`w-20 h-20 rounded-2xl ${item.color} flex-shrink-0 flex items-center justify-center overflow-hidden`}>
+                <div className={`w-20 h-20 rounded-2xl ${getSpecialItemBgClass(item.color)} flex-shrink-0 flex items-center justify-center overflow-hidden`}>
                   {item.image ? (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
@@ -349,7 +368,8 @@ export default function PublishTab({ specialItems, setSpecialItems }: PublishTab
 
                   <div className="flex items-center justify-end space-x-1 mt-2">
                     <button 
-                      onClick={() => toggleStatus(item.id)}
+                      type="button"
+                      onClick={() => toggleStatus(item)}
                       className={`p-2 rounded-xl transition-colors ${isInactive ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'text-slate-400 bg-slate-50 dark:bg-slate-700/50 hover:text-indigo-500'}`}
                       title={isInactive ? "上架" : "下架"}
                     >

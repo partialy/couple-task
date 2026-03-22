@@ -8,11 +8,11 @@ import PublishTab from './special/PublishTab';
 interface SpecialRewardsProps {
   onBack?: () => void;
   specialItems: SpecialItem[];
-  setSpecialItems: (items: SpecialItem[]) => void;
+  onRefresh: () => Promise<void>;
   key?: string;
 }
 
-export default function SpecialRewards({ onBack, specialItems, setSpecialItems }: SpecialRewardsProps) {
+export default function SpecialRewards({ onBack, specialItems, onRefresh }: SpecialRewardsProps) {
   const [activeTab, setActiveTab] = useState<'redeem' | 'publish'>('redeem');
 
   return (
@@ -76,7 +76,7 @@ export default function SpecialRewards({ onBack, specialItems, setSpecialItems }
             <PublishTab 
               key="special-publish"
               specialItems={specialItems} 
-              setSpecialItems={setSpecialItems} 
+              onRefresh={onRefresh}
             />
           )}
         </AnimatePresence>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Moon, Sun, CheckCircle } from 'lucide-react';
 
@@ -21,7 +21,9 @@ import { useUserStore, useTaskStore } from './store';
 import { initialShopItems } from './data/shopItems';
 import eventBus from './utils/eventBus';
 import shopItemsService, { ShopItem as ApiShopItem } from './api/service/shopItems';
+import specialItemsService from './api/service/specialItems';
 import { message } from '@/utils/pure/message';
+import { SpecialItem, mapSpecialItemFromApi } from './components/special/types';
 
 
 export default function App() {
@@ -41,7 +43,14 @@ export default function App() {
 
   // Local state for non-persisted data or transition
   const [shopItems, setShopItems] = useState<any[]>(initialShopItems);
-  const [specialItems, setSpecialItems] = useState<any[]>([]);
+  const [specialItems, setSpecialItems] = useState<SpecialItem[]>([]);
+
+  const loadSpecialItems = useCallback(async () => {
+    const res = await specialItemsService.page({ page: 1, size: 100 });
+    if (res.success && res.data?.records) {
+      setSpecialItems(res.data.records.map(mapSpecialItemFromApi));
+    }
+  }, []);
   const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: '', show: false });
   const [showBindingPage, setShowBindingPage] = useState(false);
 
@@ -121,6 +130,12 @@ export default function App() {
       fetchPublishConfig(bindingRelations.id);
     }
   }, [isLoggedIn, bindingRelations?.id, fetchPublishConfig]);
+
+  useEffect(() => {
+    if (view === 'special-rewards' && isLoggedIn) {
+      loadSpecialItems();
+    }
+  }, [view, isLoggedIn, loadSpecialItems]);
 
   // Custom navigate function that updates history
   const navigateTo = (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates') => {
@@ -278,7 +293,7 @@ export default function App() {
               <SpecialRewards 
                 onBack={handleBack} 
                 specialItems={specialItems}
-                setSpecialItems={setSpecialItems}
+                onRefresh={loadSpecialItems}
               />
             )}
             {view === 'settings' && (
