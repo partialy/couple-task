@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Clock, Compass, MessageCircle, Plus, User } from 'lucide-react';
+
+/** 触屏上几乎不触发 dblclick，用两次点击间隔判断双击更可靠 */
+const DOUBLE_TAP_MS = 350;
 
 interface BottomTabBarProps {
   activeTab: string;
@@ -13,10 +16,25 @@ interface BottomTabBarProps {
  * 底部导航栏（含中间发布按钮）
  */
 export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPublish, onLoginPrompt }: BottomTabBarProps) {
+  const squareLastTapRef = useRef(0);
+
+  const handleSquareTabClick = useCallback(() => {
+    const now = Date.now();
+    if (now - squareLastTapRef.current < DOUBLE_TAP_MS) {
+      squareLastTapRef.current = 0;
+      window.location.reload();
+      return;
+    }
+    squareLastTapRef.current = now;
+    setActiveTab('square');
+  }, [setActiveTab]);
+
   return (
     <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl flex items-center justify-around px-3 pb-1 z-20 transition-colors shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
-      <button onDoubleClick={ () => window.location.reload() } title="双击刷新"
-        onClick={() => setActiveTab('square')}
+      <button
+        type="button"
+        onClick={handleSquareTabClick}
+        title="连点两次刷新页面"
         className={`p-2 flex flex-col items-center space-y-1 transition-colors ${
           activeTab === 'square'
             ? 'text-cyan-500 dark:text-cyan-400'

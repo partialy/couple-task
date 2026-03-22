@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Tag, ChevronLeft, Star, Calendar, X, Hash } from 'lucide-react';
-import DatePicker from './DatePicker';
+import { datePicker } from '@/utils/pure/datePicker';
+import { formatDateToYmd } from '@/utils/pure/formatDate';
 import { RewardDraft } from './TaskRewards';
 
 interface TaskSettingsProps {
@@ -53,7 +54,6 @@ export default function TaskSettings({
   deadline, setDeadline,
   tags, setTags, tagInput, setTagInput, allTags
 }: TaskSettingsProps) {
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const selectedCategory = categories.find(c => c.id === categoryId);
   const selectedLevel = taskLevels.find(l => l.id === taskLevelId);
 
@@ -304,7 +304,14 @@ export default function TaskSettings({
         {/* 截止日期 */}
         <div 
           className="relative p-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors overflow-visible"
-          onClick={() => setShowDatePicker(true)}
+          onClick={() => {
+            datePicker.show({
+              lang: 'zh',
+              initialDate: deadline ? new Date(`${deadline}T12:00:00`) : new Date(),
+              accentColor: '#d1fae5',
+              onSelect: (d) => setDeadline(formatDateToYmd(d)),
+            });
+          }}
         >
           <div className="flex items-center space-x-3 text-slate-700 dark:text-slate-200">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-500">
@@ -329,14 +336,6 @@ export default function TaskSettings({
               <ChevronLeft className="w-4 h-4 ml-1 rotate-180" />
             )}
           </div>
-          
-          {showDatePicker && (
-            <DatePicker 
-              value={deadline} 
-              onChange={setDeadline} 
-              onClose={() => setShowDatePicker(false)} 
-            />
-          )}
         </div>
 
         {/* 标签设置 */}

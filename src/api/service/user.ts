@@ -4,8 +4,11 @@ import { Users } from "../sql_models";
 
 export interface UserUpdateParams {
     nickname?: string;
+    title?: string;
     avatar?: string;
     gender?: string;
+    phone?: string;
+    email?: string;
     birthday?: string;
     anniversary?: string;
     location?: string;

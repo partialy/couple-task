@@ -25,6 +25,7 @@ public class UserInfoService {
 
     public String update(Users user, UserUpdateDTO updateDTO) {
         if (updateDTO.getNickname() != null) user.setNickname(updateDTO.getNickname());
+        if (updateDTO.getTitle() != null) user.setTitle(updateDTO.getTitle());
         if (updateDTO.getAvatar() != null) user.setAvatar(updateDTO.getAvatar());
         if (updateDTO.getGender() != null) user.setGender(updateDTO.getGender());
         if (updateDTO.getBirthday() != null) user.setBirthday(updateDTO.getBirthday());
