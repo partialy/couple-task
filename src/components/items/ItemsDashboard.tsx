@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, PackageSearch, ScanLine, Search } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, PackageSearch, Search } from 'lucide-react';
 import DashboardStats from './DashboardStats';
 import ItemFilter, { FilterType } from './ItemFilter';
 import ItemCard from './ItemCard';
 import ItemRedemptionModal from './ItemRedemptionModal';
-import RedeemInputModal from './RedeemInputModal';
+import ItemMoreActionsModal from './ItemMoreActionsModal';
 import QrScanner from '../QrScanner';
 import { useUserStore } from '@/store';
 import userItemsService, { UserItemRecord } from '@/api/service/userItems';
@@ -21,7 +21,8 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<UserItemRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [moreOpenNonce, setMoreOpenNonce] = useState(0);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [items, setItems] = useState<UserItemRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +30,7 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
   const [hasMore, setHasMore] = useState(false);
 
   const currentUser = useUserStore((state) => state.currentUser);
+  const fetchUserDetail = useUserStore((state) => state.fetchUserDetail);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
@@ -89,10 +91,7 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
   }, [activeFilter, debouncedSearch]);
 
   const pointsBalance = currentUser?.points || 0;
-  const wildcardBalance = useMemo(
-    () => items.filter((item) => item.type === 'wildcard' && item.status === 'usable').length,
-    [items]
-  );
+  const wildcardBalance = useUserStore(s => s.currentUser?.cards || 0);
 
   const handleItemClick = (item: UserItemRecord) => {
     if (item.status === 'usable') {
@@ -101,15 +100,24 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
     }
   };
 
-  const handleRedeem = (code: string) => {
-    alert(`核销码: ${code}`);
-    setIsRedeemModalOpen(false);
+  const handleVerifyConfirm = (code: string) => {
+    message.info(`核销码：${code}`);
+    setIsMoreOpen(false);
+  };
+
+  const handleOpenScanner = () => {
+    setIsMoreOpen(false);
+    setIsScannerOpen(true);
   };
 
   const handleScan = (decodedText: string) => {
-    alert(`扫描成功: ${decodedText}`);
+    message.success(`已扫描：${decodedText}`);
     setIsScannerOpen(false);
-    // You could also automatically fill the code in the redeem modal here
+  };
+
+  const handleRedeemSuccess = async () => {
+    await fetchUserDetail();
+    await fetchItems(1, false);
   };
 
   return (
@@ -129,10 +137,15 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
         </button>
         <h2 className="text-lg font-bold text-slate-800 dark:text-white">我的道具</h2>
         <button
-          onClick={() => setIsRedeemModalOpen(true)}
+          type="button"
+          onClick={() => {
+            setMoreOpenNonce((n) => n + 1);
+            setIsMoreOpen(true);
+          }}
+          aria-label="更多"
           className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-colors"
         >
-          <ScanLine className="w-5 h-5" />
+          <MoreHorizontal className="w-5 h-5" />
         </button>
       </div>
 
@@ -190,15 +203,13 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
         item={selectedItem}
       />
 
-      {/* Input Redemption Modal */}
-      <RedeemInputModal
-        isOpen={isRedeemModalOpen}
-        onClose={() => setIsRedeemModalOpen(false)}
-        onRedeem={handleRedeem}
-        onScan={() => {
-          setIsRedeemModalOpen(false);
-          setIsScannerOpen(true);
-        }}
+      <ItemMoreActionsModal
+        isOpen={isMoreOpen}
+        onClose={() => setIsMoreOpen(false)}
+        openNonce={moreOpenNonce}
+        onVerifyConfirm={handleVerifyConfirm}
+        onOpenScanner={handleOpenScanner}
+        onRedeemSuccess={handleRedeemSuccess}
       />
 
       {/* QR Scanner Modal */}

@@ -1,8 +1,12 @@
 package cn.example.dataserver.controller;
 
+import cn.example.dataserver.common.Result;
 import cn.example.dataserver.dto.RewardCodePublishDTO;
 import cn.example.dataserver.dto.RewardCodeQueryDTO;
+import cn.example.dataserver.dto.RewardCodeRedeemDTO;
+import cn.example.dataserver.services.PointsServiceImplements;
 import cn.example.dataserver.services.RewardCodesServiceImplements;
+import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class RewardCodesController {
 
     private final RewardCodesServiceImplements rewardCodesService;
+    private final PointsServiceImplements pointsService;
 
     /**
      * 发布兑换码
@@ -58,5 +63,16 @@ public class RewardCodesController {
     @PostMapping("/restore/{id}")
     public String restore(@RequestHeader("Authorization") String token, @PathVariable String id) {
         return rewardCodesService.restoreCode(token, id);
+    }
+
+    /**
+     * 使用兑换码领取奖励（委托积分服务，与 POST /points/redeem-code 行为一致）
+     */
+    @PostMapping("/redeem")
+    public String redeem(@RequestHeader("Authorization") String token, @RequestBody(required = false) RewardCodeRedeemDTO dto) {
+        if (dto == null || StrUtil.isBlank(dto.getCode())) {
+            return Result.fail("兑换码不能为空").toJson();
+        }
+        return pointsService.redeemCode(token, dto.getCode().trim());
     }
 }

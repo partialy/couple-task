@@ -51,6 +51,11 @@ const rewardCodesService = {
   async restore(id: string): Promise<ApiResponse<string>> {
     return await request.post(`/reward-codes/restore/${id}`);
   },
+
+  /** 输入兑换码领取积分/万能卡/道具（与 POST /points/redeem-code 等价） */
+  async redeem(code: string): Promise<ApiResponse<string>> {
+    return await request.post('/reward-codes/redeem', { code: code.trim() });
+  },
 };
 
 export default rewardCodesService;
