@@ -106,8 +106,14 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
   };
 
   const handleScan = async (decodedText: string) => {
+    // html5-qrcode 回调：decodedText 始终为 string，内容为二维码里编码的原始文本（纯文本 / URL / JSON 字符串等）
     const c = decodedText.trim();
     if (!c) return;
+
+    console.log('[扫码] typeof:', typeof decodedText, 'length:', decodedText.length, 'raw:', decodedText);
+    const preview = c.length > 280 ? `${c.slice(0, 280)}…` : c;
+    message.success(`扫码成功 · 共 ${c.length} 字符：${preview}`, { duration: 10000 });
+
     try {
       const res = await userItemsService.verifyByCode(c);
       if (res.success) {
