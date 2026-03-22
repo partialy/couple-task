@@ -25,6 +25,7 @@ import TaskDescription from "./task-detail/TaskDescription";
 import TaskGallery from "./task-detail/TaskGallery";
 import TaskInfoCard from "./task-detail/TaskInfoCard";
 import TaskRewardsBlock from "./task-detail/TaskRewardsBlock";
+import ImagePreview from "./ui/ImagePreview";
 
 export default function TaskDetail({
   task,
@@ -57,6 +58,7 @@ export default function TaskDetail({
     isOpen: boolean;
     type: "accept" | "complete" | "abandon" | null;
   }>({ isOpen: false, type: null });
+  const [previewImageSrc, setPreviewImageSrc] = useState<string | null>(null);
 
   const handleAction = (type: "accept" | "complete" | "abandon") => {
     setConfirmModal({ isOpen: true, type });
@@ -164,6 +166,12 @@ export default function TaskDetail({
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
       className="absolute inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden"
     >
+      <ImagePreview
+        src={previewImageSrc}
+        isOpen={previewImageSrc != null}
+        onClose={() => setPreviewImageSrc(null)}
+        alt={displayTask.title}
+      />
       <TaskHeader
         taskId={displayTask.id}
         isBookmarked={displayTask.isBookmarked}
@@ -176,7 +184,11 @@ export default function TaskDetail({
       />
 
       <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
-        <TaskCover task={displayTask} isRevealed={isRevealed} />
+        <TaskCover
+          task={displayTask}
+          isRevealed={isRevealed}
+          onCoverPreview={() => setPreviewImageSrc(displayTask.img)}
+        />
 
         {/* 内容区 */}
         <div className="px-3 -mt-6 pt-8 relative z-10 bg-white dark:bg-slate-900 rounded-t-3xl min-h-[50vh]">
@@ -206,7 +218,10 @@ export default function TaskDetail({
           ) : (
             <>
               <TaskDescription content={displayTask.desc} loading={detailLoading} />
-              <TaskGallery images={displayTask.otherImages} />
+              <TaskGallery
+                images={displayTask.otherImages}
+                onImageClick={(src) => setPreviewImageSrc(src)}
+              />
             </>
           )}
 
