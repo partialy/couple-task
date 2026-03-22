@@ -8,6 +8,8 @@ interface TaskListWaterfallProps {
   onSelectTask: (task: UiTask) => void;
   emptyTitle: string;
   emptyHint: string;
+  /** 我的接受：已完成任务显示 FINISHED 斜带 */
+  variant?: 'default' | 'received';
 }
 
 /**
@@ -18,6 +20,7 @@ export default function TaskListWaterfall({
   onSelectTask,
   emptyTitle,
   emptyHint,
+  variant = 'default',
 }: TaskListWaterfallProps) {
   if (tasks.length === 0) {
     return (
@@ -35,14 +38,28 @@ export default function TaskListWaterfall({
         {tasks
           .filter((_, i) => i % 2 === 0)
           .map((task) => (
-            <TaskCard key={task.id} task={task} onClick={() => onSelectTask(task)} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onSelectTask(task)}
+              cornerRibbon={
+                variant === 'received' && task.status === 'completed' ? 'finished' : undefined
+              }
+            />
           ))}
       </div>
       <div className="w-1/2 space-y-3">
         {tasks
           .filter((_, i) => i % 2 === 1)
           .map((task) => (
-            <TaskCard key={task.id} task={task} onClick={() => onSelectTask(task)} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onSelectTask(task)}
+              cornerRibbon={
+                variant === 'received' && task.status === 'completed' ? 'finished' : undefined
+              }
+            />
           ))}
       </div>
     </div>

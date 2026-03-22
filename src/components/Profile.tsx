@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, ChevronRight, Star, Clock, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox } from 'lucide-react';
+import { Settings, ChevronRight, Star, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TaskCard from './TaskCard';
 import TaskDetail from './TaskDetail';
@@ -246,20 +246,6 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
             count={receivedTasks.length}
             onClick={() => openTaskListScreen('received')}
           />
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
-          <MenuItem
-            icon={<Clock className="w-5 h-5 text-blue-500" />}
-            title="待审核"
-            count={0}
-            onClick={() =>
-              openModal(setActiveList, {
-                title: '待审核',
-                filter: (t) => t.status === 'pending-review' && t.receiverId === uid,
-              })
-            }
-          />
           <MenuItem
             icon={<Star className="w-5 h-5 text-amber-500" />}
             title="我的收藏"
@@ -282,6 +268,7 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
             onSelectTask={(task) => openModal(setSelectedTask, task)}
             emptyTitle="暂无发布的任务"
             emptyHint="去广场发布一条任务吧"
+            listVariant="received"
           />
         )}
         {taskListScreen === 'received' && (
@@ -293,6 +280,7 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
             onSelectTask={(task) => openModal(setSelectedTask, task)}
             emptyTitle="暂无相关任务"
             emptyHint="接取并完成任务后，或任务完成后会出现在这里"
+            listVariant="received"
           />
         )}
       </AnimatePresence>

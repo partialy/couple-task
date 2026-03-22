@@ -11,6 +11,8 @@ export interface ProfileTaskListScreenProps {
   onSelectTask: (task: UiTask) => void;
   emptyTitle: string;
   emptyHint: string;
+  /** 我的接受列表：已完成卡片 FINISHED 斜带 */
+  listVariant?: 'default' | 'received';
 }
 
 /**
@@ -23,6 +25,7 @@ export default function ProfileTaskListScreen({
   onSelectTask,
   emptyTitle,
   emptyHint,
+  listVariant = 'default',
 }: ProfileTaskListScreenProps) {
   return (
     <motion.div
@@ -50,6 +53,7 @@ export default function ProfileTaskListScreen({
           onSelectTask={onSelectTask}
           emptyTitle={emptyTitle}
           emptyHint={emptyHint}
+          variant={listVariant}
         />
       </div>
     </motion.div>

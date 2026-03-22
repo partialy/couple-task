@@ -16,28 +16,55 @@ const colorStyles: Record<string, { bg: string, text: string, border: string }> 
   rose: { bg: 'from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-100/50 dark:border-rose-800/30' },
 };
 
-export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: () => void, key?: any }) {
+export type TaskCardCornerRibbon = 'finished';
+
+export default function TaskCard({
+  task,
+  onClick,
+  cornerRibbon,
+}: {
+  task: UiTask;
+  onClick?: () => void;
+  key?: unknown;
+  /** 右上角斜带（如「我的接受」里已完成） */
+  cornerRibbon?: TaskCardCornerRibbon;
+}) {
+  const showFinished = cornerRibbon === 'finished';
+
   return (
     <motion.div 
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
-      className={`w-full rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl shadow-sm border overflow-hidden flex flex-col transition-colors cursor-pointer ${
+      className={`relative w-full rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl shadow-sm border flex flex-col transition-colors cursor-pointer ${
+        showFinished ? 'overflow-visible' : 'overflow-hidden'
+      } ${
         task.isPrivileged 
           ? 'border-amber-400 dark:border-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.3)]' 
           : 'border-white/40 dark:border-slate-700/50'
       }`}
     >
-      <div className="w-full relative overflow-hidden">
-        <img 
-          src={task.img} 
-          alt={task.title} 
-          className={`w-full h-auto object-cover transition-all duration-500 min-h-48   ${task.isPrivate ? 'blur-xl scale-110' : ''}`} 
-          loading="lazy"
-          decoding="async"
-          referrerPolicy="no-referrer" 
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent"></div>
+      <div className={`w-full relative overflow-hidden`}>
+        <div className="overflow-hidden rounded-t-2xl">
+          <img 
+            src={task.img} 
+            alt={task.title} 
+            className={`w-full h-auto object-cover transition-all duration-500 min-h-48   ${task.isPrivate ? 'blur-xl scale-110' : ''}`} 
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer" 
+          />
+        </div>
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent pointer-events-none rounded-t-2xl"></div>
         
+        {showFinished && (
+          <div
+            className="pointer-events-none absolute -right-10 top-2.5 z-30 w-32 origin-center rotate-45 bg-green-500 py-1 text-center text-[9px] font-black tracking-widest text-white shadow-md dark:bg-green-600"
+            aria-hidden
+          >
+            已完成
+          </div>
+        )}
+
         {/* 标签显示在图片上方 */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
           <div className="flex flex-wrap gap-1.5">
@@ -60,7 +87,7 @@ export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: ()
         </div>
 
         {/* 底部黑色渐变遮罩，带有模糊效果，越往上越白/透明 */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-black/90 via-black/40 to-transparent backdrop-blur-md [mask:linear-gradient(to_top,black_20%,transparent_100%)] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-linear-to-t from-black/90 via-black/40 to-transparent backdrop-blur-md [mask:linear-gradient(to_top,black_20%,transparent_100%)] pointer-events-none rounded-t-2xl"></div>
 
         {/* 作者信息胶囊 */}
         <div className="absolute bottom-3 left-3 right-3 flex justify-start z-10">
@@ -96,7 +123,7 @@ export default function TaskCard({ task, onClick }: { task: UiTask, onClick?: ()
         </div>
       </div>
       
-      <div className="p-3.5 flex flex-col flex-1">
+      <div className={`p-3.5 flex flex-col flex-1 ${showFinished ? 'rounded-b-2xl overflow-hidden bg-white/60 dark:bg-slate-800/60' : ''}`}>
         {/* 标题（最大1行） */}
         <h3 className="font-bold text-slate-800 dark:text-white text-sm mb-1 line-clamp-1 leading-tight transition-colors">
           {task.isPrivate ? '🔒 隐私任务' : task.title}
