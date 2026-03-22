@@ -100,19 +100,30 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
     }
   };
 
-  const handleVerifyConfirm = (code: string) => {
-    message.info(`核销码：${code}`);
-    setIsMoreOpen(false);
-  };
-
   const handleOpenScanner = () => {
     setIsMoreOpen(false);
     setIsScannerOpen(true);
   };
 
-  const handleScan = (decodedText: string) => {
-    message.success(`已扫描：${decodedText}`);
-    setIsScannerOpen(false);
+  const handleScan = async (decodedText: string) => {
+    const c = decodedText.trim();
+    if (!c) return;
+    try {
+      const res = await userItemsService.verifyByCode(c);
+      if (res.success) {
+        const msg =
+          (typeof res.data === 'string' && res.data) ? res.data : res.msg || '核销成功';
+        message.success(msg);
+        await fetchUserDetail();
+        await fetchItems(1, false);
+        setIsScannerOpen(false);
+      } else {
+        message.error(res.msg || '核销失败');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('核销失败');
+    }
   };
 
   const handleRedeemSuccess = async () => {
@@ -207,7 +218,6 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
         isOpen={isMoreOpen}
         onClose={() => setIsMoreOpen(false)}
         openNonce={moreOpenNonce}
-        onVerifyConfirm={handleVerifyConfirm}
         onOpenScanner={handleOpenScanner}
         onRedeemSuccess={handleRedeemSuccess}
       />

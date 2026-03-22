@@ -3,14 +3,16 @@ import { ScanLine } from 'lucide-react';
 import Modal from '../ui/Modal';
 
 interface RedeemVerifyPanelProps {
-  onRedeem: (code: string) => void;
+  onRedeem: (code: string) => void | Promise<void>;
   onScan: () => void;
   /** 变化时清空输入（例如每次打开「更多」菜单时递增） */
   panelKey?: number | string;
+  /** 请求进行中：禁用输入与按钮 */
+  loading?: boolean;
 }
 
 /** 道具核销：输入核销码或扫码（可嵌入其它弹窗） */
-export function RedeemVerifyPanel({ onRedeem, onScan, panelKey }: RedeemVerifyPanelProps) {
+export function RedeemVerifyPanel({ onRedeem, onScan, panelKey, loading }: RedeemVerifyPanelProps) {
   const [code, setCode] = useState('');
 
   useEffect(() => {
@@ -18,9 +20,9 @@ export function RedeemVerifyPanel({ onRedeem, onScan, panelKey }: RedeemVerifyPa
   }, [panelKey]);
 
   const handleRedeem = () => {
-    if (code.trim()) {
-      onRedeem(code.trim());
-      setCode('');
+    const c = code.trim();
+    if (c && !loading) {
+      void onRedeem(c);
     }
   };
 
@@ -52,10 +54,10 @@ export function RedeemVerifyPanel({ onRedeem, onScan, panelKey }: RedeemVerifyPa
       <button
         type="button"
         onClick={handleRedeem}
-        disabled={!code.trim()}
+        disabled={!code.trim() || loading}
         className="w-full py-3.5 bg-gradient-to-r from-cyan-400 to-blue-500 dark:from-cyan-500 dark:to-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-cyan-300/40 dark:shadow-cyan-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
       >
-        确认核销
+        {loading ? '核销中...' : '确认核销'}
       </button>
     </div>
   );

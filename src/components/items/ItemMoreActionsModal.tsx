@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Modal from '../ui/Modal';
 import { RedeemVerifyPanel } from './RedeemInputModal';
 import rewardCodesService from '@/api/service/rewardCodes';
+import userItemsService from '@/api/service/userItems';
 import { message } from '@/utils/pure/message';
 
 export type MoreTab = 'verify' | 'redeem';
@@ -11,8 +12,8 @@ interface ItemMoreActionsModalProps {
   onClose: () => void;
   /** 打开「更多」时递增，用于重置核销输入框 */
   openNonce: number;
-  onVerifyConfirm: (code: string) => void;
   onOpenScanner: () => void;
+  /** 核销或兑换码兑换成功后刷新列表/用户信息 */
   onRedeemSuccess: () => Promise<void>;
 }
 
@@ -20,18 +21,19 @@ export default function ItemMoreActionsModal({
   isOpen,
   onClose,
   openNonce,
-  onVerifyConfirm,
   onOpenScanner,
   onRedeemSuccess,
 }: ItemMoreActionsModalProps) {
   const [tab, setTab] = useState<MoreTab>('verify');
   const [redeemCode, setRedeemCode] = useState('');
   const [redeemLoading, setRedeemLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setTab('verify');
       setRedeemCode('');
+      setVerifyLoading(false);
     }
   }, [isOpen]);
 
@@ -58,6 +60,29 @@ export default function ItemMoreActionsModal({
       message.error('兑换失败');
     } finally {
       setRedeemLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (code: string) => {
+    const c = code.trim();
+    if (!c || verifyLoading) return;
+    setVerifyLoading(true);
+    try {
+      const res = await userItemsService.verifyByCode(c);
+      if (res.success) {
+        const msg =
+          (typeof res.data === 'string' && res.data) ? res.data : res.msg || '核销成功';
+        message.success(msg);
+        await onRedeemSuccess();
+        onClose();
+      } else {
+        message.error(res.msg || '核销失败');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('核销失败');
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -92,8 +117,9 @@ export default function ItemMoreActionsModal({
         {tab === 'verify' && (
           <RedeemVerifyPanel
             panelKey={openNonce}
-            onRedeem={onVerifyConfirm}
+            onRedeem={handleVerifyCode}
             onScan={onOpenScanner}
+            loading={verifyLoading}
           />
         )}
 

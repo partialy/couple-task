@@ -1,10 +1,13 @@
 package cn.example.dataserver.controller;
 
 import cn.example.dataserver.dto.UserItemQueryDTO;
+import cn.example.dataserver.dto.UserItemVerifyDTO;
 import cn.example.dataserver.services.UserItemServiceImplements;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,5 +50,17 @@ public class UserItemsController {
         queryDTO.setKeyword(keyword);
         queryDTO.setIsSpecial(isSpecial);
         return userItemService.listMyItems(token, queryDTO);
+    }
+
+    /**
+     * 核销：绑定对象输入对方道具的核销码
+     */
+    @PostMapping("/verify")
+    public String verify(
+            @RequestHeader("Authorization") String token,
+            @RequestBody(required = false) UserItemVerifyDTO dto
+    ) {
+        String code = dto != null ? dto.getCode() : null;
+        return userItemService.verifyByCode(token, code);
     }
 }

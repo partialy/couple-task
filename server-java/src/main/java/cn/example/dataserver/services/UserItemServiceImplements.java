@@ -2,17 +2,27 @@ package cn.example.dataserver.services;
 
 import cn.example.dataserver.common.Result;
 import cn.example.dataserver.dto.UserItemQueryDTO;
+import cn.example.dataserver.entity.BindingRelations;
+import cn.example.dataserver.entity.ItemRedemptionRecords;
 import cn.example.dataserver.entity.UserItems;
 import cn.example.dataserver.entity.Users;
+import cn.example.dataserver.enums.BindingRelation;
+import cn.example.dataserver.enums.ItemStatus;
+import cn.example.dataserver.service.BindingRelationsService;
+import cn.example.dataserver.service.ItemRedemptionRecordsService;
 import cn.example.dataserver.service.UserItemsService;
 import cn.example.dataserver.vo.UserItemVO;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -22,8 +32,34 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserItemServiceImplements {
 
+    private static final String ITEM_TYPE_NORMAL = "normal_item";
+    private static final String ITEM_TYPE_SPECIAL = "special_item";
+
     private final AuthService authService;
     private final UserItemsService userItemsService;
+    private final BindingRelationsService bindingRelationsService;
+    private final ItemRedemptionRecordsService itemRedemptionRecordsService;
+
+    /**
+     * 解析当前用户已接受的绑定关系
+     */
+    private BindingRelations resolveAcceptedBinding(String userId) {
+        return bindingRelationsService.lambdaQuery()
+                .and(wrapper -> wrapper.eq(BindingRelations::getUserId, userId)
+                        .or().eq(BindingRelations::getTargetId, userId))
+                .eq(BindingRelations::getStatus, BindingRelation.ACCEPTED.getValue())
+                .one();
+    }
+
+    /**
+     * 绑定中对方 userId
+     */
+    private String partnerUserId(BindingRelations bind, String currentUserId) {
+        if (bind == null) {
+            return null;
+        }
+        return currentUserId.equals(bind.getUserId()) ? bind.getTargetId() : bind.getUserId();
+    }
 
     /**
      * 分页查询我的道具
@@ -75,5 +111,57 @@ public class UserItemServiceImplements {
                 "records", records
         );
         return Result.success(pageData).toJson();
+    }
+
+    /**
+     * 绑定对象输入核销码，将对方背包中可用道具置为已使用并记录流水
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String verifyByCode(String token, String rawCode) {
+        Users redeemer = authService.checkToken(token);
+        BindingRelations bind = resolveAcceptedBinding(redeemer.getId());
+        if (ObjectUtil.isNull(bind)) {
+            return Result.fail("请先绑定另一半").toJson();
+        }
+        String partnerId = partnerUserId(bind, redeemer.getId());
+        if (StrUtil.isBlank(partnerId)) {
+            return Result.fail("无法解析绑定对象").toJson();
+        }
+
+        String code = StrUtil.trimToEmpty(rawCode).toUpperCase();
+        if (StrUtil.isBlank(code)) {
+            return Result.fail("请输入核销码").toJson();
+        }
+
+        UserItems userItem = userItemsService.lambdaQuery()
+                .eq(UserItems::getCode, code)
+                .eq(UserItems::getStatus, ItemStatus.USABLE.getValue())
+                .one();
+        if (userItem == null) {
+            return Result.fail("核销码无效或已使用").toJson();
+        }
+        if (!partnerId.equals(userItem.getUserId())) {
+            return Result.fail("只能核销绑定对象的道具").toJson();
+        }
+
+        userItem.setStatus(ItemStatus.USED.getValue());
+        userItem.setUsedAt(new Date());
+        userItemsService.updateById(userItem);
+
+        ItemRedemptionRecords record = new ItemRedemptionRecords();
+        record.setId(UUID.randomUUID().toString());
+        record.setItemType(
+                userItem.getIsSpecial() != null && userItem.getIsSpecial() == 1
+                        ? ITEM_TYPE_SPECIAL
+                        : ITEM_TYPE_NORMAL);
+        record.setInstanceId(userItem.getId());
+        record.setOwnerId(userItem.getUserId());
+        record.setRedeemerId(redeemer.getId());
+        record.setCode(code);
+        record.setRemark(null);
+        record.setCreatedAt(new Date());
+        itemRedemptionRecordsService.save(record);
+
+        return Result.success("核销成功").toJson();
     }
 }

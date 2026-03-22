@@ -30,6 +30,12 @@ const userItemsService = {
   async page(query: UserItemsPageQuery): Promise<ApiResponse<PageResponse<UserItemRecord>>> {
     return await request.get('/user-items/page', { params: query });
   },
+
+  /** 绑定对象核销对方背包道具（核销码 trim + 大写） */
+  async verifyByCode(code: string): Promise<ApiResponse<string>> {
+    const normalized = code.trim().toUpperCase();
+    return await request.post('/user-items/verify', { code: normalized });
+  },
 };
 
 export default userItemsService;
