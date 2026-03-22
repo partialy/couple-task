@@ -149,6 +149,83 @@ public class TaskServiceImplements {
     }
 
     /**
+     * 更新任务（仅发布者可编辑，不修改状态/接取关系）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String update(String token, String taskId, TaskDTO taskDTO) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!StrUtil.equals(task.getAuthorId(), currentUser.getId())) {
+            return Result.fail("只有任务发布者可以编辑").toJson();
+        }
+
+        task.setTitle(taskDTO.getTitle());
+        task.setDescription(taskDTO.getDescription());
+        task.setCoverImage(taskDTO.getCoverImage());
+        task.setCategoryId(taskDTO.getCategoryId());
+        task.setLevelId(taskDTO.getLevelId());
+        task.setIsPrivate(taskDTO.getIsPrivate() ? 1 : 0);
+        task.setIsPrivileged(taskDTO.getIsPrivileged() ? 1 : 0);
+        task.setRepeatType(taskDTO.getTaskType());
+        task.setRepeatConfig(taskDTO.getRepeatConfig());
+        task.setTags(CollUtil.isNotEmpty(taskDTO.getTags()) ? JSON.toJSONString(taskDTO.getTags()) : null);
+        task.setUpdatedAt(new Date());
+
+        if (StrUtil.isNotBlank(taskDTO.getDeadline())) {
+            try {
+                task.setDeadline(new SimpleDateFormat("yyyy-MM-dd").parse(taskDTO.getDeadline()));
+            } catch (Exception e) {
+                log.error("解析截止日期出错：", e);
+            }
+        } else {
+            task.setDeadline(null);
+        }
+
+        tasksService.updateById(task);
+
+        taskImagesService.lambdaUpdate().eq(TaskImages::getTaskId, taskId).remove();
+        if (CollUtil.isNotEmpty(taskDTO.getOtherImages())) {
+            List<TaskImages> images = taskDTO.getOtherImages().stream().map(url -> {
+                TaskImages img = new TaskImages();
+                img.setId(UUID.randomUUID().toString());
+                img.setTaskId(taskId);
+                img.setImageUrl(url);
+                return img;
+            }).collect(Collectors.toList());
+            taskImagesService.saveBatch(images);
+        }
+
+        taskRewardsService.lambdaUpdate().eq(TaskRewards::getTaskId, taskId).remove();
+        if (CollUtil.isNotEmpty(taskDTO.getRewards())) {
+            List<TaskRewards> rewards = taskDTO.getRewards().stream().map(r -> {
+                TaskRewards reward = new TaskRewards();
+                String desc = r.getDescription() == null ? r.getText() : r.getDescription();
+                reward.setId(UUID.randomUUID().toString());
+                reward.setTaskId(taskId);
+                reward.setType(r.getType());
+                reward.setContent(r.getText());
+                reward.setIcon(r.getIcon());
+                reward.setColor(r.getColor());
+                reward.setAmount(r.getAmount());
+                reward.setDescription(desc);
+                return reward;
+            }).collect(Collectors.toList());
+            taskRewardsService.saveBatch(rewards);
+        }
+
+        return Result.success("任务已更新", taskId).toJson();
+    }
+
+    /**
      * 获取任务列表
      * @param token 认证令牌
      * @return JSON 字符串

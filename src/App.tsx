@@ -256,7 +256,11 @@ export default function App() {
                 onPublish={() => {
                   setTemplateData(null);
                   navigateTo('publish');
-                }} 
+                }}
+                onEditTask={(initialData) => {
+                  setTemplateData(initialData);
+                  navigateTo('publish');
+                }}
                 onOpenShop={() => navigateTo('shop')} 
                 onOpenItems={() => navigateTo('items-dashboard')}
                 onOpenSpecialRewards={() => navigateTo('special-rewards')}
@@ -287,7 +291,10 @@ export default function App() {
             {view === 'publish' && (
               <PublishTask 
                 onBack={handleBack} 
-                onPublish={handleBack} 
+                onPublish={() => {
+                  setTemplateData(null);
+                  handleBack();
+                }} 
                 initialData={templateData}
               />
             )}
@@ -342,6 +349,7 @@ export default function App() {
             {showBindingPage && (
               <BindingPage 
                 onClose={() => setShowBindingPage(false)}
+                navigateTo={navigateTo}
                 currentUser={currentUser}
               />
             )}

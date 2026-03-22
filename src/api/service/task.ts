@@ -36,6 +36,13 @@ const taskService = {
   },
 
   /**
+   * 更新任务（仅发布者）
+   */
+  async update(taskId: string, taskData: TaskCreateDTO): Promise<ApiResponse<string>> {
+    return await request.put(`/task/${encodeURIComponent(taskId)}`, taskData);
+  },
+
+  /**
    * 获取任务列表
    */
   async list(): Promise<ApiResponse<TaskVO[]>> {

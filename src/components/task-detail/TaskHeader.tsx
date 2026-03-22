@@ -10,6 +10,8 @@ interface TaskHeaderProps {
   onToggleBookmark?: (taskId: string | number) => void;
   onUnpublishTask?: (taskId: string | number) => void;
   onDeleteTask?: (taskId: string | number) => void;
+  /** 点击「编辑」：由外层关闭菜单并进入编辑流（TaskDetail 内组装 initialData） */
+  onEditTask?: () => void;
 }
 
 export default function TaskHeader({
@@ -19,7 +21,8 @@ export default function TaskHeader({
   onClose,
   onToggleBookmark,
   onUnpublishTask,
-  onDeleteTask
+  onDeleteTask,
+  onEditTask,
 }: TaskHeaderProps) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -63,7 +66,16 @@ export default function TaskHeader({
               >
                 {isMyTask ? (
                   <div className="flex flex-col">
-                    <button onClick={() => setShowMenu(false)} className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors border-b border-slate-50 dark:border-slate-700/50">编辑</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMenu(false);
+                        onEditTask?.();
+                      }}
+                      className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors border-b border-slate-50 dark:border-slate-700/50"
+                    >
+                      编辑
+                    </button>
                     <button onClick={() => { setShowMenu(false); onUnpublishTask && onUnpublishTask(taskId); }} className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors border-b border-slate-50 dark:border-slate-700/50">下架</button>
                     <button onClick={() => { setShowMenu(false); onDeleteTask && onDeleteTask(taskId); }} className="px-4 py-3 text-sm font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left transition-colors">删除</button>
                   </div>

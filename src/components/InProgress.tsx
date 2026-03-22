@@ -3,6 +3,7 @@ import { AnimatePresence } from "motion/react";
 import TaskDetail from "./TaskDetail";
 import { useTaskStore } from "@/store/task";
 import { UiTask } from "@/types/task";
+import type { PublishTaskInitialData } from "@/mappers/task";
 import RoleSwitch from "./in-progress/RoleSwitch";
 import StatsCards from "./in-progress/StatsCards";
 import WeekCalendar from "./in-progress/WeekCalendar";
@@ -13,9 +14,11 @@ import { useUserStore } from "@/store";
 export default function InProgress({
   tasks,
   setTasks,
+  onEditTask,
 }: {
   tasks: UiTask[];
   setTasks: (tasks: UiTask[]) => void;
+  onEditTask?: (initialData: PublishTaskInitialData) => void;
 }) {
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
   const [activeStatusTab, setActiveStatusTab] = useState<
@@ -179,6 +182,13 @@ export default function InProgress({
               const next =
                 useTaskStore.getState().tasks.find((t) => t.id === taskId) ?? null;
               setSelectedTask(next);
+            }}
+            onEditTask={(initialData) => {
+              setSelectedTask(null);
+              if (window.history.state?.modal === 'taskDetail') {
+                window.history.replaceState({ view: 'home' }, '', '#home');
+              }
+              onEditTask?.(initialData);
             }}
           />
         )}

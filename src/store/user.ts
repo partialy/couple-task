@@ -55,6 +55,7 @@ export const useUserStore = create<UserState>()(
         // await authService.logout();
         set({ currentUser: null, bindingRelations: null, isLoggedIn: false });
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
       },
 
       updatePoints: async (amount) => {

@@ -18,6 +18,7 @@ interface TaskState {
   // Actions
   addTask: (task: UiTask) => void;
   createTask: (taskData: TaskCreateDTO) => Promise<Result<string>>;
+  updateTask: (taskId: string, taskData: TaskCreateDTO) => Promise<Result<string>>;
   fetchTasks: () => Promise<void>;
   acceptTask: (taskId: string) => Promise<Result<string>>;
   abandonTask: (taskId: string) => Promise<Result<string>>;
@@ -46,6 +47,19 @@ export const useTaskStore = create<TaskState>()((set, get) => ({
         set({ loading: true });
         try {
           const result = await taskService.create(taskData);
+          if (result.success) {
+            get().fetchTasks();
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updateTask: async (taskId, taskData) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.update(taskId, taskData);
           if (result.success) {
             get().fetchTasks();
           }

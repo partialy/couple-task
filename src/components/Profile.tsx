@@ -11,10 +11,29 @@ import RewardCenter from './RewardCenter';
 import { useUserStore } from '@/store';
 import { useTaskStore } from '@/store/task';
 import { UiTask } from '@/types/task';
+import type { PublishTaskInitialData } from '@/mappers/task';
 
 type TaskListScreenMode = 'published' | 'received';
 
-export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards, onOpenSettings, onOpenPointsDetail, tasks, setTasks }: { onOpenItems?: () => void, onOpenShop?: () => void, onOpenSpecialRewards?: () => void, onOpenSettings?: () => void, onOpenPointsDetail?: () => void, tasks: any[], setTasks: (tasks: any[]) => void }) {
+export default function Profile({
+  onOpenItems,
+  onOpenShop,
+  onOpenSpecialRewards,
+  onOpenSettings,
+  onOpenPointsDetail,
+  tasks,
+  setTasks,
+  onEditTask,
+}: {
+  onOpenItems?: () => void;
+  onOpenShop?: () => void;
+  onOpenSpecialRewards?: () => void;
+  onOpenSettings?: () => void;
+  onOpenPointsDetail?: () => void;
+  tasks: any[];
+  setTasks: (tasks: any[]) => void;
+  onEditTask?: (initialData: PublishTaskInitialData) => void;
+}) {
   const { currentUser } = useUserStore();
   const toggleBookmark = useTaskStore((s) => s.toggleBookmark);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -384,6 +403,10 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
               const next =
                 useTaskStore.getState().tasks.find((t) => t.id === taskId) ?? null;
               setSelectedTask(next);
+            }}
+            onEditTask={(initialData) => {
+              setSelectedTask(null);
+              onEditTask?.(initialData);
             }}
           />
         )}

@@ -18,12 +18,15 @@ import BottomTabBar from './components/BottomTabBar';
 import useScrollCollapse from './hooks/useScrollCollapse';
 import { Users } from '@/api/sql_models';
 import { UiTask } from '@/types/task';
+import type { PublishTaskInitialData } from '@/mappers/task';
 
 interface HomeProps {
   key?: string;
   tasks: any[];
   setTasks: (tasks: any[]) => void;
   onPublish?: () => void;
+  /** 从任务详情进入编辑发布页 */
+  onEditTask?: (initialData: PublishTaskInitialData) => void;
   onOpenShop?: () => void;
   onOpenItems?: () => void;
   onOpenSpecialRewards?: () => void;
@@ -44,6 +47,7 @@ export default function Home({
   tasks,
   setTasks,
   onPublish,
+  onEditTask,
   onOpenShop,
   onOpenItems,
   onOpenSpecialRewards,
@@ -181,6 +185,7 @@ export default function Home({
                 onOpenPointsDetail={onOpenPointsDetail}
                 tasks={tasks}
                 setTasks={setTasks}
+                onEditTask={onEditTask}
               />
             )}
           </motion.div>
@@ -197,7 +202,7 @@ export default function Home({
             {!isLoggedIn ? (
               renderLoginPrompt('任务进度')
             ) : (
-              <InProgress tasks={tasks} setTasks={setTasks} />
+              <InProgress tasks={tasks} setTasks={setTasks} onEditTask={onEditTask} />
             )}
           </motion.div>
         )}
@@ -298,6 +303,13 @@ export default function Home({
               const next =
                 useTaskStore.getState().tasks.find((t) => t.id === taskId) ?? null;
               setSelectedTask(next);
+            }}
+            onEditTask={(initialData) => {
+              setSelectedTask(null);
+              if (window.history.state?.modal === 'taskDetail') {
+                window.history.replaceState({ view: 'home' }, '', '#home');
+              }
+              onEditTask?.(initialData);
             }}
           />
         )}

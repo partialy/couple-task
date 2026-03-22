@@ -28,6 +28,17 @@ public class TaskController {
     }
 
     /**
+     * 更新任务（仅发布者）
+     */
+    @PutMapping("/{taskId}")
+    public String update(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String taskId,
+            @RequestBody TaskDTO taskDTO) {
+        return taskService.update(token, taskId, taskDTO);
+    }
+
+    /**
      * 获取任务列表
      * @param token 认证令牌
      * @return JSON 字符串

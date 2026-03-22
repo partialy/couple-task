@@ -12,8 +12,13 @@ import TaskComments from "./task-detail/TaskComments";
 import taskService from "@/api/service/task";
 import { TaskDetailVO } from "@/api/types";
 import { UiTask, UiTaskDetail } from "@/types/task";
-import { mergeTaskDetailVOIntoUiTask } from "@/mappers/task";
+import {
+  mergeTaskDetailVOIntoUiTask,
+  PublishTaskInitialData,
+  taskDetailVOToPublishInitial,
+} from "@/mappers/task";
 import { useUserStore } from "@/store/user";
+import { message } from "@/utils/pure/message";
 import TaskCover from "./task-detail/TaskCover";
 import TaskMeta from "./task-detail/TaskMeta";
 import TaskDescription from "./task-detail/TaskDescription";
@@ -28,6 +33,7 @@ export default function TaskDetail({
   onToggleBookmark,
   onDeleteTask,
   onUnpublishTask,
+  onEditTask,
 }: {
   task: UiTask;
   onClose: () => void;
@@ -38,6 +44,8 @@ export default function TaskDetail({
   onToggleBookmark?: (taskId: string) => void | Promise<void>;
   onDeleteTask?: (taskId: string) => void;
   onUnpublishTask?: (taskId: string) => void;
+  /** 进入发布页编辑：由 App 设置 templateData 并打开 publish */
+  onEditTask?: (initialData: PublishTaskInitialData) => void;
   key?: string;
 }) {
   const currentUser = useUserStore((state) => state.currentUser);
@@ -134,6 +142,20 @@ export default function TaskDetail({
   const isReceiverTask =
     !!displayTask.receiverId && currentUser?.id === displayTask.receiverId;
 
+  const handleEditTask = () => {
+    if (detailLoading) {
+      message.warning("正在加载任务详情，请稍候");
+      return;
+    }
+    if (!detail) {
+      message.warning("任务详情未加载完成，请稍后重试");
+      return;
+    }
+    if (!onEditTask) return;
+    // 不要在此调用 onClose()：父级通常用 history.back() 关详情，会抵消 App 里 navigateTo('publish') 的入栈
+    onEditTask(taskDetailVOToPublishInitial(detail));
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: "100%" }}
@@ -150,6 +172,7 @@ export default function TaskDetail({
         onToggleBookmark={onToggleBookmark}
         onUnpublishTask={onUnpublishTask}
         onDeleteTask={onDeleteTask}
+        onEditTask={onEditTask ? handleEditTask : undefined}
       />
 
       <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">

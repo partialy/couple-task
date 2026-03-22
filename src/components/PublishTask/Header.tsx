@@ -6,9 +6,17 @@ interface HeaderProps {
   onPublish: () => void;
   canPublish: boolean;
   isPublishing?: boolean;
+  /** 编辑模式：标题与按钮文案 */
+  isEditMode?: boolean;
 }
 
-export default function Header({ onBack, onPublish, canPublish, isPublishing }: HeaderProps) {
+export default function Header({
+  onBack,
+  onPublish,
+  canPublish,
+  isPublishing,
+  isEditMode,
+}: HeaderProps) {
   return (
     <div className="px-3 pt-3 pb-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 flex items-center justify-between sticky top-0 z-10">
       <button 
@@ -17,7 +25,9 @@ export default function Header({ onBack, onPublish, canPublish, isPublishing }: 
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
-      <h2 className="text-lg font-bold text-slate-800 dark:text-white">发布任务</h2>
+      <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+        {isEditMode ? "编辑任务" : "发布任务"}
+      </h2>
       <button 
         onClick={onPublish}
         disabled={!canPublish || isPublishing}
@@ -27,7 +37,13 @@ export default function Header({ onBack, onPublish, canPublish, isPublishing }: 
             : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
         }`}
       >
-        {isPublishing ? '发布中...' : '发布'}
+        {isPublishing
+          ? isEditMode
+            ? "保存中..."
+            : "发布中..."
+          : isEditMode
+            ? "保存"
+            : "发布"}
       </button>
     </div>
   );

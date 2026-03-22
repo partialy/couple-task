@@ -7,18 +7,21 @@ import SentInvitesList from './binding/SentInvitesList';
 import { bindingService, InviteDTO } from '@/api/service/binding';
 import { useUserStore } from '@/store';
 import { message } from '@/utils/pure/message';
+import { Users } from '@/api/sql_models';
 
 interface BindingPageProps {
   key?: string;
   onClose: () => void;
-  currentUser: any;
+  currentUser: Users;
+  navigateTo: (path: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates') => void;
 }
 
-export default function BindingPage({ onClose, currentUser }: BindingPageProps) {
+export default function BindingPage({ onClose, currentUser, navigateTo }: BindingPageProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const myCode = currentUser?.inviteCode || '';
-  
+
+  const { logout } = useUserStore();
   const [sentInvites, setSentInvites] = useState<InviteDTO[]>([]);
   const [receivedInvites, setReceivedInvites] = useState<InviteDTO[]>([]);
   const [showPendingList, setShowPendingList] = useState(false);
@@ -101,6 +104,11 @@ export default function BindingPage({ onClose, currentUser }: BindingPageProps) 
     } else {
       message.error(res.msg || '拒绝邀请失败');
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigateTo('login');
   };
 
   return (
@@ -216,6 +224,14 @@ export default function BindingPage({ onClose, currentUser }: BindingPageProps) 
               className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-colors shadow-sm shadow-indigo-500/20"
             >
               发送邀请
+            </button>
+
+            {/* 退出登录 */}
+            <button
+              onClick={handleLogout}
+              className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-sm shadow-red-500/20"
+            >
+              退出登录
             </button>
           </div>
         </div>

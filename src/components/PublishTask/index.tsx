@@ -57,6 +57,7 @@ export default function PublishTask({
   const [isPublishing, setIsPublishing] = useState(false);
 
   const createTask = useTaskStore((state) => state.createTask);
+  const updateTask = useTaskStore((state) => state.updateTask);
   const fetchPublishConfig = useTaskStore((state) => state.fetchPublishConfig);
   const storeCategories = useTaskStore((state) => state.categories);
   const storeTaskLevels = useTaskStore((state) => state.taskLevels);
@@ -137,7 +138,9 @@ export default function PublishTask({
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
-  // Pre-fill from initialData
+  const isEditMode = Boolean(initialData?.taskId);
+
+  // Pre-fill from initialData（新建模板 / 编辑任务）
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
@@ -154,7 +157,11 @@ export default function PublishTask({
 
       if (initialData.repeatConfig) {
         try {
-          const config = JSON.parse(initialData.repeatConfig);
+          const raw =
+            typeof initialData.repeatConfig === "string"
+              ? initialData.repeatConfig
+              : JSON.stringify(initialData.repeatConfig);
+          const config = JSON.parse(raw);
           if (config.days) setSelectedDays(config.days);
         } catch (e) {
           console.error("Failed to parse repeatConfig", e);
@@ -164,21 +171,27 @@ export default function PublishTask({
       if (initialData.rewards && initialData.rewards.length > 0) {
         const formattedRewards = initialData.rewards.map(
           (r: any, idx: number) => ({
-            text: typeof r === "string" ? r : String(r?.content ?? r?.text ?? ""),
-            color: ["pink", "cyan", "amber", "emerald", "purple", "rose"][
-              idx % 6
-            ],
-            icon: [
-              "Gift",
-              "Heart",
-              "Star",
-              "Coffee",
-              "Plane",
-              "Music",
-              "ShoppingBag",
-              "Sparkles",
-            ][idx % 8],
-            description: typeof r === "string" ? "" : String(r?.description ?? ""),
+            text:
+              typeof r === "string"
+                ? r
+                : String(r?.content ?? r?.text ?? ""),
+            color:
+              (typeof r === "object" && r?.color) ||
+              ["pink", "cyan", "amber", "emerald", "purple", "rose"][idx % 6],
+            icon:
+              (typeof r === "object" && r?.icon) ||
+              [
+                "Gift",
+                "Heart",
+                "Star",
+                "Coffee",
+                "Plane",
+                "Music",
+                "ShoppingBag",
+                "Sparkles",
+              ][idx % 8],
+            description:
+              typeof r === "string" ? "" : String(r?.description ?? ""),
             type: "normal",
             amount: 1,
           }),
@@ -188,6 +201,27 @@ export default function PublishTask({
 
       if (initialData.img) {
         setCoverImage(initialData.img);
+      }
+
+      if (Array.isArray(initialData.otherImages) && initialData.otherImages.length > 0) {
+        setOtherImages(initialData.otherImages);
+        setOtherFiles([]);
+      }
+
+      if (typeof initialData.isPrivate === "boolean") {
+        setIsPrivate(initialData.isPrivate);
+      }
+      if (typeof initialData.isPrivileged === "boolean") {
+        setUsePrivilegeCard(initialData.isPrivileged);
+      }
+      if (initialData.rewardType === "wild_card" || initialData.rewardType === "points") {
+        setRewardType(initialData.rewardType);
+      }
+      if (typeof initialData.wildcardAmount === "number") {
+        setWildcardAmount(initialData.wildcardAmount);
+      }
+      if (typeof initialData.pointsAmount === "number") {
+        setPointsAmount(initialData.pointsAmount);
       }
     }
   }, [initialData]);
@@ -333,12 +367,14 @@ export default function PublishTask({
             : undefined,
       };
 
-      const result = await createTask(taskData);
+      const result = isEditMode && initialData?.taskId
+        ? await updateTask(initialData.taskId, taskData)
+        : await createTask(taskData);
       if (result.success) {
-        message.success("任务发布成功");
+        message.success(isEditMode ? "任务已保存" : "任务发布成功");
         onPublish();
       } else {
-        message.error(result.msg || "发布失败");
+        message.error(result.msg || (isEditMode ? "保存失败" : "发布失败"));
       }
     } catch (error) {
       console.error("Failed to publish task", error);
@@ -361,6 +397,7 @@ export default function PublishTask({
         onPublish={handlePublish}
         canPublish={!!title.trim()}
         isPublishing={isPublishing}
+        isEditMode={isEditMode}
       />
 
       {/* 表单内容 */}
