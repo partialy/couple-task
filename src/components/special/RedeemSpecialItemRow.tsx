@@ -61,6 +61,11 @@ export default function RedeemSpecialItemRow({
               库存 {item.stock > 0 ? `剩余 ${item.stock}` : '已售罄'}
             </p>
           )}
+          {item.stock == null || item.stock < 0 && (
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+              库存不限
+            </p>
+          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1">
               <span className="text-lg font-black text-indigo-500">

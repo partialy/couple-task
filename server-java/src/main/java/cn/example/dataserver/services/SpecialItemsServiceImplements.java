@@ -109,6 +109,9 @@ public class SpecialItemsServiceImplements {
         if (dto.getCardsCost() == null || dto.getCardsCost() < 1) {
             return Result.fail("万能卡数量至少为 1").toJson();
         }
+        if (dto.getStock() != null && dto.getStock() != -1 && dto.getStock() < 1) {
+            return Result.fail("有限库存须至少为 1").toJson();
+        }
 
         int stock = dto.getStock() != null ? dto.getStock() : -1;
 
@@ -178,6 +181,9 @@ public class SpecialItemsServiceImplements {
             item.setImageUrl(StrUtil.isBlank(dto.getImageUrl()) ? null : dto.getImageUrl().trim());
         }
         if (dto.getStock() != null) {
+            if (dto.getStock() != -1 && dto.getStock() < 1) {
+                return Result.fail("有限库存须至少为 1").toJson();
+            }
             item.setStock(dto.getStock());
         }
 

@@ -22,6 +22,11 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, onRefreshShop
   const [pendingShopItem, setPendingShopItem] = useState<ShopItem | null>(null);
 
   const requestShopRedeem = (item: ShopItem) => {
+    const limited = item.stock != null && item.stock >= 0;
+    if (limited && item.stock === 0) {
+      message.error('库存不足');
+      return;
+    }
     const pts = currentUser?.points ?? 0;
     if (pts < item.points) {
       message.error('积分不足');
@@ -110,8 +115,13 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, onRefreshShop
                 )}
               </div>
               <h4 className="font-bold text-slate-800 dark:text-white mb-1 text-sm">{item.name}</h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 h-6 leading-tight">{item.desc}</p>
-              
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2 line-clamp-2 h-6 leading-tight">{item.desc}</p>
+              {item.stock != null && item.stock >= 0 && (
+                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-2">
+                  {item.stock > 0 ? `剩余 ${item.stock}` : '已售罄'}
+                </p>
+              )}
+
               <div className="mt-auto w-full">
                 <div className="flex items-center justify-center space-x-1 mb-3">
                   <span className="text-lg font-black text-amber-500">{item.points}</span>
@@ -120,9 +130,10 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, onRefreshShop
                 <button 
                   type="button"
                   onClick={() => requestShopRedeem(item)}
-                  className="w-full py-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 font-bold rounded-xl transition-colors text-xs focus:outline-none"
+                  disabled={item.stock != null && item.stock >= 0 && item.stock === 0}
+                  className="w-full py-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 font-bold rounded-xl transition-colors text-xs focus:outline-none disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed"
                 >
-                  立即兑换
+                  {item.stock != null && item.stock >= 0 && item.stock === 0 ? '已售罄' : '立即兑换'}
                 </button>
               </div>
             </div>

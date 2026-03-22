@@ -10,6 +10,8 @@ export interface ShopItem {
   color: string;
   image?: string;
   status?: 'active' | 'inactive';
+  /** -1 表示不限；>=0 为剩余可兑换次数 */
+  stock?: number;
 }
 
 export const iconMap: Record<string, React.ElementType> = {

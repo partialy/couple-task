@@ -205,7 +205,12 @@ export default function App() {
       message.error(msg);
       handleLogoutRef.current();
     };
+    const onLogout = () => {
+      logout();
+      navigateTo('login');
+    };
     eventBus.on('UNAUTHORIZED', onUnauthorized);
+    eventBus.on('LOGOUT', onLogout);
     return () => eventBus.off('UNAUTHORIZED', onUnauthorized);
   }, []);
 

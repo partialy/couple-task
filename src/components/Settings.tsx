@@ -2,9 +2,20 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, User, Shield, Bell, HelpCircle, Info, LogOut, ChevronRight, Smartphone, Moon, Globe } from 'lucide-react';
 import ProfileEdit from './profile/ProfileEdit';
+import { useUserStore } from '@/store';
+import eventBus from '@/utils/eventBus';
 
 export default function Settings({ onBack, onLogout }: { onBack: () => void, onLogout: () => void, key?: string }) {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+
+  const clearCache = () => {
+    eventBus.emit('LOGOUT');
+    // @ts-ignore
+    if(window.AndroidBridge) {
+      // @ts-ignore
+      window.AndroidBridge.clearCache();
+    }
+  };
 
   return (
     <motion.div
@@ -57,6 +68,7 @@ export default function Settings({ onBack, onLogout }: { onBack: () => void, onL
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
             <SettingItem icon={<HelpCircle className="w-5 h-5 text-slate-500" />} title="帮助与反馈" />
             <SettingItem icon={<Info className="w-5 h-5 text-slate-500" />} title="关于我们" />
+            <SettingItem icon={<Info className="w-5 h-5 text-red-500" />} title="清除缓存" onClick={() => clearCache()} />
           </div>
         </section>
 
@@ -70,7 +82,7 @@ export default function Settings({ onBack, onLogout }: { onBack: () => void, onL
             <span>退出登录</span>
           </button>
           <p className="text-center text-slate-400 dark:text-slate-600 text-xs mt-6 font-medium">
-            版本 1.2.4 (Build 20260308)
+            版本 1.0.0 (Build 20260322)
           </p>
         </div>
       </div>

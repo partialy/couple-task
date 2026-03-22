@@ -8,6 +8,7 @@ import { bindingService, InviteDTO } from '@/api/service/binding';
 import { useUserStore } from '@/store';
 import { message } from '@/utils/pure/message';
 import { Users } from '@/api/sql_models';
+import eventBus from '@/utils/eventBus';
 
 interface BindingPageProps {
   key?: string;
@@ -107,8 +108,7 @@ export default function BindingPage({ onClose, currentUser, navigateTo }: Bindin
   };
 
   const handleLogout = () => {
-    logout();
-    navigateTo('login');
+    eventBus.emit("LOGOUT");
   };
 
   return (

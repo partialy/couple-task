@@ -6,6 +6,9 @@ import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/q
 import { message } from '@/utils/pure/message';
 import specialItemsService from '@/api/service/specialItems';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import LimitedStockFields, {
+  stockPayloadFromLimited,
+} from '@/components/ui/LimitedStockFields';
 
 interface PublishTabProps {
   specialItems: SpecialItem[];
@@ -27,6 +30,8 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
   const [isPublishing, setIsPublishing] = useState(false);
   const [activePicker, setActivePicker] = useState<'icon' | 'color' | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [limitedStock, setLimitedStock] = useState(false);
+  const [stockQuantity, setStockQuantity] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cleanup on unmount
@@ -72,6 +77,7 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
           ? finalImageUrl
           : null;
 
+      const stock = stockPayloadFromLimited(limitedStock, stockQuantity);
       const payload = {
         name: publishForm.name.trim(),
         description: publishForm.desc.trim(),
@@ -79,6 +85,7 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
         icon: publishForm.icon,
         color: publishForm.color,
         imageUrl,
+        stock,
       };
 
       if (publishForm.id) {
@@ -115,10 +122,16 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
     setPublishForm({ id: null, name: '', desc: '', cards: '', icon: 'crown', color: 'indigo', image: null });
     setImageFile(null);
     setActivePicker(null);
+    setLimitedStock(false);
+    setStockQuantity(1);
   };
 
   const handleEdit = (item: SpecialItem) => {
     const colorKey = specialColorStyles[item.color] ? item.color : 'indigo';
+    const s = item.stock;
+    const isLimited = s != null && s >= 0;
+    setLimitedStock(isLimited);
+    setStockQuantity(isLimited ? (s >= 1 ? s : 1) : 1);
     setPublishForm({
       id: item.id,
       name: item.name,
@@ -327,6 +340,14 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
             )}
           </AnimatePresence>
 
+          <LimitedStockFields
+            limited={limitedStock}
+            quantity={stockQuantity}
+            onLimitedChange={setLimitedStock}
+            onQuantityChange={setStockQuantity}
+            accent="indigo"
+          />
+
           <button 
             type="submit"
             disabled={isPublishing}
@@ -373,6 +394,16 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                       {item.desc}
                     </p>
+                    {item.stock != null && item.stock >= 0 && (
+                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1">
+                        库存{item.stock > 0 ? `剩余 ${item.stock}` : '已售罄'}
+                      </p>
+                    )}
+                    {item.stock == null || item.stock < 0 && (
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                        库存不限
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-end space-x-1 mt-2">

@@ -11,6 +11,9 @@ export function mapRecordToShopItem(item: ShopItemRecord): ShopItem {
   const bg = colorStyles[colorKey]?.bg || 'bg-pink-100 dark:bg-pink-900/30';
   const raw = (item.icon || 'gift').trim();
   const isUrl = isLikelyImageUrl(raw);
+  const stock =
+    item.stock === undefined || item.stock === null ? -1 : item.stock;
+
   return {
     id: item.id,
     name: item.name,
@@ -20,5 +23,6 @@ export function mapRecordToShopItem(item: ShopItemRecord): ShopItem {
     color: bg,
     image: isUrl ? raw : undefined,
     status: item.status as 'active' | 'inactive',
+    stock,
   };
 }

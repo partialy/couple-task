@@ -5,6 +5,9 @@ import { ShopItem, iconMap, colorStyles } from './types';
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
 import { message } from '@/utils/pure/message';
 import shopItemsService from '@/api/service/shopItems';
+import LimitedStockFields, {
+  stockPayloadFromLimited,
+} from '@/components/ui/LimitedStockFields';
 
 interface PublishTabProps {
   shopItems: ShopItem[];
@@ -24,6 +27,8 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activePicker, setActivePicker] = useState<'icon' | 'color' | null>(null);
+  const [limitedStock, setLimitedStock] = useState(false);
+  const [stockQuantity, setStockQuantity] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -67,6 +72,7 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
       }
 
       const safePoints = Math.max(0, Math.floor(Number(publishForm.points) || 0));
+      const stock = stockPayloadFromLimited(limitedStock, stockQuantity);
       const payload = {
         name: publishForm.name.trim(),
         description: publishForm.desc.trim(),
@@ -74,7 +80,7 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
         pointsCost: safePoints,
         icon: (finalImageUrl || publishForm.icon || 'gift').trim(),
         color: publishForm.color,
-        stock: -1,
+        stock,
         status: 'active',
       };
 
@@ -109,10 +115,16 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
     setPublishForm({ id: null, name: '', desc: '', points: '', icon: 'gift', color: 'pink', image: null });
     setActivePicker(null);
     setImageFile(null);
+    setLimitedStock(false);
+    setStockQuantity(1);
   };
 
   const handleEdit = (item: ShopItem) => {
     const colorKey = Object.keys(colorStyles).find(k => colorStyles[k].bg === item.color) || 'pink';
+    const s = item.stock;
+    const isLimited = s != null && s >= 0;
+    setLimitedStock(isLimited);
+    setStockQuantity(isLimited ? (s >= 1 ? s : 1) : 1);
     setPublishForm({
       id: item.id,
       name: item.name,
@@ -140,6 +152,8 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
   const toggleStatus = async (item: ShopItem) => {
     const newStatus = item.status === 'inactive' ? 'active' : 'inactive';
     const colorKey = Object.keys(colorStyles).find(k => colorStyles[k].bg === item.color) || 'pink';
+    const stock =
+      item.stock === undefined || item.stock === null ? -1 : item.stock;
     const res = await shopItemsService.update(item.id, {
       name: item.name,
       description: item.desc,
@@ -147,7 +161,7 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
       pointsCost: item.points,
       icon: (item.image || item.icon || 'gift').trim(),
       color: colorKey,
-      stock: -1,
+      stock,
       status: newStatus,
     });
     if (res.success) {
@@ -316,6 +330,14 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
             )}
           </AnimatePresence>
 
+          <LimitedStockFields
+            limited={limitedStock}
+            quantity={stockQuantity}
+            onLimitedChange={setLimitedStock}
+            onQuantityChange={setStockQuantity}
+            accent="amber"
+          />
+
           <button 
             type="submit"
             disabled={isPublishing}
@@ -361,6 +383,17 @@ export default function PublishTab({ shopItems, onRefreshShop }: PublishTabProps
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                       {item.desc}
                     </p>
+                    {item.stock != null && item.stock >= 0 && (
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                        库存{item.stock > 0 ? `剩余 ${item.stock}` : '已售罄'}
+                      </p>
+                    )}
+                    {item.stock == null || item.stock < 0 && (
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                        库存不限
+                      </p>
+                    )}
+
                   </div>
 
                   <div className="flex items-center justify-end space-x-1 mt-2">

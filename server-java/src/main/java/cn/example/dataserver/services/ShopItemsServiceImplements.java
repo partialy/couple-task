@@ -102,6 +102,9 @@ public class ShopItemsServiceImplements {
         if (dto.getPointsCost() == null || dto.getPointsCost() < 0) {
             return Result.fail("积分不能为空").toJson();
         }
+        if (dto.getStock() != null && dto.getStock() != -1 && dto.getStock() < 1) {
+            return Result.fail("有限库存须至少为 1").toJson();
+        }
 
         String partnerId = partnerUserId(bind, user.getId());
         if (StrUtil.isBlank(partnerId)) {
@@ -168,6 +171,9 @@ public class ShopItemsServiceImplements {
             item.setColor(dto.getColor());
         }
         if (dto.getStock() != null) {
+            if (dto.getStock() != -1 && dto.getStock() < 1) {
+                return Result.fail("有限库存须至少为 1").toJson();
+            }
             item.setStock(dto.getStock());
         }
         if (dto.getStatus() != null) {

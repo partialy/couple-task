@@ -4,6 +4,7 @@ import { userService } from '@/api/service/user';
 import { BindingRelations, Users } from '@/api/sql_models';
 import { message } from '@/utils/pure/message';
 import { ApiResponse, UserLoginResponse } from '@/api/types';
+import eventBus from '@/utils/eventBus';
 
 interface UserState {
   currentUser: Users | null;
@@ -56,6 +57,7 @@ export const useUserStore = create<UserState>()(
         set({ currentUser: null, bindingRelations: null, isLoggedIn: false });
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        eventBus.emit('LOGOUT');
       },
 
       updatePoints: async (amount) => {

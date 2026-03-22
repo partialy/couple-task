@@ -64,6 +64,11 @@ export default function SpecialItemDetailModal({
                 库存 {item.stock > 0 ? `剩余 ${item.stock}` : '已售罄'}
               </p>
             )}
+            {item.stock == null || item.stock < 0 && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                库存不限
+              </p>
+            )}
           </div>
 
           <button
