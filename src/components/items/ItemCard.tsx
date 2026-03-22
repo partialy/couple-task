@@ -40,7 +40,7 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
     >
       {isSpecialReward && (
         <div
-          className="pointer-events-none absolute -left-8 top-3 z-10 w-28 origin-center -rotate-45 bg-violet-200/90 py-0.5 text-center text-[10px] font-black tracking-wider text-violet-900 shadow-sm dark:bg-violet-900/50 dark:text-violet-100"
+          className="pointer-events-none absolute -left-10 top-2 z-10 w-28 origin-center -rotate-45 bg-violet-200/90 py-0.5 text-center text-[10px] font-black tracking-wider text-violet-900 shadow-sm dark:bg-violet-900/50 dark:text-violet-100"
           aria-hidden
         >
           SVIP

@@ -149,6 +149,7 @@ export const useTaskStore = create<TaskState>()((set, get) => ({
                 t.id === id ? { ...t, isBookmarked: willFavorite } : t,
               ),
             }));
+            message.success(willFavorite ? "已收藏" : "已取消收藏");
           } else {
             message.error(result.msg || "操作失败");
           }

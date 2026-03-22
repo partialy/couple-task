@@ -61,7 +61,8 @@ export function mergeTaskDetailVOIntoUiTask(
     authorAvatar: detail.publisher?.avatar || null,
     createdAt: detail.createdAt || base.createdAt,
     commentCount: detail.commentCount,
-    isBookmarked:
-      detail.isBookmarked !== undefined ? !!detail.isBookmarked : base.isBookmarked,
+    // 收藏态以列表/详情入口传入的 base（store 中的 task）为准；detail 为接口快照，
+    // 收藏切换后不会自动刷新，若优先 detail 会导致心形图标不同步。
+    isBookmarked: base.isBookmarked,
   };
 }

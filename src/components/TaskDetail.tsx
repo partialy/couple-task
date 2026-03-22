@@ -35,7 +35,7 @@ export default function TaskDetail({
     taskId: string,
     newStatus: string,
   ) => Promise<boolean> | boolean;
-  onToggleBookmark?: (taskId: string) => void;
+  onToggleBookmark?: (taskId: string) => void | Promise<void>;
   onDeleteTask?: (taskId: string) => void;
   onUnpublishTask?: (taskId: string) => void;
   key?: string;
