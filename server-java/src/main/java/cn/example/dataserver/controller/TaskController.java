@@ -80,4 +80,20 @@ public class TaskController {
     public String completeTask(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
         return taskService.completeTask(token, taskId);
     }
+
+    /**
+     * 收藏任务
+     */
+    @PostMapping("/favorite/{taskId}")
+    public String addFavorite(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.addFavorite(token, taskId);
+    }
+
+    /**
+     * 取消收藏任务
+     */
+    @DeleteMapping("/favorite/{taskId}")
+    public String removeFavorite(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.removeFavorite(token, taskId);
+    }
 }

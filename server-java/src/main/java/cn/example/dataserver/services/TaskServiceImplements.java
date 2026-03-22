@@ -23,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Collections;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImplements {
+
+    private static final String FAVORITE_TARGET_TASK = "task";
 
     private final TasksService tasksService;
     private final TaskRewardsService taskRewardsService;
@@ -50,6 +54,7 @@ public class TaskServiceImplements {
     private final TaskLevelsService taskLevelsService;
     private final CardTransactionsService cardTransactionsService;
     private final ItemTransactionsService itemTransactionsService;
+    private final UserFavoritesService userFavoritesService;
 
     /**
      * 发布新任务
@@ -212,6 +217,22 @@ public class TaskServiceImplements {
             return vo;
         }).collect(Collectors.toList());
 
+        // 当前用户已收藏的任务 ID（user_favorites.target_type = task）
+        if (CollUtil.isNotEmpty(taskVOs)) {
+            List<String> taskIds = tasks.stream().map(Tasks::getId).collect(Collectors.toList());
+            List<UserFavorites> favs = userFavoritesService.lambdaQuery()
+                    .eq(UserFavorites::getUserId, userId)
+                    .eq(UserFavorites::getTargetType, FAVORITE_TARGET_TASK)
+                    .in(UserFavorites::getTargetId, taskIds)
+                    .list();
+            Set<String> favorited = favs.stream()
+                    .map(UserFavorites::getTargetId)
+                    .collect(Collectors.toCollection(HashSet::new));
+            for (int i = 0; i < taskVOs.size(); i++) {
+                taskVOs.get(i).setIsBookmarked(favorited.contains(tasks.get(i).getId()));
+            }
+        }
+
         return Result.success(taskVOs).toJson();
     }
 
@@ -222,7 +243,7 @@ public class TaskServiceImplements {
      * @return JSON 字符串
      */
     public String detail(String token, String taskId) {
-        authService.checkToken(token);
+        Users currentUser = authService.checkToken(token);
         if (StrUtil.isBlank(taskId)) {
             return Result.fail("任务ID不能为空").toJson();
         }
@@ -270,7 +291,62 @@ public class TaskServiceImplements {
                 .count();
         detailVO.setCommentCount(commentCount);
 
+        boolean bookmarked = userFavoritesService.lambdaQuery()
+                .eq(UserFavorites::getUserId, currentUser.getId())
+                .eq(UserFavorites::getTargetType, FAVORITE_TARGET_TASK)
+                .eq(UserFavorites::getTargetId, taskId)
+                .count() > 0;
+        detailVO.setIsBookmarked(bookmarked);
+
         return Result.success(detailVO).toJson();
+    }
+
+    /**
+     * 收藏任务
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String addFavorite(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        long exists = userFavoritesService.lambdaQuery()
+                .eq(UserFavorites::getUserId, currentUser.getId())
+                .eq(UserFavorites::getTargetType, FAVORITE_TARGET_TASK)
+                .eq(UserFavorites::getTargetId, taskId)
+                .count();
+        if (exists > 0) {
+            return Result.success("已收藏").toJson();
+        }
+        UserFavorites fav = new UserFavorites();
+        fav.setId(UUID.randomUUID().toString());
+        fav.setUserId(currentUser.getId());
+        fav.setTargetType(FAVORITE_TARGET_TASK);
+        fav.setTargetId(taskId);
+        fav.setCreatedAt(new Date());
+        userFavoritesService.save(fav);
+        return Result.success("收藏成功").toJson();
+    }
+
+    /**
+     * 取消收藏任务
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String removeFavorite(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+        userFavoritesService.lambdaUpdate()
+                .eq(UserFavorites::getUserId, currentUser.getId())
+                .eq(UserFavorites::getTargetType, FAVORITE_TARGET_TASK)
+                .eq(UserFavorites::getTargetId, taskId)
+                .remove();
+        return Result.success("已取消收藏").toJson();
     }
 
     /**

@@ -3,6 +3,7 @@ import { Categories, TaskLevels, Tasks, Result } from "@/api/sql_models";
 import taskService, { TaskCreateDTO } from "@/api/service/task";
 import { UiTask } from "@/types/task";
 import { mapTaskVOToUiTask } from "@/mappers/task";
+import { message } from "@/utils/pure/message";
 
 const DEFAULT_TASK_TAGS = ["浪漫", "宅家", "音乐", "游乐园", "宠物"];
 
@@ -23,7 +24,7 @@ interface TaskState {
   completeTask: (taskId: string) => Promise<Result<string>>;
   updateTaskStatus: (taskId: string | number, status: string) => void;
   deleteTask: (taskId: string | number) => void;
-  toggleBookmark: (taskId: string | number) => void;
+  toggleBookmark: (taskId: string | number) => Promise<void>;
   getTaskById: (id: string | number) => any | undefined;
   setTasks: (tasks: UiTask[]) => void;
   fetchPublishConfig: (bindId: string) => Promise<void>;
@@ -133,12 +134,27 @@ export const useTaskStore = create<TaskState>()((set, get) => ({
         }));
       },
 
-      toggleBookmark: (taskId) => {
-        set((state) => ({
-          tasks: state.tasks.map((t) =>
-            t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t,
-          ),
-        }));
+      toggleBookmark: async (taskId) => {
+        const id = String(taskId);
+        const current = get().tasks.find((t) => t.id === id);
+        if (!current) return;
+        const willFavorite = !current.isBookmarked;
+        try {
+          const result = willFavorite
+            ? await taskService.favoriteTask(id)
+            : await taskService.unfavoriteTask(id);
+          if (result.success) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === id ? { ...t, isBookmarked: willFavorite } : t,
+              ),
+            }));
+          } else {
+            message.error(result.msg || "操作失败");
+          }
+        } catch {
+          message.error("操作失败");
+        }
       },
 
       getTaskById: (id) => {

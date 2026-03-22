@@ -23,7 +23,7 @@ export default function InProgress({
   >("in-progress");
   const [roleTab, setRoleTab] = useState<"my" | "ta">("my");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { completeTask, abandonTask, fetchTasks} = useTaskStore();
+  const { completeTask, abandonTask, fetchTasks, toggleBookmark } = useTaskStore();
   const currentUser = useUserStore((s) => s.currentUser);
 
 
@@ -174,14 +174,11 @@ export default function InProgress({
                 return true;
               }
             }}
-            onToggleBookmark={(taskId) => {
-              const updatedTasks = tasks.map((t) =>
-                t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t,
-              );
-              setTasks(updatedTasks);
-              setSelectedTask(
-                updatedTasks.find((t) => t.id === taskId) || null,
-              );
+            onToggleBookmark={async (taskId) => {
+              await toggleBookmark(taskId);
+              const next =
+                useTaskStore.getState().tasks.find((t) => t.id === taskId) ?? null;
+              setSelectedTask(next);
             }}
           />
         )}

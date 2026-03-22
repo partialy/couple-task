@@ -42,6 +42,8 @@ export interface TaskVO extends Tasks {
     level: string;
     rewards: TaskRewards[];
     images: TaskImages[];
+    /** 当前用户是否已收藏 */
+    isBookmarked?: boolean;
 }
 
 export interface PublisherVO {

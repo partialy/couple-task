@@ -26,7 +26,7 @@ export function mapTaskVOToUiTask(task: TaskVO): UiTask {
     taskType: task.repeatType,
     repeatConfig: task.repeatConfig,
     deadline: task.deadline,
-    isBookmarked: false,
+    isBookmarked: !!task.isBookmarked,
     otherImages: (task.images || [])
       .map((item) => item.imageUrl)
       .filter(Boolean),
@@ -61,5 +61,7 @@ export function mergeTaskDetailVOIntoUiTask(
     authorAvatar: detail.publisher?.avatar || null,
     createdAt: detail.createdAt || base.createdAt,
     commentCount: detail.commentCount,
+    isBookmarked:
+      detail.isBookmarked !== undefined ? !!detail.isBookmarked : base.isBookmarked,
   };
 }

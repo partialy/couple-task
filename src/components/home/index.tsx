@@ -63,7 +63,7 @@ export default function Home({
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { acceptTask, completeTask, abandonTask } = useTaskStore();
+  const { acceptTask, completeTask, abandonTask, toggleBookmark } = useTaskStore();
   const { collapsed: isSquareHeaderCollapsed } = useScrollCollapse(scrollRef, {
     collapseThresholdPx: 120,
     expandThresholdPx: 80,
@@ -293,10 +293,11 @@ export default function Home({
               setTasks(tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
               return true;
             }}
-            onToggleBookmark={(taskId) => {
-              const updatedTasks = tasks.map((t) => (t.id === taskId ? { ...t, isBookmarked: !t.isBookmarked } : t));
-              setTasks(updatedTasks);
-              setSelectedTask(updatedTasks.find((t) => t.id === taskId) || null);
+            onToggleBookmark={async (taskId) => {
+              await toggleBookmark(taskId);
+              const next =
+                useTaskStore.getState().tasks.find((t) => t.id === taskId) ?? null;
+              setSelectedTask(next);
             }}
           />
         )}

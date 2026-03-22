@@ -96,7 +96,17 @@ const taskService = {
    */
   async deleteComment(commentId: string): Promise<ApiResponse<null>> {
     return await request.post(`/task/comment/delete/${commentId}`);
-  }
+  },
+
+  /** 收藏任务 */
+  async favoriteTask(taskId: string): Promise<ApiResponse<string>> {
+    return await request.post(`/task/favorite/${taskId}`);
+  },
+
+  /** 取消收藏 */
+  async unfavoriteTask(taskId: string): Promise<ApiResponse<string>> {
+    return await request.delete(`/task/favorite/${taskId}`);
+  },
 };
 
 export default taskService;
