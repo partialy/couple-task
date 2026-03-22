@@ -6,6 +6,7 @@ import cn.example.dataserver.enums.ItemStatus;
 import cn.example.dataserver.enums.RewardType;
 import cn.example.dataserver.service.*;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,11 @@ public class PointsServiceImplements {
 
         if (!ItemStatus.UNUSED.getValue().equals(rewardCode.getStatus())) {
             return Result.fail("兑换码已被使用或已作废").toJson();
+        }
+
+        if (StrUtil.isNotBlank(rewardCode.getCreatorId())
+                && rewardCode.getCreatorId().equals(currentUser.getId())) {
+            return Result.fail("只能使用对方的给的兑换码哦").toJson();
         }
 
         // Mark as used
