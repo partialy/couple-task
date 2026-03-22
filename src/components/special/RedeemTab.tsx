@@ -6,6 +6,7 @@ import { useUserStore } from '@/store/user';
 import cardTransactionsService, { CardTransactionRecord } from '@/api/service/cardTransactions';
 import specialItemsService from '@/api/service/specialItems';
 import { message } from '@/utils/pure/message';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface RedeemTabProps {
   specialItems: SpecialItem[];
@@ -30,6 +31,7 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
   const activeItems = specialItems.filter((item) => item.status !== 'inactive');
 
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [pendingRedeemItem, setPendingRedeemItem] = useState<SpecialItem | null>(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showHowToGetModal, setShowHowToGetModal] = useState(false);
   const [cardRecords, setCardRecords] = useState<CardTransactionRecord[]>([]);
@@ -50,7 +52,7 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
       .finally(() => setRecordsLoading(false));
   }, [showRecordModal]);
 
-  const handleRedeem = async (item: SpecialItem) => {
+  const requestRedeem = (item: SpecialItem) => {
     if (redeemingId || !currentUser?.id) return;
     if (cardBalance < item.cards) {
       message.error('万能卡不足');
@@ -61,6 +63,14 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
       message.error('库存不足');
       return;
     }
+    setPendingRedeemItem(item);
+  };
+
+  const executeRedeem = async () => {
+    const item = pendingRedeemItem;
+    if (!item) return;
+    setPendingRedeemItem(null);
+    if (redeemingId || !currentUser?.id) return;
     setRedeemingId(item.id);
     try {
       const res = await specialItemsService.redeem(item.id);
@@ -85,6 +95,21 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
   };
 
   return (
+    <>
+    <ConfirmModal
+      isOpen={pendingRedeemItem != null}
+      title="确认兑换特别奖励"
+      message={
+        pendingRedeemItem
+          ? `将消耗 ${pendingRedeemItem.cards} 张万能卡兑换「${pendingRedeemItem.name}」，兑换后道具将放入「我的道具」，是否继续？`
+          : ''
+      }
+      confirmText="确认兑换"
+      cancelText="取消"
+      confirmColor="bg-indigo-500 hover:bg-indigo-600"
+      onConfirm={executeRedeem}
+      onCancel={() => setPendingRedeemItem(null)}
+    />
     <motion.div
       key="special-redeem-tab"
       initial={{ opacity: 0, y: 10 }}
@@ -93,7 +118,7 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
       className="px-3 py-6"
     >
       {/* Cards Balance Card */}
-      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg shadow-indigo-300/40 dark:shadow-indigo-900/40 relative overflow-hidden mb-8">
+      <div className="bg-linear-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg shadow-indigo-300/40 dark:shadow-indigo-900/40 relative overflow-hidden mb-8">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-8 -mb-8 blur-xl"></div>
         
@@ -163,7 +188,7 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
                         cardBalance < item.cards ||
                         (item.stock != null && item.stock >= 0 && item.stock === 0)
                       }
-                      onClick={() => handleRedeem(item)}
+                      onClick={() => requestRedeem(item)}
                       className="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors text-xs shadow-md shadow-indigo-200 dark:shadow-indigo-900/40 outline-none focus:outline-none"
                     >
                       {redeemingId === item.id ? '兑换中...' : '立即兑换'}
@@ -334,5 +359,6 @@ export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 }

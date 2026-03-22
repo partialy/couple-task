@@ -5,7 +5,7 @@ import taskService from '@/api/service/task';
 import { TaskCommentVO } from '@/api/types';
 import { message } from '@/utils/pure/message';
 import { useUserStore } from '@/store/user';
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface TaskCommentsProps {
   taskId: string;

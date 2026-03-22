@@ -5,7 +5,7 @@ import { SpecialItem, specialIconMap, specialColorStyles, getSpecialItemBgClass 
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
 import { message } from '@/utils/pure/message';
 import specialItemsService from '@/api/service/specialItems';
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 interface PublishTabProps {
   specialItems: SpecialItem[];

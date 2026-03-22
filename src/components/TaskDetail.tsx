@@ -4,7 +4,7 @@ import {
   ShieldCheck,
   Trophy,
 } from "lucide-react";
-import ConfirmModal from "./ConfirmModal";
+import ConfirmModal from "./ui/ConfirmModal";
 import confetti from "canvas-confetti";
 import TaskHeader from "./task-detail/TaskHeader";
 import TaskBottomBar from "./task-detail/TaskBottomBar";

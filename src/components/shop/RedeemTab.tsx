@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Gift } from 'lucide-react';
 import { ShopItem, iconMap, colorStyles } from './types';
 import { usePointsStore } from '../../store/points';
 import { useUserStore } from '../../store/user';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import { message } from '@/utils/pure/message';
 
 interface RedeemTabProps {
   shopItems: ShopItem[];
@@ -16,8 +18,41 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
   
   const { redeemItem } = usePointsStore();
   const { currentUser } = useUserStore();
+  const [pendingShopItem, setPendingShopItem] = useState<ShopItem | null>(null);
+
+  const requestShopRedeem = (item: ShopItem) => {
+    const pts = currentUser?.points ?? 0;
+    if (pts < item.points) {
+      message.error('积分不足');
+      return;
+    }
+    setPendingShopItem(item);
+  };
+
+  const confirmShopRedeem = async () => {
+    const item = pendingShopItem;
+    setPendingShopItem(null);
+    if (item) {
+      await redeemItem(String(item.id));
+    }
+  };
 
   return (
+    <>
+    <ConfirmModal
+      isOpen={pendingShopItem != null}
+      title="确认兑换"
+      message={
+        pendingShopItem
+          ? `将消耗 ${pendingShopItem.points} 积分兑换「${pendingShopItem.name}」，是否继续？`
+          : ''
+      }
+      confirmText="确认兑换"
+      cancelText="取消"
+      confirmColor="bg-amber-500 hover:bg-amber-600"
+      onConfirm={confirmShopRedeem}
+      onCancel={() => setPendingShopItem(null)}
+    />
     <motion.div
       key="redeem-tab"
       initial={{ opacity: 0, y: 10 }}
@@ -79,7 +114,8 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
                   <span className="text-[10px] font-bold text-slate-400">积分</span>
                 </div>
                 <button 
-                  onClick={() => redeemItem(String(item.id))}
+                  type="button"
+                  onClick={() => requestShopRedeem(item)}
                   className="w-full py-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 font-bold rounded-xl transition-colors text-xs focus:outline-none"
                 >
                   立即兑换
@@ -90,5 +126,6 @@ export default function RedeemTab({ shopItems, onOpenPointsDetail, key }: Redeem
         })}
       </div>
     </motion.div>
+    </>
   );
 }
