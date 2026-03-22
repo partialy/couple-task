@@ -6,6 +6,7 @@ import cn.example.dataserver.dto.SpecialItemQueryDTO;
 import cn.example.dataserver.entity.*;
 import cn.example.dataserver.enums.BindingRelation;
 import cn.example.dataserver.enums.ItemStatus;
+import cn.example.dataserver.enums.RewardType;
 import cn.example.dataserver.service.BindingRelationsService;
 import cn.example.dataserver.service.CardTransactionsService;
 import cn.example.dataserver.service.SpecialItemsService;
@@ -320,9 +321,15 @@ public class SpecialItemsServiceImplements {
         ui.setAcquiredAt(new Date());
         ui.setName(item.getName());
         ui.setDescription(StrUtil.isBlank(item.getDescription()) ? "" : item.getDescription());
-        ui.setIcon(StrUtil.isBlank(item.getIcon()) ? "Package" : item.getIcon());
+        String icon;
+        if(!StrUtil.isBlank(item.getImageUrl())) {
+            icon = item.getImageUrl();
+        } else {
+            icon = StrUtil.isBlank(item.getIcon()) ? "Package" : item.getIcon();
+        }
+        ui.setIcon(icon);
         ui.setColor(StrUtil.isBlank(item.getColor()) ? "purple" : item.getColor());
-        ui.setType("special");
+        ui.setType(RewardType.SPECIAL.getValue());
         ui.setIsSpecial(1);
         userItemsService.save(ui);
 

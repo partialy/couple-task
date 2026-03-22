@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { UserItemRecord } from '@/api/service/userItems';
+import { getUserItemIconShellClass } from './userItemIconColor';
 
 interface ItemCardProps {
   key?: string | React.Key;
@@ -18,20 +19,12 @@ function isLikelyImageUrl(s?: string | null): boolean {
 export default function ItemCard({ item, onClick }: ItemCardProps) {
   const imgSrc = isLikelyImageUrl(item.icon) ? item.icon : undefined;
 
-  const rawIcon = item.icon || 'Package';
+  const rawIcon = isLikelyImageUrl(item.icon) ? 'Package' : item.icon || 'Package';
   const pascalIcon = rawIcon.charAt(0).toUpperCase() + rawIcon.slice(1);
   const IconComponent =
     (Icons as any)[rawIcon] || (Icons as any)[pascalIcon] || Icons.Package;
 
-  // Determine color classes based on item.color
-  const colorClasses = {
-    purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500',
-    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-500',
-    emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500',
-    cyan: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-500',
-    rose: 'bg-rose-100 dark:bg-rose-900/30 text-rose-500',
-    blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-500',
-  }[item.color] || 'bg-slate-100 dark:bg-slate-900/30 text-slate-500';
+  const colorClasses = getUserItemIconShellClass(item.color);
 
   const isUsed = item.status === 'used';
   const isSpecialReward = item.isSpecial === 1;

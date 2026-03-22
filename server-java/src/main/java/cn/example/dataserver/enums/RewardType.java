@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum RewardType {
     WILD_CARD("wild_card","万能卡"),
     POINTS("points","积分"),
-    NORMAL("normal","道具");
+    NORMAL("normal","道具"),
+    SPECIAL("special","特别奖励");
 
     private final String value;
     private final String desc;
