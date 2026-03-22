@@ -2,7 +2,8 @@ import axios, { AxiosError } from 'axios';
 import eventBus from '../utils/eventBus';
 
 const request = axios.create({
-    baseURL: '/api',
+    // @ts-ignore
+    baseURL: import.meta.env.VITE_API_URL + '/api',
     timeout: 15000,
 });
 

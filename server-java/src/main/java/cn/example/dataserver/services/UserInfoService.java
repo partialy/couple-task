@@ -64,6 +64,8 @@ public class UserInfoService {
                 .eq(Categories::getBelongBindingId, bindId)
                 .or()
                 .eq(Categories::getBelongBindingId, "")
+                .or()
+                .isNull(Categories::getBelongBindingId)
                 .groupBy(Categories::getSortOrder)
                 .orderByAsc(Categories::getSortOrder)
                 .list();
@@ -71,6 +73,8 @@ public class UserInfoService {
                 .eq(TaskLevels::getBelongBindingId, bindId)
                 .or()
                 .eq(TaskLevels::getBelongBindingId, "")
+                .or()
+                .isNull(TaskLevels::getBelongBindingId)
                 .list();
         PublishConfigDTO publishConfigDTO = PublishConfigDTO.builder()
                 .categories(categoriesList)

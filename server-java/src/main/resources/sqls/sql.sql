@@ -51,8 +51,8 @@ create table shop_items
     description       text                                  null comment '商品描述',
     item_type         varchar(20) default 'prop'            null comment '道具类型 (prop, wildcard, other)',
     points_cost       int                                   not null comment '兑换所需积分',
-    icon              varchar(512)                          null comment 'Lucide 图标 key 或图片 URL',
-    color             varchar(50)                           null comment '颜色样式',
+    icon              varchar(512)                          null comment '图标标识符',
+    color             varchar(100)                          null comment '颜色样式',
     status            varchar(20) default 'active'          null comment '状态 (active, inactive)',
     stock             int         default -1                null comment '库存数量，-1为不限量',
     version           int         default 0                 null comment '乐观锁版本号',
@@ -287,9 +287,6 @@ create table item_transactions
     created_at       datetime default CURRENT_TIMESTAMP null comment '发生时间',
     constraint item_transactions_ibfk_1
         foreign key (user_id) references users (id)
-            on delete cascade,
-    constraint item_transactions_ibfk_2
-        foreign key (item_id) references shop_items (id)
             on delete cascade
 )
     comment '道具流水表' collate = utf8mb4_unicode_ci;
@@ -369,18 +366,18 @@ create table reward_codes
     id           varchar(36)                           not null comment 'ID，全局唯一'
         primary key,
     code         varchar(20)                           not null comment '兑换码',
-    reward_type  varchar(20)                           not null comment '奖励类型 (prop, points, wild_card)',
+    reward_type  varchar(20)                           not null comment '奖励类型 (prop, points, special)',
     reward_name  varchar(50)                           not null comment '奖励名称',
-    description  text                                  null comment '描述',
     reward_count int         default 1                 null comment '奖励数量',
-    icon         varchar(50)                           null comment '图标',
-    color        varchar(50)                           null comment '颜色样式',
+    icon         varchar(512)                          null comment '图标',
+    color        varchar(100)                          null comment '颜色样式',
     image_url    varchar(255)                          null comment '自定义图片',
     creator_id   varchar(36)                           not null comment '创建者ID',
     status       varchar(20) default 'unused'          null comment '状态 (unused, used, voided)',
     redeemer_id  varchar(36)                           null comment '兑换者ID',
     redeemed_at  datetime                              null comment '兑换时间',
     created_at   datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    description  text                                  null comment '描述',
     constraint uk_code
         unique (code),
     constraint reward_codes_ibfk_1
@@ -613,15 +610,16 @@ create index idx_user_id
 
 create table task_rewards
 (
-    id         varchar(36)                  not null comment 'ID，全局唯一'
+    id          varchar(36)                  not null comment 'ID，全局唯一'
         primary key,
-    task_id    varchar(36)                  not null comment '关联任务ID',
-    type       varchar(20) default 'normal' null comment '奖励类型 (normal, wildcard, points)',
-    content    varchar(255)                 not null comment '奖励内容文本',
-    icon       varchar(50)                  null comment '奖励图标标识符',
-    color      varchar(50)                  null comment '奖励颜色标识符',
-    amount     int         default 0        null comment '数量（积分或万能卡）',
-    sort_order int         default 0        null comment '排序权重',
+    task_id     varchar(36)                  not null comment '关联任务ID',
+    type        varchar(20) default 'normal' null comment '奖励类型 (normal, wildcard, points)',
+    content     varchar(255)                 not null comment '奖励内容文本',
+    icon        varchar(50)                  null comment '奖励图标标识符',
+    color       varchar(50)                  null comment '奖励颜色标识符',
+    amount      int         default 0        null comment '数量（积分或万能卡）',
+    sort_order  int         default 0        null comment '排序权重',
+    description text                         null comment '奖励描述',
     constraint task_rewards_ibfk_1
         foreign key (task_id) references tasks (id)
             on delete cascade
@@ -711,22 +709,48 @@ create table user_devices
 create index idx_user_id
     on user_devices (user_id);
 
+create table user_favorites
+(
+    id          varchar(36)                        not null comment '主键 UUID'
+        primary key,
+    user_id     varchar(36)                        not null comment '用户ID',
+    target_type varchar(32)                        not null comment '收藏类型：task / shop_item / user_item / ...',
+    target_id   varchar(36)                        not null comment '被收藏对象ID（对应各业务表主键）',
+    created_at  datetime default CURRENT_TIMESTAMP not null comment '收藏时间',
+    extra       json                               null comment '扩展信息（可选：标题快照、封面URL等）',
+    constraint uk_user_favorite
+        unique (user_id, target_type, target_id),
+    constraint user_favorites_ibfk_user
+        foreign key (user_id) references users (id)
+            on delete cascade
+)
+    comment '用户收藏表' collate = utf8mb4_unicode_ci;
+
+create index idx_user_favorites_created_at
+    on user_favorites (user_id, created_at);
+
+create index idx_user_favorites_target
+    on user_favorites (target_type, target_id);
+
+create index idx_user_favorites_user_id
+    on user_favorites (user_id);
+
 create table user_items
 (
     id          varchar(36)                           not null comment 'ID，全局唯一'
         primary key,
     user_id     varchar(36)                           not null comment '用户ID',
-    item_id     varchar(36)                           not null comment '来源ID（商品ID/奖励ID/兑换码）',
+    item_id     varchar(36)                           not null comment '商品ID',
     status      varchar(20) default 'usable'          null comment '状态 (usable, used)',
     code        varchar(50)                           null comment '核销码',
     acquired_at datetime    default CURRENT_TIMESTAMP null comment '获得时间',
     used_at     datetime                              null comment '核销时间',
     name        varchar(100)                          null comment '名称',
     description text                                  null comment '描述',
-    icon        varchar(512)                          null comment 'Lucide 图标 key 或图片 URL',
+    icon        varchar(512)                          null comment '图标',
     type        varchar(30)                           null comment '类型',
-    color       varchar(30)                           null comment '颜色',
-    is_special  tinyint(1)    default 0             not null comment '是否来自特别奖励兑换',
+    color       varchar(255)                          null comment '颜色',
+    is_special  int         default 0                 not null,
     constraint uk_code
         unique (code),
     constraint user_items_ibfk_1

@@ -1,7 +1,7 @@
 {
-  "name": "情侣任务",
-  "short_name": "情侣任务",
-  "description": "情侣互动任务清单应用",
+  "name": "Echo",
+  "short_name": "Echo",
+  "description": "情侣互动任务发布、获取奖励的应用（回声）",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -133,6 +133,7 @@
         </dependency>
     </dependencies>
 
+
     <build>
         <plugins>
             <plugin>
@@ -151,13 +152,39 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
+                    <layout>ZIP</layout>
+                    <mainClass>cn.example.dataserver.DataServerApplication</mainClass>
+                    <!-- 不将依赖打包进jar包 -->
+                    <includes>
+                        <include>
+                            <groupId>nothing</groupId>
+                            <artifactId>nothing</artifactId>
+                        </include>
+                    </includes>
                 </configuration>
+            </plugin>
+
+            <!-- 2. 复制依赖到外部lib目录 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase> <!-- 打包阶段执行 -->
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <!-- 依赖输出目录：target/lib（打包后会和jar包同级） -->
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <!-- 排除不需要复制的依赖（可选） -->
+                            <!-- <excludeGroupIds>com.example</excludeGroupIds> -->
+                            <!-- 只复制运行时依赖（推荐） -->
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
