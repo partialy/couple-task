@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, ChevronRight, Star, Heart, Clock, CheckCircle, Shield, Gift, CreditCard, Moon, Sun, X, Package, ChevronLeft, QrCode } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Settings, ChevronRight, Star, Clock, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TaskCard from './TaskCard';
 import TaskDetail from './TaskDetail';
 import QrScanner from './QrScanner';
 import ProfileEdit from './profile/ProfileEdit';
+import ProfileTaskListScreen from './profile/ProfileTaskListScreen';
+import { filterMyPublishedTasks, filterMyReceivedTasks } from './profile/profileTaskFilters';
 import RewardCenter from './RewardCenter';
 import { useUserStore } from '@/store';
 import { UiTask } from '@/types/task';
 
+type TaskListScreenMode = 'published' | 'received';
+
 export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards, onOpenSettings, onOpenPointsDetail, tasks, setTasks }: { onOpenItems?: () => void, onOpenShop?: () => void, onOpenSpecialRewards?: () => void, onOpenSettings?: () => void, onOpenPointsDetail?: () => void, tasks: any[], setTasks: (tasks: any[]) => void }) {
   const { currentUser } = useUserStore();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [taskListScreen, setTaskListScreen] = useState<TaskListScreenMode | null>(null);
   const [activeList, setActiveList] = useState<{ title: string, filter: (t: any) => boolean } | null>(null);
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
   const [showScanner, setShowScanner] = useState(false);
@@ -23,6 +28,8 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
     const handlePopState = () => {
       if (selectedTask) {
         setSelectedTask(null);
+      } else if (taskListScreen) {
+        setTaskListScreen(null);
       } else if (activeList) {
         setActiveList(null);
       } else if (showScanner) {
@@ -36,7 +43,7 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [selectedTask, activeList, showScanner, showPersonalInfo, showRewardCenter]);
+  }, [selectedTask, taskListScreen, activeList, showScanner, showPersonalInfo, showRewardCenter]);
 
   // Helper to push state when opening a modal
   const openModal = (setter: (val: any) => void, value: any) => {
@@ -68,10 +75,29 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
     window.history.replaceState(window.history.state, '', url.toString());
   };
 
-  const publishedTasks = tasks.filter(t => t.author === (currentUser?.username || '兔兔'));
-  const completedTasks = tasks.filter(t => t.status === 'completed' && t.assignee === (currentUser?.username || '兔兔'));
-  const acceptedTasks = tasks.filter(t => t.status === 'in-progress' && t.assignee === (currentUser?.username || '兔兔'));
-  const bookmarkedTasks = tasks.filter(t => t.isBookmarked);
+  const uid = currentUser?.id;
+
+  const publishedTasks = useMemo(
+    () => filterMyPublishedTasks(tasks as UiTask[], uid),
+    [tasks, uid],
+  );
+  const receivedTasks = useMemo(
+    () => filterMyReceivedTasks(tasks as UiTask[], uid),
+    [tasks, uid],
+  );
+  const completedTasks = useMemo(
+    () =>
+      uid
+        ? tasks.filter((t) => t.status === 'completed' && t.receiverId === uid)
+        : [],
+    [tasks, uid],
+  );
+  const bookmarkedTasks = tasks.filter((t) => t.isBookmarked);
+
+  const openTaskListScreen = (mode: TaskListScreenMode) => {
+    window.history.pushState({ modal: 'profile-sub' }, '', '#profile-sub');
+    setTaskListScreen(mode);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto pb-32 no-scrollbar bg-slate-50 dark:bg-slate-900 h-full">
@@ -203,37 +229,73 @@ export default function Profile({ onOpenItems, onOpenShop, onOpenSpecialRewards,
         </button>
       </div>
 
-      {/* Menu List */}
+      {/* 我的任务：点击进入全屏列表 */}
       <div className="px-3 mt-8 space-y-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">我的任务</h3>
-        
+
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
-          <MenuItem 
-            icon={<Heart className="w-5 h-5 text-pink-500" />} 
-            title="我发布的" 
-            count={publishedTasks.length} 
-            onClick={() => openModal(setActiveList, { title: '我发布的', filter: t => t.author === '兔兔' })}
+          <MenuItem
+            icon={<Send className="w-5 h-5 text-pink-500" />}
+            title="我的发布"
+            count={publishedTasks.length}
+            onClick={() => openTaskListScreen('published')}
           />
-          <MenuItem 
-            icon={<CheckCircle className="w-5 h-5 text-emerald-500" />} 
-            title="我接受的" 
-            count={acceptedTasks.length} 
-            onClick={() => openModal(setActiveList, { title: '我接受的', filter: t => t.status === 'in-progress' && t.assignee === '兔兔' })}
+          <MenuItem
+            icon={<Inbox className="w-5 h-5 text-cyan-500" />}
+            title="我的接受"
+            count={receivedTasks.length}
+            onClick={() => openTaskListScreen('received')}
           />
-          <MenuItem 
-            icon={<Clock className="w-5 h-5 text-blue-500" />} 
-            title="待审核" 
-            count={0} 
-            onClick={() => openModal(setActiveList, { title: '待审核', filter: t => t.status === 'pending-review' && t.assignee === '兔兔' })}
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
+          <MenuItem
+            icon={<Clock className="w-5 h-5 text-blue-500" />}
+            title="待审核"
+            count={0}
+            onClick={() =>
+              openModal(setActiveList, {
+                title: '待审核',
+                filter: (t) => t.status === 'pending-review' && t.receiverId === uid,
+              })
+            }
           />
-          <MenuItem 
-            icon={<Star className="w-5 h-5 text-amber-500" />} 
-            title="我的收藏" 
+          <MenuItem
+            icon={<Star className="w-5 h-5 text-amber-500" />}
+            title="我的收藏"
             count={bookmarkedTasks.length}
-            onClick={() => openModal(setActiveList, { title: '我的收藏', filter: t => t.isBookmarked })}
+            onClick={() =>
+              openModal(setActiveList, { title: '我的收藏', filter: (t) => t.isBookmarked })
+            }
           />
         </div>
       </div>
+
+      {/* 我的发布 / 我的接受 — 全屏子页 */}
+      <AnimatePresence>
+        {taskListScreen === 'published' && (
+          <ProfileTaskListScreen
+            key="published"
+            title="我的发布"
+            tasks={publishedTasks}
+            onBack={closeModal}
+            onSelectTask={(task) => openModal(setSelectedTask, task)}
+            emptyTitle="暂无发布的任务"
+            emptyHint="去广场发布一条任务吧"
+          />
+        )}
+        {taskListScreen === 'received' && (
+          <ProfileTaskListScreen
+            key="received"
+            title="我的接受"
+            tasks={receivedTasks}
+            onBack={closeModal}
+            onSelectTask={(task) => openModal(setSelectedTask, task)}
+            emptyTitle="暂无相关任务"
+            emptyHint="接取并完成任务后，或任务完成后会出现在这里"
+          />
+        )}
+      </AnimatePresence>
 
       <div className="px-3 mt-8 space-y-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">更多服务</h3>

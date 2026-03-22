@@ -18,7 +18,7 @@ export function mapTaskVOToUiTask(task: TaskVO): UiTask {
     authorAvatar: task.authorAvatar,
     authorName: task.authorName,
     gender: task.gender,
-    author: task.authorId || "未知用户",
+    author: task.authorName || task.authorId || "未知用户",
     receiverId: task.receiverId,
     location: task.location,
     isPrivate: task.isPrivate === 1,
