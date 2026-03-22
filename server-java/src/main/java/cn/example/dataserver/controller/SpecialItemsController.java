@@ -26,12 +26,14 @@ public class SpecialItemsController {
             @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "1") Long page,
             @RequestParam(defaultValue = "10") Long size,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "self") String type
     ) {
         SpecialItemQueryDTO query = new SpecialItemQueryDTO();
         query.setPage(page);
         query.setSize(size);
         query.setStatus(status);
+        query.setType(type);
         return specialItemsServiceImplements.pageList(token, query);
     }
 
@@ -73,5 +75,16 @@ public class SpecialItemsController {
             @RequestBody SpecialItemStatusDTO body
     ) {
         return specialItemsServiceImplements.updateStatus(token, id, body.getStatus());
+    }
+
+    /**
+     * 使用万能卡兑换对方发布的特别奖励
+     */
+    @PostMapping("/{id}/redeem")
+    public String redeem(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String id
+    ) {
+        return specialItemsServiceImplements.redeem(token, id);
     }
 }

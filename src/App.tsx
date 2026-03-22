@@ -43,12 +43,17 @@ export default function App() {
 
   // Local state for non-persisted data or transition
   const [shopItems, setShopItems] = useState<any[]>(initialShopItems);
-  const [specialItems, setSpecialItems] = useState<SpecialItem[]>([]);
+  const [specialItemsSelf, setSpecialItemsSelf] = useState<SpecialItem[]>([]);
+  const [specialItemsTarget, setSpecialItemsTarget] = useState<SpecialItem[]>([]);
 
-  const loadSpecialItems = useCallback(async () => {
-    const res = await specialItemsService.page({ page: 1, size: 100 });
-    if (res.success && res.data?.records) {
-      setSpecialItems(res.data.records.map(mapSpecialItemFromApi));
+  const loadSpecialItems = useCallback(async (type: 'self' | 'target') => {
+    const res = await specialItemsService.page({ page: 1, size: 100, type });
+    const mapped =
+      res.success && res.data?.records ? res.data.records.map(mapSpecialItemFromApi) : [];
+    if (type === 'self') {
+      setSpecialItemsSelf(mapped);
+    } else {
+      setSpecialItemsTarget(mapped);
     }
   }, []);
   const [toast, setToast] = useState<{ message: string; show: boolean }>({ message: '', show: false });
@@ -133,7 +138,7 @@ export default function App() {
 
   useEffect(() => {
     if (view === 'special-rewards' && isLoggedIn) {
-      loadSpecialItems();
+      void Promise.all([loadSpecialItems('self'), loadSpecialItems('target')]);
     }
   }, [view, isLoggedIn, loadSpecialItems]);
 
@@ -292,8 +297,10 @@ export default function App() {
             {view === 'special-rewards' && (
               <SpecialRewards 
                 onBack={handleBack} 
-                specialItems={specialItems}
-                onRefresh={loadSpecialItems}
+                specialItemsSelf={specialItemsSelf}
+                specialItemsTarget={specialItemsTarget}
+                onRefreshSelf={() => loadSpecialItems('self')}
+                onRefreshTarget={() => loadSpecialItems('target')}
               />
             )}
             {view === 'settings' && (

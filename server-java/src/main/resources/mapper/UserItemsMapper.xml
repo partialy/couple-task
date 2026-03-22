@@ -17,11 +17,12 @@
             <result property="icon" column="icon" />
             <result property="type" column="type" />
             <result property="color" column="color" />
+            <result property="isSpecial" column="is_special" />
     </resultMap>
 
     <sql id="Base_Column_List">
         id,user_id,item_id,status,code,acquired_at,
         used_at,name,description,icon,type,
-        color
+        color,is_special
     </sql>
 </mapper>

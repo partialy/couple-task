@@ -7,13 +7,24 @@ import PublishTab from './special/PublishTab';
 
 interface SpecialRewardsProps {
   onBack?: () => void;
-  specialItems: SpecialItem[];
-  onRefresh: () => Promise<void>;
+  /** 我给 TA 发布的（可编辑） */
+  specialItemsSelf: SpecialItem[];
+  /** 对方发给我的（可兑换） */
+  specialItemsTarget: SpecialItem[];
+  onRefreshSelf: () => Promise<void>;
+  onRefreshTarget: () => Promise<void>;
   key?: string;
 }
 
-export default function SpecialRewards({ onBack, specialItems, onRefresh }: SpecialRewardsProps) {
+export default function SpecialRewards({
+  onBack,
+  specialItemsSelf,
+  specialItemsTarget,
+  onRefreshSelf,
+  onRefreshTarget,
+}: SpecialRewardsProps) {
   const [activeTab, setActiveTab] = useState<'redeem' | 'publish'>('redeem');
+
 
   return (
     <motion.div 
@@ -70,13 +81,14 @@ export default function SpecialRewards({ onBack, specialItems, onRefresh }: Spec
           {activeTab === 'redeem' ? (
             <RedeemTab 
               key="special-redeem"
-              specialItems={specialItems} 
+              specialItems={specialItemsTarget} 
+              onRefresh={onRefreshTarget}
             />
           ) : (
             <PublishTab 
               key="special-publish"
-              specialItems={specialItems} 
-              onRefresh={onRefresh}
+              specialItems={specialItemsSelf} 
+              onRefresh={onRefreshSelf}
             />
           )}
         </AnimatePresence>

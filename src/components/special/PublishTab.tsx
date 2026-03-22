@@ -5,6 +5,7 @@ import { SpecialItem, specialIconMap, specialColorStyles, getSpecialItemBgClass 
 import { createLocalPreview, revokeLocalPreview, uploadToQiniu } from '@/utils/qiniu';
 import { message } from '@/utils/pure/message';
 import specialItemsService from '@/api/service/specialItems';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface PublishTabProps {
   specialItems: SpecialItem[];
@@ -25,6 +26,7 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activePicker, setActivePicker] = useState<'icon' | 'color' | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cleanup on unmount
@@ -130,14 +132,21 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个特别奖励吗？')) return;
-    const res = await specialItemsService.remove(id);
-    if (res.success) {
-      message.success('删除成功');
-      await onRefresh();
-    } else {
-      message.error(res.msg || '删除失败');
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    try {
+      const res = await specialItemsService.remove(id);
+      if (res.success) {
+        message.success('删除成功');
+        setDeleteConfirmId(null);
+        await onRefresh();
+      } else {
+        message.error(res.msg || '删除失败');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('删除失败，请稍后再试');
     }
   };
 
@@ -383,7 +392,8 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => handleDelete(item.id)}
+                      type="button"
+                      onClick={() => setDeleteConfirmId(item.id)}
                       className="p-2 text-slate-400 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:text-rose-500 transition-colors"
                       title="删除"
                     >
@@ -402,6 +412,16 @@ export default function PublishTab({ specialItems, onRefresh }: PublishTabProps)
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={deleteConfirmId !== null}
+        title="删除特别奖励"
+        message="确定要删除这个特别奖励吗？删除后将无法恢复。"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmId(null)}
+        confirmText="删除"
+        confirmColor="bg-rose-500 hover:bg-rose-600"
+      />
     </motion.div>
   );
 }

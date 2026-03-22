@@ -4,9 +4,12 @@ import { Star, Ticket, X, Clock, Info, CheckCircle2 } from 'lucide-react';
 import { SpecialItem, specialIconMap, specialColorStyles, getSpecialItemBgClass } from './types';
 import { useUserStore } from '@/store/user';
 import cardTransactionsService, { CardTransactionRecord } from '@/api/service/cardTransactions';
+import specialItemsService from '@/api/service/specialItems';
+import { message } from '@/utils/pure/message';
 
 interface RedeemTabProps {
   specialItems: SpecialItem[];
+  onRefresh: () => Promise<void>;
   key?: string;
 }
 
@@ -20,11 +23,13 @@ function formatCardTxDate(createdAt?: string | number): string {
   return isNaN(d.getTime()) ? String(createdAt) : d.toLocaleString('zh-CN');
 }
 
-export default function RedeemTab({ specialItems }: RedeemTabProps) {
-  const { currentUser } = useUserStore();
+export default function RedeemTab({ specialItems, onRefresh }: RedeemTabProps) {
+  const { currentUser, fetchUserDetail } = useUserStore();
   const cardBalance = currentUser?.cards ?? 0;
 
-  const activeItems = specialItems.filter(item => item.status !== 'inactive');
+  const activeItems = specialItems.filter((item) => item.status !== 'inactive');
+
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showHowToGetModal, setShowHowToGetModal] = useState(false);
   const [cardRecords, setCardRecords] = useState<CardTransactionRecord[]>([]);
@@ -44,6 +49,35 @@ export default function RedeemTab({ specialItems }: RedeemTabProps) {
       })
       .finally(() => setRecordsLoading(false));
   }, [showRecordModal]);
+
+  const handleRedeem = async (item: SpecialItem) => {
+    if (redeemingId || !currentUser?.id) return;
+    if (cardBalance < item.cards) {
+      message.error('万能卡不足');
+      return;
+    }
+    const limited = item.stock != null && item.stock >= 0;
+    if (limited && item.stock === 0) {
+      message.error('库存不足');
+      return;
+    }
+    setRedeemingId(item.id);
+    try {
+      const res = await specialItemsService.redeem(item.id);
+      if (res.success && res.data) {
+        message.success(`兑换成功！核销码：${res.data.verifyCode}`);
+        await fetchUserDetail();
+        await onRefresh();
+      } else {
+        message.error(res.msg || '兑换失败');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('兑换失败');
+    } finally {
+      setRedeemingId(null);
+    }
+  };
 
   return (
     <motion.div
@@ -106,14 +140,30 @@ export default function RedeemTab({ specialItems }: RedeemTabProps) {
                 <h4 className="font-bold text-slate-800 dark:text-white mb-1 text-base truncate">{item.name}</h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2 leading-relaxed">{item.desc}</p>
                 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-lg font-black text-indigo-500">{item.cards}</span>
-                    <span className="text-[10px] font-bold text-slate-400">张万能卡</span>
+                <div className="flex flex-col gap-2">
+                  {item.stock != null && item.stock >= 0 && (
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      库存 {item.stock > 0 ? `剩余 ${item.stock}` : '已售罄'}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <span className="text-lg font-black text-indigo-500">{item.cards}</span>
+                      <span className="text-[10px] font-bold text-slate-400">张万能卡</span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={
+                        redeemingId === item.id ||
+                        cardBalance < item.cards ||
+                        (item.stock != null && item.stock >= 0 && item.stock === 0)
+                      }
+                      onClick={() => handleRedeem(item)}
+                      className="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors text-xs shadow-md shadow-indigo-200 dark:shadow-indigo-900/40 outline-none focus:outline-none"
+                    >
+                      {redeemingId === item.id ? '兑换中...' : '立即兑换'}
+                    </button>
                   </div>
-                  <button className="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-colors text-xs shadow-md shadow-indigo-200 dark:shadow-indigo-900/40 outline-none focus:outline-none">
-                    立即兑换
-                  </button>
                 </div>
               </div>
             </div>

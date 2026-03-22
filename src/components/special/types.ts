@@ -12,6 +12,10 @@ export interface SpecialItem {
   color: string;
   image?: string;
   status?: 'active' | 'inactive';
+  /** 发布者用户 id */
+  publishUserId?: string;
+  /** 库存，-1 或 undefined 表示不限 */
+  stock?: number;
 }
 
 /** 将后端记录转为前端展示结构 */
@@ -24,6 +28,8 @@ export function mapSpecialItemFromApi(row: {
   color?: string | null;
   imageUrl?: string | null;
   status?: string | null;
+  publishUserId?: string | null;
+  stock?: number | null;
 }): SpecialItem {
   return {
     id: row.id,
@@ -34,6 +40,8 @@ export function mapSpecialItemFromApi(row: {
     color: row.color?.trim() || 'indigo',
     image: row.imageUrl || undefined,
     status: row.status === 'inactive' ? 'inactive' : 'active',
+    publishUserId: row.publishUserId ?? undefined,
+    stock: row.stock === undefined || row.stock === null ? -1 : row.stock,
   };
 }
 

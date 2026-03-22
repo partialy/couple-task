@@ -22,4 +22,9 @@ public class SpecialItemQueryDTO {
      * 状态筛选：active、inactive，空表示全部
      */
     private String status;
+
+    /**
+     * 区分自己和对方
+     */
+    private String type;
 }

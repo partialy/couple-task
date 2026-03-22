@@ -4,11 +4,17 @@ import cn.example.dataserver.common.Result;
 import cn.example.dataserver.dto.SpecialItemPublishDTO;
 import cn.example.dataserver.dto.SpecialItemQueryDTO;
 import cn.example.dataserver.entity.BindingRelations;
+import cn.example.dataserver.entity.CardTransactions;
 import cn.example.dataserver.entity.SpecialItems;
+import cn.example.dataserver.entity.UserSpecialItems;
 import cn.example.dataserver.entity.Users;
 import cn.example.dataserver.enums.BindingRelation;
+import cn.example.dataserver.enums.ItemStatus;
 import cn.example.dataserver.service.BindingRelationsService;
+import cn.example.dataserver.service.CardTransactionsService;
 import cn.example.dataserver.service.SpecialItemsService;
+import cn.example.dataserver.service.UserSpecialItemsService;
+import cn.example.dataserver.service.UsersService;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -34,6 +40,9 @@ public class SpecialItemsServiceImplements {
     private final AuthService authService;
     private final BindingRelationsService bindingRelationsService;
     private final SpecialItemsService specialItemsService;
+    private final UsersService usersService;
+    private final CardTransactionsService cardTransactionsService;
+    private final UserSpecialItemsService userSpecialItemsService;
 
     /**
      * 解析当前用户已接受的绑定关系
@@ -48,6 +57,7 @@ public class SpecialItemsServiceImplements {
 
     /**
      * 分页查询当前绑定下的特别奖励（未逻辑删除）
+     * 区分自己和对方
      */
     public String pageList(String token, SpecialItemQueryDTO query) {
         Users user = authService.checkToken(token);
@@ -59,11 +69,22 @@ public class SpecialItemsServiceImplements {
         long pageNo = query.getPage() == null || query.getPage() < 1 ? 1L : query.getPage();
         long pageSize = query.getSize() == null || query.getSize() < 1 ? 10L : Math.min(query.getSize(), 100L);
 
-        Page<SpecialItems> page = specialItemsService.lambdaQuery()
+        String listType = StrUtil.blankToDefault(query.getType(), "self");
+        if (!"self".equals(listType) && !"target".equals(listType)) {
+            return Result.fail("type 参数无效，应为 self 或 target").toJson();
+        }
+
+        var wrapper = specialItemsService.lambdaQuery()
                 .eq(SpecialItems::getBelongBindingId, bind.getId())
-                .ne(SpecialItems::getPublishUserId, user.getId())
                 .isNull(SpecialItems::getDeletedAt)
-                .eq(StrUtil.isNotBlank(query.getStatus()), SpecialItems::getStatus, query.getStatus())
+                .eq(StrUtil.isNotBlank(query.getStatus()), SpecialItems::getStatus, query.getStatus());
+        if ("self".equals(listType)) {
+            wrapper.eq(SpecialItems::getPublishUserId, user.getId());
+        } else {
+            wrapper.ne(SpecialItems::getPublishUserId, user.getId());
+        }
+
+        Page<SpecialItems> page = wrapper
                 .orderByDesc(SpecialItems::getCreatedAt)
                 .page(new Page<>(pageNo, pageSize));
 
@@ -230,5 +251,83 @@ public class SpecialItemsServiceImplements {
         item.setUpdatedAt(new Date());
         specialItemsService.updateById(item);
         return Result.success(item).toJson();
+    }
+
+    /**
+     * 使用万能卡兑换对方发布的特别奖励
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String redeem(String token, String specialItemId) {
+        Users current = authService.checkToken(token);
+        BindingRelations bind = resolveAcceptedBinding(current.getId());
+        if (ObjectUtil.isNull(bind)) {
+            return Result.fail("请先绑定另一半").toJson();
+        }
+
+        SpecialItems item = specialItemsService.getById(specialItemId);
+        if (item == null || item.getDeletedAt() != null) {
+            return Result.fail("特别奖励不存在").toJson();
+        }
+        if (!bind.getId().equals(item.getBelongBindingId())) {
+            return Result.fail("无权兑换").toJson();
+        }
+        if (current.getId().equals(item.getPublishUserId())) {
+            return Result.fail("不能兑换自己发布的奖励").toJson();
+        }
+        if (!STATUS_ACTIVE.equals(item.getStatus())) {
+            return Result.fail("该奖励已下架").toJson();
+        }
+
+        Integer stock = item.getStock();
+        boolean unlimited = stock == null || stock < 0;
+        if (!unlimited && stock == 0) {
+            return Result.fail("库存不足").toJson();
+        }
+
+        Integer cost = item.getCardsCost() != null ? item.getCardsCost() : 0;
+        if (cost < 1) {
+            return Result.fail("兑换所需万能卡无效").toJson();
+        }
+
+        Integer cards = current.getCards() == null ? 0 : current.getCards();
+        if (cards < cost) {
+            return Result.fail("万能卡不足").toJson();
+        }
+
+        current.setCards(cards - cost);
+        usersService.updateById(current);
+
+        CardTransactions ct = new CardTransactions();
+        ct.setUserId(current.getId());
+        ct.setAmount(-cost);
+        ct.setTransactionType("special_redeem");
+        ct.setReferenceId(item.getId());
+        ct.setDescription("兑换特别奖励：" + item.getName());
+        ct.setCreatedAt(new Date());
+        cardTransactionsService.save(ct);
+
+        if (!unlimited) {
+            item.setStock(stock - 1);
+            item.setUpdatedAt(new Date());
+            if (item.getVersion() != null) {
+                item.setVersion(item.getVersion() + 1);
+            }
+            specialItemsService.updateById(item);
+        }
+
+        UserSpecialItems usi = new UserSpecialItems();
+        usi.setId(UUID.randomUUID().toString());
+        usi.setUserId(current.getId());
+        usi.setSpecialItemId(item.getId());
+        usi.setStatus(ItemStatus.USABLE.getValue());
+        usi.setCode(UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase());
+        usi.setAcquiredAt(new Date());
+        userSpecialItemsService.save(usi);
+
+        Map<String, Object> data = new HashMap<>(8);
+        data.put("userSpecialItemId", usi.getId());
+        data.put("verifyCode", usi.getCode());
+        data.put("specialItemId", item.getId());
+        return Result.success(data).toJson();
     }
 }

@@ -87,6 +87,12 @@ public class UserItems implements Serializable {
     @TableField(value = "color")
     private String color;
 
+    /**
+     * 
+     */
+    @TableField(value = "is_special")
+    private Integer isSpecial;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

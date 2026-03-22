@@ -34,6 +34,8 @@ export interface SpecialItemsPageQuery {
   size?: number;
   /** 不传则全部 */
   status?: string;
+  /** 区分自己和对方，默认自己 */
+  type?: 'self' | 'target';
 }
 
 const specialItemsService = {
@@ -55,6 +57,13 @@ const specialItemsService = {
 
   async updateStatus(id: string, status: 'active' | 'inactive'): Promise<ApiResponse<SpecialItemRecord>> {
     return await request.post(`/special-items/${id}/status`, { status });
+  },
+
+  /** 兑换对方发布的特别奖励（扣万能卡） */
+  async redeem(id: string): Promise<
+    ApiResponse<{ userSpecialItemId: string; verifyCode: string; specialItemId: string }>
+  > {
+    return await request.post(`/special-items/${id}/redeem`);
   },
 };
 
