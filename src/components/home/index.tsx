@@ -34,6 +34,7 @@ interface HomeProps {
   onOpenSettings?: () => void;
   onOpenPointsDetail?: () => void;
   onOpenTemplates?: () => void;
+  onOpenPartnerProfile?: () => void;
   onLogout?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -57,6 +58,7 @@ export default function Home({
   onOpenSettings,
   onOpenPointsDetail,
   onOpenTemplates,
+  onOpenPartnerProfile,
   onLogout,
   activeTab,
   setActiveTab,
@@ -224,7 +226,7 @@ export default function Home({
             {!isLoggedIn ? (
               renderLoginPrompt('消息列表')
             ) : (
-              <Messages />
+              <Messages onOpenPartnerProfile={onOpenPartnerProfile} />
             )}
           </motion.div>
         )}

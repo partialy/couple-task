@@ -14,7 +14,7 @@ interface BindingPageProps {
   key?: string;
   onClose: () => void;
   currentUser: Users;
-  navigateTo: (path: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates') => void;
+  navigateTo: (path: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile') => void;
 }
 
 export default function BindingPage({ onClose, currentUser, navigateTo }: BindingPageProps) {

@@ -1,5 +1,5 @@
 import request from "../request";
-import { ApiResponse, UserInitResponse, PublishConfigResponse } from "../types";
+import { ApiResponse, UserInitResponse, PublishConfigResponse, PartnerOverviewResponse } from "../types";
 import { Users } from "../sql_models";
 
 export interface UserUpdateParams {
@@ -35,5 +35,10 @@ export const userService = {
      */
     publishConfig: async (bindId: string) : Promise<ApiResponse<PublishConfigResponse>> => {
         return await request.get('/user/publishConfig', { params: { bindId } });
+    },
+
+    /** 绑定对象资料与任务/道具/资产汇总 */
+    partnerOverview: async (): Promise<ApiResponse<PartnerOverviewResponse>> => {
+        return await request.get('/user/partnerOverview');
     },
 }

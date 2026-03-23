@@ -29,4 +29,10 @@ public class UserController {
     public String publishConfig(@RequestHeader("Authorization") String token, @RequestParam String bindId) {
         return userInfoService.publishConfig(authService.checkToken(token), bindId);
     }
+
+    /** 绑定对象的资料与任务/道具/资产汇总 */
+    @GetMapping("/partnerOverview")
+    public String partnerOverview(@RequestHeader("Authorization") String token) {
+        return userInfoService.partnerOverview(authService.checkToken(token));
+    }
 }

@@ -25,7 +25,20 @@ export interface UserInitResponse {
     bindingRelations: BindingRelations;
     isBinding: boolean;
     user: Users;
-    bindUser: Users;
+    bindUser: Users | null;
+}
+
+/** GET /user/partnerOverview */
+export interface PartnerOverviewResponse {
+    profile: Users;
+    points: number;
+    cards: number;
+    tasksPublished: number;
+    tasksReceivedCompleted: number;
+    tasksReceivedOngoing: number;
+    tasksReceivedPending: number;
+    usableItemCount: number;
+    specialRewardsPublished: number;
 }
 
 export interface PublishConfigResponse {

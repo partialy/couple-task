@@ -16,6 +16,7 @@ const PointsDetail = lazy(() => import('./components/PointsDetail'));
 const Achievements = lazy(() => import('./components/achievements/Achievements'));
 const ItemsDashboard = lazy(() => import('./components/items/ItemsDashboard'));
 const TaskTemplatesPage = lazy(() => import('./components/task-templates/TaskTemplatesPage'));
+const PartnerProfilePage = lazy(() => import('./components/partner/PartnerProfilePage'));
 
 import { useUserStore, useTaskStore } from './store';
 import eventBus from './utils/eventBus';
@@ -29,7 +30,7 @@ import { getInitialDarkMode, writeStoredDarkMode } from './utils/darkMode';
 
 
 export default function App() {
-  const [view, setView] = useState<'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates'>('home');
+  const [view, setView] = useState<'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile'>('home');
   const [activeTab, setActiveTab] = useState('square'); // 'square' | 'inprogress' | 'messages' | 'profile'
   const [templateData, setTemplateData] = useState<any>(null);
   
@@ -148,7 +149,7 @@ export default function App() {
   }, [view, isLoggedIn, loadSpecialItems]);
 
   // Custom navigate function that updates history
-  const navigateTo = (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates') => {
+  const navigateTo = (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile') => {
     if (newView !== view) {
       window.history.pushState({ view: newView }, '', `#${newView}`);
       setView(newView);
@@ -251,7 +252,7 @@ export default function App() {
 
           {/* Main App Layer - Keep Home mounted when sub-pages are open to prevent blank gaps */}
           <AnimatePresence>
-            {(view === 'home' || view === 'publish' || view === 'shop' || view === 'settings' || view === 'points-detail' || view === 'special-rewards' || view === 'achievements' || view === 'items-dashboard' || view === 'task-templates') && (
+            {(view === 'home' || view === 'publish' || view === 'shop' || view === 'settings' || view === 'points-detail' || view === 'special-rewards' || view === 'achievements' || view === 'items-dashboard' || view === 'task-templates' || view === 'partner-profile') && (
               <Home 
                 key="home" 
                 tasks={storeTasks} 
@@ -271,6 +272,7 @@ export default function App() {
                 onOpenSettings={() => navigateTo('settings')}
                 onOpenPointsDetail={() => navigateTo('points-detail')}
                 onOpenTemplates={() => navigateTo('task-templates')}
+                onOpenPartnerProfile={() => navigateTo('partner-profile')}
                 onLogout={handleLogout}
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -350,6 +352,9 @@ export default function App() {
               <ItemsDashboard 
                 onBack={handleBack} 
               />
+            )}
+            {view === 'partner-profile' && (
+              <PartnerProfilePage onBack={handleBack} />
             )}
             {showBindingPage && (
               <BindingPage 

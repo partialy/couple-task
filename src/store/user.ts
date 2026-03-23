@@ -8,6 +8,8 @@ import eventBus from '@/utils/eventBus';
 
 interface UserState {
   currentUser: Users | null;
+  /** 绑定对象，未绑定时为 null */
+  bindUser: Users | null;
   bindingRelations: BindingRelations | null;
   isLoggedIn: boolean;
   login: (username: string, password: string, code?: string) => Promise<boolean>;
@@ -22,6 +24,7 @@ interface UserState {
 export const useUserStore = create<UserState>()(
     (set, get) => ({
       currentUser: null,
+      bindUser: null,
       bindingRelations: null,
       isLoggedIn: true,
       setIsLoggedIn: (isLoggedIn: boolean) => set({ isLoggedIn }),
@@ -32,7 +35,7 @@ export const useUserStore = create<UserState>()(
           set({ 
             currentUser: res.data.user, 
             bindingRelations: res.data.bindingRelations,
-            isLoggedIn: true 
+            isLoggedIn: true
           });
           localStorage.setItem('token', res.data.token);
           return true;
@@ -54,7 +57,7 @@ export const useUserStore = create<UserState>()(
 
       logout: async () => {
         // await authService.logout();
-        set({ currentUser: null, bindingRelations: null, isLoggedIn: false });
+        set({ currentUser: null, bindUser: null, bindingRelations: null, isLoggedIn: false });
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         eventBus.emit('LOGOUT');
@@ -90,7 +93,8 @@ export const useUserStore = create<UserState>()(
           set({ 
             currentUser: res.data.user, 
             bindingRelations: res.data.bindingRelations,
-            isLoggedIn: true 
+            isLoggedIn: true, 
+            bindUser: res.data.bindUser
           });
         }
       },
