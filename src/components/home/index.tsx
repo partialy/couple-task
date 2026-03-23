@@ -41,7 +41,6 @@ interface HomeProps {
   isLoggedIn?: boolean;
   currentUser?: Users | null;
   onLoginPrompt?: () => void;
-  onOpenBindingPage?: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
 }
@@ -64,7 +63,6 @@ export default function Home({
   isLoggedIn,
   currentUser,
   onLoginPrompt,
-  onOpenBindingPage,
   isDarkMode,
   onToggleDarkMode,
 }: HomeProps) {

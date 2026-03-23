@@ -239,6 +239,7 @@ export default function App() {
   }, [navigateTo]);
 
   useEffect(() => {
+
     const onLogout = () => {
       logout();
       setView('login');
@@ -248,6 +249,10 @@ export default function App() {
       message.error(msg);
       onLogout();
     };
+
+    if(!currentUser) {
+      fetchUserDetail()
+    }
 
     eventBus.on('UNAUTHORIZED', onUnauthorized);
     eventBus.on('LOGOUT', onLogout);
@@ -322,7 +327,6 @@ export default function App() {
                 isLoggedIn={isLoggedIn}
                 currentUser={currentUser || null}
                 onLoginPrompt={() => navigateTo('login')}
-                onOpenBindingPage={() => setShowBindingPage(true)}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={() => setIsDarkMode((v) => !v)}
               />
