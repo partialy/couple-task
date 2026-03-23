@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence } from "motion/react";
 import { Heart } from "lucide-react";
 import ConversationList from "./ConversationList";
@@ -8,25 +8,6 @@ import type { Conversation } from "../../data/messages";
 import { useMessageStore } from "../../store";
 import { useUserStore } from "@/store/user";
 import { chatService, type ConversationVO } from "@/api/service/chat";
-import { getChatWebSocketUrl } from "@/utils/chatWsUrl";
-import eventBus from "@/utils/eventBus";
-import type { MessageVO } from "@/api/service/chat";
-
-/** 避免在 CONNECTING 阶段直接 close 触发浏览器 “closed before established” 警告（Strict Mode 双挂载时常见） */
-function closeWebSocketSafely(ws: WebSocket | null) {
-  if (!ws) return;
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.close();
-    return;
-  }
-  if (ws.readyState === WebSocket.CONNECTING) {
-    const finish = () => {
-      if (ws.readyState === WebSocket.OPEN) ws.close();
-    };
-    ws.addEventListener("open", finish, { once: true });
-    ws.addEventListener("error", finish, { once: true });
-  }
-}
 
 function formatListTime(iso?: string): string {
   if (!iso) return "";
@@ -91,27 +72,19 @@ export default function Messages({
   const currentUser = useUserStore((state) => state.currentUser);
   const bindUser = useUserStore((state) => state.bindUser);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const activeConvRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    activeConvRef.current = activeConversationId;
-  }, [activeConversationId]);
 
   const {
     conversations,
     setConversations,
     clearUnreadCount,
     partnerOnline,
-    setPartnerOnline,
-    applyIncomingMessage,
+    setActiveChatConversationId,
   } = useMessageStore();
 
-  const applyIncomingMessageRef = useRef(applyIncomingMessage);
-  const setPartnerOnlineRef = useRef(setPartnerOnline);
   useEffect(() => {
-    applyIncomingMessageRef.current = applyIncomingMessage;
-    setPartnerOnlineRef.current = setPartnerOnline;
-  }, [applyIncomingMessage, setPartnerOnline]);
+    setActiveChatConversationId(activeConversationId);
+    return () => setActiveChatConversationId(null);
+  }, [activeConversationId, setActiveChatConversationId]);
 
   const loadConversations = useCallback(async () => {
     if (!bindUser || !currentUser) {
@@ -139,67 +112,6 @@ export default function Messages({
   useEffect(() => {
     void loadConversations();
   }, [loadConversations]);
-
-  useEffect(() => {
-    if (!currentUser?.id || !bindUser?.id) {
-      setPartnerOnlineRef.current(false);
-      return;
-    }
-    const peerId = bindUser.id;
-    const url = getChatWebSocketUrl();
-    let ws: WebSocket | null = null;
-    try {
-      ws = new WebSocket(url);
-    } catch {
-      setPartnerOnlineRef.current(false);
-      return () => {};
-    }
-
-    ws.onopen = () => {
-      if (import.meta.env.DEV) {
-        console.debug("[chat ws] connected");
-      }
-    };
-
-    ws.onmessage = (ev) => {
-      try {
-        const o = JSON.parse(ev.data as string) as {
-          event?: string;
-          data?: { userId?: string; online?: boolean } & MessageVO;
-        };
-        if (o.event === "peerPresence" && o.data?.userId === peerId) {
-          setPartnerOnlineRef.current(!!o.data.online);
-          return;
-        }
-        if (o.event === "newMessage" && o.data?.conversationId) {
-          const d = o.data;
-          const viewing = activeConvRef.current === d.conversationId;
-          applyIncomingMessageRef.current({
-            conversationId: d.conversationId,
-            content: d.content,
-            type: d.type,
-            createdAt: d.createdAt,
-            incrementUnread: !viewing,
-          });
-          eventBus.emit("CHAT_MESSAGE_INCOMING", d);
-        }
-      } catch {
-        /* ignore */
-      }
-    };
-
-    ws.onerror = () => setPartnerOnlineRef.current(false);
-
-    ws.onclose = (ev) => {
-      if (import.meta.env.DEV) {
-        console.debug("[chat ws] closed", ev.code, ev.reason || "");
-      }
-    };
-
-    return () => {
-      closeWebSocketSafely(ws);
-    };
-  }, [currentUser?.id, bindUser?.id]);
 
   useEffect(() => {
     if (activeConversationId) {

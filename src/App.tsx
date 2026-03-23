@@ -27,6 +27,11 @@ import specialItemsService from './api/service/specialItems';
 import { message } from '@/utils/pure/message';
 import { SpecialItem, mapSpecialItemFromApi } from './components/special/types';
 import { getInitialDarkMode, writeStoredDarkMode } from './utils/darkMode';
+import {
+  connectChatWebSocket,
+  disconnectChatWebSocket,
+  setChatHomeActiveTab,
+} from '@/ws/chatWebSocketClient';
 
 
 export default function App() {
@@ -37,7 +42,7 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => getInitialDarkMode());
   
   // Use Stores
-  const { currentUser, bindingRelations, isLoggedIn, logout, fetchUserDetail } = useUserStore();
+  const { currentUser, bindUser, bindingRelations, isLoggedIn, logout, fetchUserDetail } = useUserStore();
   const { tasks: storeTasks, setTasks: setStoreTasks, fetchPublishConfig } = useTaskStore();
 
   // Local state for non-persisted data or transition
@@ -119,6 +124,31 @@ export default function App() {
       setShowBindingPage(false);
     }
   }, [isLoggedIn, currentUser, bindingRelations]);
+
+  // Home 底栏 tab 同步给 WS 单例（新消息横幅是否打扰）
+  useEffect(() => {
+    setChatHomeActiveTab(activeTab);
+  }, [activeTab]);
+
+  // 已登录：主界面常驻聊天 WebSocket（不依赖是否打开「消息」tab）
+  useEffect(() => {
+    if (isLoggedIn && currentUser?.id) {
+      connectChatWebSocket();
+      return () => {
+        disconnectChatWebSocket();
+      };
+    }
+    disconnectChatWebSocket();
+    return () => {};
+  }, [isLoggedIn, currentUser?.id, bindUser?.id]);
+
+  useEffect(() => {
+    const openMessages = () => setActiveTab('messages');
+    eventBus.on('OPEN_MESSAGES_TAB', openMessages);
+    return () => {
+      eventBus.off('OPEN_MESSAGES_TAB', openMessages);
+    };
+  }, []);
 
   // Initial data fetch
   useEffect(() => {

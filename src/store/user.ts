@@ -3,6 +3,7 @@ import { authService } from '@/api/service/auth';
 import { userService } from '@/api/service/user';
 import { BindingRelations, Users } from '@/api/sql_models';
 import { message } from '@/utils/pure/message';
+import { disconnectChatWebSocket } from '@/ws/chatWebSocketClient';
 import { ApiResponse, UserLoginResponse } from '@/api/types';
 interface UserState {
   currentUser: Users | null;
@@ -55,6 +56,7 @@ export const useUserStore = create<UserState>()(
 
       logout: () => {
         // 不在此处 emit LOGOUT：App 中 onLogout 会调用本方法，emit 会导致无限递归
+        disconnectChatWebSocket();
         set({ currentUser: null, bindUser: null, bindingRelations: null, isLoggedIn: false });
         localStorage.removeItem('token');
         localStorage.removeItem('user');

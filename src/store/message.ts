@@ -4,8 +4,11 @@ import type { Conversation } from "@/data/messages";
 interface MessageState {
   conversations: Conversation[];
   partnerOnline: boolean;
+  /** 当前打开的聊天室会话 id（仅 messages tab 且打开 ChatRoom 时有值，供 WS 单例判断是否弹横幅） */
+  activeChatConversationId: string | null;
   setConversations: (conversations: Conversation[]) => void;
   setPartnerOnline: (online: boolean) => void;
+  setActiveChatConversationId: (id: string | null) => void;
   clearUnreadCount: (conversationId: string) => void;
   /** 收到新消息后更新列表项预览与未读 */
   applyIncomingMessage: (payload: {
@@ -39,8 +42,10 @@ function formatShortTime(iso: string): string {
 export const useMessageStore = create<MessageState>()((set) => ({
   conversations: [],
   partnerOnline: false,
+  activeChatConversationId: null,
   setConversations: (conversations) => set({ conversations }),
   setPartnerOnline: (online) => set({ partnerOnline: online }),
+  setActiveChatConversationId: (id) => set({ activeChatConversationId: id }),
   clearUnreadCount: (conversationId) =>
     set((state) => ({
       conversations: state.conversations.map((c) =>
