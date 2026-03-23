@@ -142,11 +142,11 @@ export default function Home({
               <div className="px-3 pt-3 pb-4">
                 {/* 标题/天气固定 */}
                 <div className="mb-3">
-                  <SquareHeader onOpenBindingPage={onOpenBindingPage} />
+                  <SquareHeader />
                 </div>
 
                 {/* 搜索框：常驻 */}
-                <SquareHeader onOpenBindingPage={onOpenBindingPage} variant="searchOnly" />
+                <SquareHeader variant="searchOnly" />
 
                 {/* 快捷入口折叠 */}
                 <div
