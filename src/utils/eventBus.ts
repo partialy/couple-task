@@ -5,6 +5,7 @@ const eventBus = new EventEmitter([
   "REQUEST_ERROR",
   "LOGOUT",
   "CHAT_MESSAGE_INCOMING",
+  "CHAT_CONVERSATION_READ",
   "OPEN_MESSAGES_TAB",
 ]);
 

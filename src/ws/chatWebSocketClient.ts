@@ -116,6 +116,16 @@ export function connectChatWebSocket() {
         }
       }
 
+      if (o.event === "conversationRead") {
+        const readData = o.data as { conversationId?: string; readByUserId?: string } | undefined;
+        if (readData?.conversationId && readData?.readByUserId) {
+          eventBus.emit("CHAT_CONVERSATION_READ", {
+            conversationId: readData.conversationId,
+            readByUserId: readData.readByUserId,
+          });
+        }
+      }
+
       // 后续：taskUpdate / systemNotice 等可在此分支
     } catch {
       /* ignore */

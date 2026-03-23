@@ -4,65 +4,9 @@ import { Heart } from "lucide-react";
 import ConversationList from "./ConversationList";
 import ChatRoom from "./ChatRoom";
 import { mockMessages } from "../../data/messages";
-import type { Conversation } from "../../data/messages";
 import { useMessageStore } from "../../store";
 import { useUserStore } from "@/store/user";
-import { chatService, type ConversationVO } from "@/api/service/chat";
-
-function formatListTime(iso?: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-function previewLastMessage(vo: ConversationVO | undefined): string {
-  if (!vo?.lastMessage) return "暂无消息";
-  const { content, type } = vo.lastMessage;
-  switch (type) {
-    case "image":
-      return "[图片]";
-    case "video":
-      return "[视频]";
-    case "file":
-      return "[文件]";
-    default:
-      return content || "";
-  }
-}
-
-function buildConversationRows(
-  partnerVo: ConversationVO | null,
-  bindUser: { id: string; nickname?: string; username: string; avatar?: string } | null
-): Conversation[] {
-  const rows: Conversation[] = [];
-
-  if (partnerVo && bindUser) {
-    rows.push({
-      id: partnerVo.id,
-      kind: "partner",
-      userId: partnerVo.peerUser.id,
-      userName: partnerVo.peerUser.nickname?.trim() || bindUser.nickname?.trim() || bindUser.username,
-      userAvatar: partnerVo.peerUser.avatar || bindUser.avatar || "",
-      lastMessage: previewLastMessage(partnerVo),
-      lastMessageTime: formatListTime(partnerVo.lastMessage?.createdAt || partnerVo.updatedAt),
-      unreadCount: Number(partnerVo.unreadCount) || 0,
-    });
-  }
-
-  rows.push({
-    id: "system",
-    kind: "system",
-    userId: "system",
-    userName: "系统通知",
-    userAvatar: "",
-    lastMessage: "任务与奖励相关通知",
-    lastMessageTime: "",
-    unreadCount: 0,
-  });
-
-  return rows;
-}
+import { fetchChatConversationRows } from "@/utils/chatConversationList";
 
 export default function Messages({
   onOpenPartnerProfile,
@@ -87,26 +31,8 @@ export default function Messages({
   }, [activeConversationId, setActiveChatConversationId]);
 
   const loadConversations = useCallback(async () => {
-    if (!bindUser || !currentUser) {
-      setConversations(buildConversationRows(null, null));
-      return;
-    }
-    const res = await chatService.listConversations(1, 20);
-    if (!res.success) {
-      setConversations(buildConversationRows(null, bindUser));
-      return;
-    }
-    let records = res.data?.records ?? [];
-    if (records.length === 0) {
-      const r2 = await chatService.getOrCreateWithPeer(bindUser.id);
-      if (r2.success && r2.data) {
-        setConversations(buildConversationRows(r2.data, bindUser));
-        return;
-      }
-      setConversations(buildConversationRows(null, bindUser));
-      return;
-    }
-    setConversations(buildConversationRows(records[0], bindUser));
+    const rows = await fetchChatConversationRows(bindUser, currentUser);
+    setConversations(rows);
   }, [bindUser, currentUser, setConversations]);
 
   useEffect(() => {

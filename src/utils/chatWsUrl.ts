@@ -1,3 +1,5 @@
+import request from "@/api/request";
+
 /**
  * 聊天 WebSocket 地址（后端 spring.mvc.servlet.path=/api，端点为 /api/ws/chat）
  *
@@ -16,7 +18,7 @@ export function getChatWebSocketUrl(): string {
     return `${wsProto}//${window.location.host}${path}?token=${tokenParam}`;
   }
 
-  const base = import.meta.env.VITE_API_URL as string | "https://api-yu.hs.partialy.cn";
+  const base = request.defaults.baseURL?.replace("/api","") || import.meta.env.VITE_API_URL as string || "https://api-yu.hs.partialy.cn";
   const origin = base?.startsWith("http")
     ? base
     : `${window.location.protocol}//${window.location.host}`;

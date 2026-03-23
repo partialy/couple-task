@@ -1,5 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import { Clock, Compass, MessageCircle, Plus, User } from 'lucide-react';
+import { useMessageStore } from '@/store/message';
 
 /** 触屏上几乎不触发 dblclick，用两次点击间隔判断双击更可靠 */
 const DOUBLE_TAP_MS = 350;
@@ -17,6 +18,9 @@ interface BottomTabBarProps {
  */
 export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPublish, onLoginPrompt }: BottomTabBarProps) {
   const squareLastTapRef = useRef(0);
+  const messageUnreadTotal = useMessageStore((s) =>
+    s.conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0),
+  );
 
   const handleSquareTabClick = useCallback(() => {
     const now = Date.now();
@@ -67,14 +71,23 @@ export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPu
       </div>
 
       <button
+        type="button"
         onClick={() => setActiveTab('messages')}
-        className={`p-2 flex flex-col items-center space-y-1 transition-colors ${
+        className={`relative p-2 flex flex-col items-center space-y-1 transition-colors ${
           activeTab === 'messages'
             ? 'text-blue-500 dark:text-blue-400'
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
         }`}
+        aria-label={messageUnreadTotal > 0 ? `消息，${messageUnreadTotal} 条未读` : '消息'}
       >
-        <MessageCircle className="w-6 h-6" strokeWidth={activeTab === 'messages' ? 2.5 : 2} />
+        <span className="relative">
+          <MessageCircle className="w-6 h-6" strokeWidth={activeTab === 'messages' ? 2.5 : 2} />
+          {messageUnreadTotal > 0 && (
+            <span className="absolute -right-1.5 -top-1 min-w-[18px] rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-[18px] text-white border-2 border-white dark:border-slate-900">
+              {messageUnreadTotal > 99 ? '99+' : messageUnreadTotal}
+            </span>
+          )}
+        </span>
         <span className="text-[10px] font-bold">消息</span>
       </button>
 

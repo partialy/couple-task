@@ -237,6 +237,10 @@ public class ChatService {
                 .set(Messages::getIsRead, 1)
                 .update();
 
+        // 通知消息发送方：对方已读（用于 WebSocket 同步己方气泡「已读」）
+        String messageSenderUserId = getPeerUserId(conv, user.getId());
+        chatWebSocketPushService.pushConversationRead(messageSenderUserId, dto.getConversationId(), user.getId());
+
         return Result.success("已更新").toJson();
     }
 

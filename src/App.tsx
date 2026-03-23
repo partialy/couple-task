@@ -18,7 +18,8 @@ const ItemsDashboard = lazy(() => import('./components/items/ItemsDashboard'));
 const TaskTemplatesPage = lazy(() => import('./components/task-templates/TaskTemplatesPage'));
 const PartnerProfilePage = lazy(() => import('./components/partner/PartnerProfilePage'));
 
-import { useUserStore, useTaskStore } from './store';
+import { useUserStore, useTaskStore, useMessageStore } from './store';
+import { fetchChatConversationRows } from '@/utils/chatConversationList';
 import eventBus from './utils/eventBus';
 import shopItemsService from './api/service/shopItems';
 import { mapRecordToShopItem } from './components/shop/mapShopItem';
@@ -158,6 +159,20 @@ export default function App() {
       
     }
   }, [isLoggedIn]);
+
+  // 预拉会话列表，供底栏未读角标与 WS 增量在未打开「消息」页时仍可用
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser || !bindUser) {
+      if (!isLoggedIn) {
+        useMessageStore.getState().setConversations([]);
+      }
+      return;
+    }
+    void (async () => {
+      const rows = await fetchChatConversationRows(bindUser, currentUser);
+      useMessageStore.getState().setConversations(rows);
+    })();
+  }, [isLoggedIn, currentUser?.id, bindUser?.id]);
 
   useEffect(() => {
     if (isLoggedIn && view === 'shop') {

@@ -44,4 +44,24 @@ public class ChatWebSocketPushService {
         payload.put("data", data);
         chatWebSocketSessionRegistry.sendJsonToUser(targetUserId, JSON.toJSONString(payload));
     }
+
+    /**
+     * 通知消息发送方：对方已读会话内未读消息（用于前端同步「已读」回执）
+     *
+     * @param messageSenderUserId 应收到推送的用户（己方消息被对方标记已读的一方）
+     * @param conversationId      会话 ID
+     * @param readByUserId        执行已读的一方用户 ID
+     */
+    public void pushConversationRead(String messageSenderUserId, String conversationId, String readByUserId) {
+        if (messageSenderUserId == null || conversationId == null || readByUserId == null) {
+            return;
+        }
+        Map<String, Object> data = new HashMap<>(4);
+        data.put("conversationId", conversationId);
+        data.put("readByUserId", readByUserId);
+        Map<String, Object> payload = new HashMap<>(4);
+        payload.put("event", "conversationRead");
+        payload.put("data", data);
+        chatWebSocketSessionRegistry.sendJsonToUser(messageSenderUserId, JSON.toJSONString(payload));
+    }
 }

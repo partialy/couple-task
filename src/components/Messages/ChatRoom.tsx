@@ -125,6 +125,25 @@ export default function ChatRoom({
     };
   }, [isPartner, convId, currentUserId, onRefreshList]);
 
+  useEffect(() => {
+    if (!isPartner || !convId || !currentUserId) return;
+
+    const onPeerRead = (payload: { conversationId: string; readByUserId: string }) => {
+      if (payload.conversationId !== convId) return;
+      if (payload.readByUserId === currentUserId) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.senderId === currentUserId ? { ...m, isRead: true } : m,
+        ),
+      );
+    };
+
+    eventBus.on("CHAT_CONVERSATION_READ", onPeerRead);
+    return () => {
+      eventBus.off("CHAT_CONVERSATION_READ", onPeerRead);
+    };
+  }, [isPartner, convId, currentUserId]);
+
   const handleSendMessage = async (text: string) => {
     if (!isPartner || !convId || !currentUserId) return;
     const res = await chatService.send({
