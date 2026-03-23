@@ -7,7 +7,16 @@ import axios from "axios";
  * @param prefix 文件名前缀
  * @returns 上传后的完整URL
  */
-export const uploadToQiniu = async (file: File, prefix: string = 'yutask'): Promise<string> => {
+export interface UploadToQiniuOptions {
+  /** 默认 15s；大文件请传更大值或 0 表示不限制（由 axios 行为决定） */
+  timeout?: number;
+}
+
+export const uploadToQiniu = async (
+  file: File,
+  prefix: string = 'yutask',
+  options?: UploadToQiniuOptions,
+): Promise<string> => {
     try {
         // 1. 获取上传Token
         const res = await commonService.getQiniuToken();
@@ -28,11 +37,18 @@ export const uploadToQiniu = async (file: File, prefix: string = 'yutask'): Prom
         formData.append('key', fileName);
 
         // 3. 执行上传
+        const timeout =
+            options?.timeout !== undefined
+                ? options.timeout
+                : file.size > 10 * 1024 * 1024
+                  ? 60 * 60 * 1000
+                  : 15000;
+
         const uploadRes = await axios.post(uploadUrl, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             },
-            timeout: 15000
+            timeout,
         });
 
         if (uploadRes.status !== 200) {

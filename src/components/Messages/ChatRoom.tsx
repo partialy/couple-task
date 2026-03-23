@@ -9,6 +9,8 @@ import { chatService, type MessageVO } from "@/api/service/chat";
 import eventBus from "@/utils/eventBus";
 import { message as toast } from "@/utils/pure/message";
 import { useUserStore } from "@/store/user";
+import { uploadToQiniu } from "@/utils/qiniu";
+import type { ChatAttachmentKind } from "@/components/ui/ChatAttachmentModal";
 
 interface ChatRoomProps {
   conversation: Conversation;
@@ -160,6 +162,42 @@ export default function ChatRoom({
     onRefreshList();
   };
 
+  const handleSendAttachments = async (type: ChatAttachmentKind, files: File[]) => {
+    if (!isPartner || !convId || !currentUserId || files.length === 0) return;
+    let failed = 0;
+    const total = files.length;
+    const uploadTimeout = 60 * 60 * 1000;
+    for (let i = 0; i < total; i++) {
+      const file = files[i];
+      try {
+        const url = await uploadToQiniu(file, "chat", { timeout: uploadTimeout });
+        const res = await chatService.send({
+          conversationId: convId,
+          type,
+          content: url,
+        });
+        if (!res.success || !res.data) {
+          toast.error(res.msg || `第 ${i + 1}/${total} 个发送失败`);
+          failed++;
+          continue;
+        }
+        setMessages((prev) => [...prev, apiMessageToUi(res.data)]);
+      } catch (e) {
+        console.error(e);
+        toast.error(`第 ${i + 1}/${total} 个上传失败`);
+        failed++;
+      }
+    }
+    onRefreshList();
+    if (failed === 0) {
+      toast.success(total === 1 ? "已发送" : `已发送 ${total} 条`);
+    } else if (failed < total) {
+      toast.error(`${failed} 个未成功，其余已发送`);
+    } else {
+      toast.error("全部发送失败");
+    }
+  };
+
   const partnerAvatar = bindUser?.avatar || conversation.userAvatar;
   const myAvatar = currentUser?.avatar || "";
   const displayName = conversation.userName;
@@ -244,7 +282,10 @@ export default function ChatRoom({
       </div>
 
       {isPartner ? (
-        <ChatInput onSend={(t) => void handleSendMessage(t)} />
+        <ChatInput
+          onSend={(t) => void handleSendMessage(t)}
+          onSendAttachments={(type, files) => void handleSendAttachments(type, files)}
+        />
       ) : (
         <div className="bg-slate-100 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 text-center text-sm text-slate-500">
           系统通知仅支持查看
