@@ -41,6 +41,8 @@ interface HomeProps {
   currentUser?: Users | null;
   onLoginPrompt?: () => void;
   onOpenBindingPage?: () => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
 export default function Home({
@@ -62,6 +64,8 @@ export default function Home({
   currentUser,
   onLoginPrompt,
   onOpenBindingPage,
+  isDarkMode,
+  onToggleDarkMode,
 }: HomeProps) {
   const [activeCategory, setActiveCategory] = useState('全部');
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
@@ -186,6 +190,8 @@ export default function Home({
                 tasks={tasks}
                 setTasks={setTasks}
                 onEditTask={onEditTask}
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={onToggleDarkMode}
               />
             )}
           </motion.div>

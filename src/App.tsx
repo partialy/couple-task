@@ -25,6 +25,7 @@ import type { ShopItem as ShopItemFE } from './components/shop/types';
 import specialItemsService from './api/service/specialItems';
 import { message } from '@/utils/pure/message';
 import { SpecialItem, mapSpecialItemFromApi } from './components/special/types';
+import { getInitialDarkMode, writeStoredDarkMode } from './utils/darkMode';
 
 
 export default function App() {
@@ -32,11 +33,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('square'); // 'square' | 'inprogress' | 'messages' | 'profile'
   const [templateData, setTemplateData] = useState<any>(null);
   
-  // Initialize dark mode from URL query parameter or default to false
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('darkMode') === 'true';
-  });
+  const [isDarkMode, setIsDarkMode] = useState(() => getInitialDarkMode());
   
   // Use Stores
   const { currentUser, bindingRelations, isLoggedIn, logout, fetchUserDetail } = useUserStore();
@@ -173,7 +170,7 @@ export default function App() {
     }, 50);
   };
 
-  // Toggle dark mode class on the document element for Tailwind and update URL
+  // Toggle dark mode class、持久化 localStorage、同步 URL（便于分享链接）
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -181,7 +178,8 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
 
-    // Update URL query parameter without reloading the page
+    writeStoredDarkMode(isDarkMode);
+
     const url = new URL(window.location.href);
     url.searchParams.set('darkMode', isDarkMode.toString());
     window.history.replaceState(window.history.state, '', url.toString());
@@ -280,6 +278,8 @@ export default function App() {
                 currentUser={currentUser || null}
                 onLoginPrompt={() => navigateTo('login')}
                 onOpenBindingPage={() => setShowBindingPage(true)}
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={() => setIsDarkMode((v) => !v)}
               />
             )}
           </AnimatePresence>

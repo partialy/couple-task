@@ -1,3 +1,5 @@
+import { getInitialDarkMode } from './darkMode';
+
 /** 与 Tailwind slate-50 / slate-900 及主界面背景一致 */
 export const THEME_COLOR_LIGHT = '#f8fafc';
 export const THEME_COLOR_DARK = '#0f172a';
@@ -17,13 +19,12 @@ export function syncThemeColorMeta(): void {
 }
 
 /**
- * 与 App 初始逻辑一致：从 URL 在首屏同步 dark 类，避免 theme-color 闪一下
+ * 与 App 初始逻辑一致：localStorage 优先，否则 URL，在首屏同步 dark 类
  * （React 挂载后仍会再跑一次 effect，结果一致）
  */
 export function syncDarkClassFromUrl(): void {
   try {
-    const params = new URLSearchParams(window.location.search);
-    const dark = params.get('darkMode') === 'true';
+    const dark = getInitialDarkMode();
     if (dark) {
       document.documentElement.classList.add('dark');
     } else {
@@ -35,7 +36,7 @@ export function syncDarkClassFromUrl(): void {
 }
 
 /**
- * 监听 html class 变化（App / Profile 等处直接改 class 时也能更新 theme-color）
+ * 监听 html class 变化（App 等处改 class 时也能更新 theme-color）
  */
 export function initThemeColorObserver(): () => void {
   syncThemeColorMeta();

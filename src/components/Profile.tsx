@@ -24,6 +24,8 @@ export default function Profile({
   tasks,
   setTasks,
   onEditTask,
+  isDarkMode,
+  onToggleDarkMode,
 }: {
   onOpenItems?: () => void;
   onOpenShop?: () => void;
@@ -33,10 +35,11 @@ export default function Profile({
   tasks: any[];
   setTasks: (tasks: any[]) => void;
   onEditTask?: (initialData: PublishTaskInitialData) => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 }) {
   const { currentUser } = useUserStore();
   const toggleBookmark = useTaskStore((s) => s.toggleBookmark);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [taskListScreen, setTaskListScreen] = useState<TaskListScreenMode | null>(null);
   const [activeList, setActiveList] = useState<{ title: string, filter: (t: any) => boolean } | null>(null);
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
@@ -77,25 +80,6 @@ export default function Profile({
     window.history.back();
   };
 
-  useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    setIsDarkMode(newDarkMode);
-
-    // Update URL query parameter without reloading the page
-    const url = new URL(window.location.href);
-    url.searchParams.set('darkMode', newDarkMode.toString());
-    window.history.replaceState(window.history.state, '', url.toString());
-  };
-
   const uid = currentUser?.id;
 
   const publishedTasks = useMemo(
@@ -132,7 +116,7 @@ export default function Profile({
             <QrCode className="w-5 h-5" />
           </button>
           <button 
-            onClick={toggleDarkMode}
+            onClick={onToggleDarkMode}
             className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors bg-slate-50 dark:bg-slate-700/50 rounded-full"
           >
             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

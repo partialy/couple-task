@@ -4,7 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { initThemeColorObserver, syncDarkClassFromUrl, syncThemeColorMeta } from './utils/themeColor';
 
-// 与 App 中 URL darkMode 一致，首屏即正确 class + theme-color
+// 与 App 中 localStorage / URL darkMode 一致，首屏即正确 class + theme-color
 syncDarkClassFromUrl();
 syncThemeColorMeta();
 initThemeColorObserver();
