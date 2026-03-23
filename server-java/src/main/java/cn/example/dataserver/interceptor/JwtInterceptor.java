@@ -24,6 +24,14 @@ public class JwtInterceptor implements HandlerInterceptor {
             log.info("OPTIONS请求，放行");
             return true;
         }
+        // WebSocket 握手由 ChatHandshakeInterceptor 校验 token，此处放行避免与 servlet.path=/api 下路径排除不一致
+        String upgrade = request.getHeader("Upgrade");
+        if (upgrade != null && "websocket".equalsIgnoreCase(upgrade)) {
+            String uri = request.getRequestURI();
+            if (uri != null && uri.contains("/ws/")) {
+                return true;
+            }
+        }
         // 获取请求头中的令牌 (Token)
         String token = request.getHeader("Authorization");
         log.info("收到令牌: {}", token);

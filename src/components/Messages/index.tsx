@@ -12,6 +12,22 @@ import { getChatWebSocketUrl } from "@/utils/chatWsUrl";
 import eventBus from "@/utils/eventBus";
 import type { MessageVO } from "@/api/service/chat";
 
+/** 避免在 CONNECTING 阶段直接 close 触发浏览器 “closed before established” 警告（Strict Mode 双挂载时常见） */
+function closeWebSocketSafely(ws: WebSocket | null) {
+  if (!ws) return;
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.close();
+    return;
+  }
+  if (ws.readyState === WebSocket.CONNECTING) {
+    const finish = () => {
+      if (ws.readyState === WebSocket.OPEN) ws.close();
+    };
+    ws.addEventListener("open", finish, { once: true });
+    ws.addEventListener("error", finish, { once: true });
+  }
+}
+
 function formatListTime(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -90,6 +106,13 @@ export default function Messages({
     applyIncomingMessage,
   } = useMessageStore();
 
+  const applyIncomingMessageRef = useRef(applyIncomingMessage);
+  const setPartnerOnlineRef = useRef(setPartnerOnline);
+  useEffect(() => {
+    applyIncomingMessageRef.current = applyIncomingMessage;
+    setPartnerOnlineRef.current = setPartnerOnline;
+  }, [applyIncomingMessage, setPartnerOnline]);
+
   const loadConversations = useCallback(async () => {
     if (!bindUser || !currentUser) {
       setConversations(buildConversationRows(null, null));
@@ -119,17 +142,24 @@ export default function Messages({
 
   useEffect(() => {
     if (!currentUser?.id || !bindUser?.id) {
-      setPartnerOnline(false);
+      setPartnerOnlineRef.current(false);
       return;
     }
+    const peerId = bindUser.id;
     const url = getChatWebSocketUrl();
     let ws: WebSocket | null = null;
     try {
       ws = new WebSocket(url);
     } catch {
-      setPartnerOnline(false);
+      setPartnerOnlineRef.current(false);
       return () => {};
     }
+
+    ws.onopen = () => {
+      if (import.meta.env.DEV) {
+        console.debug("[chat ws] connected");
+      }
+    };
 
     ws.onmessage = (ev) => {
       try {
@@ -137,14 +167,14 @@ export default function Messages({
           event?: string;
           data?: { userId?: string; online?: boolean } & MessageVO;
         };
-        if (o.event === "peerPresence" && o.data?.userId === bindUser.id) {
-          setPartnerOnline(!!o.data.online);
+        if (o.event === "peerPresence" && o.data?.userId === peerId) {
+          setPartnerOnlineRef.current(!!o.data.online);
           return;
         }
         if (o.event === "newMessage" && o.data?.conversationId) {
           const d = o.data;
           const viewing = activeConvRef.current === d.conversationId;
-          applyIncomingMessage({
+          applyIncomingMessageRef.current({
             conversationId: d.conversationId,
             content: d.content,
             type: d.type,
@@ -158,12 +188,18 @@ export default function Messages({
       }
     };
 
-    ws.onerror = () => setPartnerOnline(false);
+    ws.onerror = () => setPartnerOnlineRef.current(false);
+
+    ws.onclose = (ev) => {
+      if (import.meta.env.DEV) {
+        console.debug("[chat ws] closed", ev.code, ev.reason || "");
+      }
+    };
 
     return () => {
-      ws?.close();
+      closeWebSocketSafely(ws);
     };
-  }, [currentUser?.id, bindUser?.id, applyIncomingMessage, setPartnerOnline]);
+  }, [currentUser?.id, bindUser?.id]);
 
   useEffect(() => {
     if (activeConversationId) {

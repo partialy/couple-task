@@ -28,7 +28,8 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/auth/register",
                         "/auth/sendCode",
                         "/ws/**",
+                        "/api/ws/**",
                         "/error"
-                ); // 排除接口
+                ); // 排除接口（含 spring.mvc.servlet.path=/api 下的 WebSocket）
     }
 }
