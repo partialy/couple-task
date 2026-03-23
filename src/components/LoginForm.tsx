@@ -92,6 +92,7 @@ export default function LoginForm({ onSwitch, onBack, onLogin }: { onSwitch: () 
               onChange={(e) => setPassword(e.target.value)}
               className="w-full pl-12 pr-12 py-4 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:focus:ring-cyan-500 focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium"
               placeholder="请输入密码"
+              onKeyDown={ handleKeyDown }
             />
             <button
               type="button"

@@ -27,6 +27,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/auth/login",
                         "/auth/register",
                         "/auth/sendCode",
+                        "/ws/**",
                         "/error"
                 ); // 排除接口
     }

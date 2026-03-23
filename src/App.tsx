@@ -148,20 +148,23 @@ export default function App() {
     }
   }, [view, isLoggedIn, loadSpecialItems]);
 
-  // Custom navigate function that updates history
-  const navigateTo = (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile') => {
-    if (newView !== view) {
-      window.history.pushState({ view: newView }, '', `#${newView}`);
-      setView(newView);
-    }
-  };
+  const navigateTo = useCallback(
+    (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile') => {
+      setView((prev) => {
+        if (newView !== prev) {
+          window.history.pushState({ view: newView }, '', `#${newView}`);
+          return newView;
+        }
+        return prev;
+      });
+    },
+    []
+  );
 
-  // Robust back handler
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     window.history.back();
-    // Fallback in case popstate doesn't fire (e.g., no history)
     setTimeout(() => {
-      setView(prev => {
+      setView((prev) => {
         if (prev !== 'home' && prev !== 'login' && prev !== 'register') {
           window.history.replaceState({ view: 'home' }, '', '#home');
           return 'home';
@@ -169,7 +172,7 @@ export default function App() {
         return prev;
       });
     }, 50);
-  };
+  }, []);
 
   // Toggle dark mode class、持久化 localStorage、同步 URL（便于分享链接）
   useEffect(() => {
@@ -186,32 +189,28 @@ export default function App() {
     window.history.replaceState(window.history.state, '', url.toString());
   }, [isDarkMode]);
 
-  // Handlers that integrate with Store
-  const handleLogin = () => {
+  const handleLogin = useCallback(() => {
     navigateTo('home');
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigateTo('login');
-  };
-
-  const handleLogoutRef = useRef(handleLogout);
-  handleLogoutRef.current = handleLogout;
+  }, [navigateTo]);
 
   useEffect(() => {
-    const onUnauthorized = (msg: string) => {
-      message.error(msg);
-      handleLogoutRef.current();
-    };
     const onLogout = () => {
       logout();
-      navigateTo('login');
+      setView('login');
+      window.history.replaceState({ view: 'login' }, '', '#login');
     };
+    const onUnauthorized = (msg: string) => {
+      message.error(msg);
+      onLogout();
+    };
+
     eventBus.on('UNAUTHORIZED', onUnauthorized);
     eventBus.on('LOGOUT', onLogout);
-    return () => eventBus.off('UNAUTHORIZED', onUnauthorized);
-  }, []);
+    return () => {
+      eventBus.off('UNAUTHORIZED', onUnauthorized);
+      eventBus.off('LOGOUT', onLogout);
+    };
+  }, [logout]);
 
   return (
     <div className="h-screen w-screen relative overflow-hidden font-sans transition-colors duration-500 bg-white dark:bg-slate-900">
@@ -273,7 +272,6 @@ export default function App() {
                 onOpenPointsDetail={() => navigateTo('points-detail')}
                 onOpenTemplates={() => navigateTo('task-templates')}
                 onOpenPartnerProfile={() => navigateTo('partner-profile')}
-                onLogout={handleLogout}
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 isLoggedIn={isLoggedIn}
@@ -335,7 +333,6 @@ export default function App() {
             {view === 'settings' && (
               <Settings 
                 onBack={handleBack} 
-                onLogout={() => navigateTo('login')}
               />
             )}
             {view === 'points-detail' && (

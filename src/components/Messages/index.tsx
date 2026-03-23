@@ -1,10 +1,71 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence } from "motion/react";
+import { Heart } from "lucide-react";
 import ConversationList from "./ConversationList";
 import ChatRoom from "./ChatRoom";
-import { mockConversations, mockMessages } from "../../data/messages";
+import { mockMessages } from "../../data/messages";
+import type { Conversation } from "../../data/messages";
 import { useMessageStore } from "../../store";
 import { useUserStore } from "@/store/user";
+import { chatService, type ConversationVO } from "@/api/service/chat";
+import { getChatWebSocketUrl } from "@/utils/chatWsUrl";
+import eventBus from "@/utils/eventBus";
+import type { MessageVO } from "@/api/service/chat";
+
+function formatListTime(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function previewLastMessage(vo: ConversationVO | undefined): string {
+  if (!vo?.lastMessage) return "暂无消息";
+  const { content, type } = vo.lastMessage;
+  switch (type) {
+    case "image":
+      return "[图片]";
+    case "video":
+      return "[视频]";
+    case "file":
+      return "[文件]";
+    default:
+      return content || "";
+  }
+}
+
+function buildConversationRows(
+  partnerVo: ConversationVO | null,
+  bindUser: { id: string; nickname?: string; username: string; avatar?: string } | null
+): Conversation[] {
+  const rows: Conversation[] = [];
+
+  if (partnerVo && bindUser) {
+    rows.push({
+      id: partnerVo.id,
+      kind: "partner",
+      userId: partnerVo.peerUser.id,
+      userName: partnerVo.peerUser.nickname?.trim() || bindUser.nickname?.trim() || bindUser.username,
+      userAvatar: partnerVo.peerUser.avatar || bindUser.avatar || "",
+      lastMessage: previewLastMessage(partnerVo),
+      lastMessageTime: formatListTime(partnerVo.lastMessage?.createdAt || partnerVo.updatedAt),
+      unreadCount: Number(partnerVo.unreadCount) || 0,
+    });
+  }
+
+  rows.push({
+    id: "system",
+    kind: "system",
+    userId: "system",
+    userName: "系统通知",
+    userAvatar: "",
+    lastMessage: "任务与奖励相关通知",
+    lastMessageTime: "",
+    unreadCount: 0,
+  });
+
+  return rows;
+}
 
 export default function Messages({
   onOpenPartnerProfile,
@@ -13,25 +74,101 @@ export default function Messages({
 }) {
   const currentUser = useUserStore((state) => state.currentUser);
   const bindUser = useUserStore((state) => state.bindUser);
-  const [activeConversationId, setActiveConversationId] = useState<
-    string | null
-  >(null);
-  const { conversations, setConversations, clearUnreadCount } =
-    useMessageStore();
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const activeConvRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Initialize conversations from mock data if empty
-    if (conversations.length === 0) {
-      setConversations(mockConversations);
+    activeConvRef.current = activeConversationId;
+  }, [activeConversationId]);
+
+  const {
+    conversations,
+    setConversations,
+    clearUnreadCount,
+    partnerOnline,
+    setPartnerOnline,
+    applyIncomingMessage,
+  } = useMessageStore();
+
+  const loadConversations = useCallback(async () => {
+    if (!bindUser || !currentUser) {
+      setConversations(buildConversationRows(null, null));
+      return;
     }
-  }, [conversations.length, setConversations]);
+    const res = await chatService.listConversations(1, 20);
+    if (!res.success) {
+      setConversations(buildConversationRows(null, bindUser));
+      return;
+    }
+    let records = res.data?.records ?? [];
+    if (records.length === 0) {
+      const r2 = await chatService.getOrCreateWithPeer(bindUser.id);
+      if (r2.success && r2.data) {
+        setConversations(buildConversationRows(r2.data, bindUser));
+        return;
+      }
+      setConversations(buildConversationRows(null, bindUser));
+      return;
+    }
+    setConversations(buildConversationRows(records[0], bindUser));
+  }, [bindUser, currentUser, setConversations]);
+
+  useEffect(() => {
+    void loadConversations();
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (!currentUser?.id || !bindUser?.id) {
+      setPartnerOnline(false);
+      return;
+    }
+    const url = getChatWebSocketUrl();
+    let ws: WebSocket | null = null;
+    try {
+      ws = new WebSocket(url);
+    } catch {
+      setPartnerOnline(false);
+      return () => {};
+    }
+
+    ws.onmessage = (ev) => {
+      try {
+        const o = JSON.parse(ev.data as string) as {
+          event?: string;
+          data?: { userId?: string; online?: boolean } & MessageVO;
+        };
+        if (o.event === "peerPresence" && o.data?.userId === bindUser.id) {
+          setPartnerOnline(!!o.data.online);
+          return;
+        }
+        if (o.event === "newMessage" && o.data?.conversationId) {
+          const d = o.data;
+          const viewing = activeConvRef.current === d.conversationId;
+          applyIncomingMessage({
+            conversationId: d.conversationId,
+            content: d.content,
+            type: d.type,
+            createdAt: d.createdAt,
+            incrementUnread: !viewing,
+          });
+          eventBus.emit("CHAT_MESSAGE_INCOMING", d);
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    ws.onerror = () => setPartnerOnline(false);
+
+    return () => {
+      ws?.close();
+    };
+  }, [currentUser?.id, bindUser?.id, applyIncomingMessage, setPartnerOnline]);
 
   useEffect(() => {
     if (activeConversationId) {
-      // Clear unread count when conversation is opened
       clearUnreadCount(activeConversationId);
 
-      // Push a dummy state with hash so back button can be intercepted in WebViews
       window.history.pushState({ modal: "chatRoom" }, "", "#chat");
 
       const handlePopState = () => {
@@ -53,20 +190,12 @@ export default function Messages({
     }
   };
 
-  const activeConversation = conversations.find(
-    (c) => c.id === activeConversationId,
-  );
-  const messages = activeConversationId
-    ? mockMessages[activeConversationId] || []
-    : [];
+  const activeConversation = conversations.find((c) => c.id === activeConversationId);
 
   return (
     <div className="w-full h-full relative overflow-hidden flex flex-col">
-      {/* Header for Messages Tab */}
       <div className="px-4 pt-4 pb-3 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white shrink-0">
-          消息
-        </h2>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white shrink-0">消息</h2>
         {bindUser && onOpenPartnerProfile ? (
           <button
             type="button"
@@ -74,6 +203,10 @@ export default function Messages({
             className="flex min-w-0 max-w-[55%] items-center gap-2 rounded-full py-1 pl-3 pr-1 transition-colors hover:bg-slate-100/90 dark:hover:bg-slate-800/80"
             aria-label="查看对方资料"
           >
+            <Heart
+              className={`h-4 w-4 shrink-0 ${partnerOnline ? "fill-rose-500 text-rose-500" : "text-slate-300 dark:text-slate-600"}`}
+              aria-hidden
+            />
             <span className="truncate text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
               {bindUser.nickname?.trim() || bindUser.username}
             </span>
@@ -91,29 +224,22 @@ export default function Messages({
             )}
           </button>
         ) : (
-          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 shrink-0">
-            未绑定
-          </span>
+          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 shrink-0">未绑定</span>
         )}
       </div>
 
-      {/* Conversation List */}
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-        <ConversationList
-          conversations={conversations}
-          onSelect={handleSelectConversation}
-        />
+        <ConversationList conversations={conversations} onSelect={handleSelectConversation} />
       </div>
 
-      {/* Chat Room Overlay */}
       <AnimatePresence>
         {activeConversationId && activeConversation && (
           <ChatRoom
             key="chatroom"
             conversation={activeConversation}
-            initialMessages={messages}
+            initialMessages={activeConversation.kind === "system" ? mockMessages.system : []}
             onBack={handleBackToList}
-            currentUser={currentUser?.username || null}
+            onRefreshList={loadConversations}
           />
         )}
       </AnimatePresence>

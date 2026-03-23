@@ -23,6 +23,7 @@ public class BindingService {
 
     private final BindingRelationsService bindingRelationsService;
     private final UsersService usersService;
+    private final ChatService chatService;
 
     @Transactional
     public String invite(Users user, String inviteCode) {
@@ -151,6 +152,9 @@ public class BindingService {
         invite.setStatus(BindingRelation.ACCEPTED.getValue());
         invite.setUpdatedAt(new Date());
         bindingRelationsService.updateById(invite);
+
+        // 绑定成功后创建双人聊天会话
+        chatService.ensureConversationBetweenUsers(invite.getUserId(), user.getId());
 
         // 拒绝两个用户的所有其他待处理邀请
         bindingRelationsService.lambdaUpdate()

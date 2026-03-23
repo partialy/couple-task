@@ -40,7 +40,7 @@ public class Messages implements Serializable {
     private String content;
 
     /**
-     * 消息类型 (text, image, task_invite)
+     * 消息类型：text、image、video、file、task_invite 等
      */
     @TableField(value = "type")
     private String type;

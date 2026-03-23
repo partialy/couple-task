@@ -36,8 +36,8 @@ request.interceptors.response.use(response => {
         }
     } else {
         eventBus.emit("REQUEST_ERROR", error.response?.data);
+        console.error("请求错误：", error.response?.data);
     }
-    console.error("请求错误：", error.response?.data);
     return error.response?.data;
 })
 

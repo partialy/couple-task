@@ -4,8 +4,6 @@ import { userService } from '@/api/service/user';
 import { BindingRelations, Users } from '@/api/sql_models';
 import { message } from '@/utils/pure/message';
 import { ApiResponse, UserLoginResponse } from '@/api/types';
-import eventBus from '@/utils/eventBus';
-
 interface UserState {
   currentUser: Users | null;
   /** 绑定对象，未绑定时为 null */
@@ -55,12 +53,11 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      logout: async () => {
-        // await authService.logout();
+      logout: () => {
+        // 不在此处 emit LOGOUT：App 中 onLogout 会调用本方法，emit 会导致无限递归
         set({ currentUser: null, bindUser: null, bindingRelations: null, isLoggedIn: false });
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        eventBus.emit('LOGOUT');
       },
 
       updatePoints: async (amount) => {

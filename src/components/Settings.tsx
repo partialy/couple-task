@@ -5,7 +5,7 @@ import ProfileEdit from './profile/ProfileEdit';
 import { useUserStore } from '@/store';
 import eventBus from '@/utils/eventBus';
 
-export default function Settings({ onBack, onLogout }: { onBack: () => void, onLogout: () => void, key?: string }) {
+export default function Settings({ onBack }: { onBack: () => void, key?: string }) {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   const clearCache = () => {
@@ -75,7 +75,7 @@ export default function Settings({ onBack, onLogout }: { onBack: () => void, onL
         {/* Logout Button */}
         <div className="pt-8 pb-12">
           <button 
-            onClick={onLogout}
+            onClick={() => eventBus.emit("LOGOUT")}
             className="w-full py-4 bg-white dark:bg-slate-800 text-rose-500 font-bold rounded-2xl shadow-sm hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all flex items-center justify-center space-x-2 border border-slate-100 dark:border-slate-700"
           >
             <LogOut className="w-5 h-5" />

@@ -35,7 +35,6 @@ interface HomeProps {
   onOpenPointsDetail?: () => void;
   onOpenTemplates?: () => void;
   onOpenPartnerProfile?: () => void;
-  onLogout?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -59,7 +58,6 @@ export default function Home({
   onOpenPointsDetail,
   onOpenTemplates,
   onOpenPartnerProfile,
-  onLogout,
   activeTab,
   setActiveTab,
   isLoggedIn,

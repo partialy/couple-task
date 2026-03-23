@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.example.dataserver.mapper.ChatMapper">
+
+    <select id="selectConversationPage" resultType="cn.example.dataserver.dto.ConversationListRow">
+        SELECT
+            c.id AS conversation_id,
+            c.user1_id AS user1_id,
+            c.user2_id AS user2_id,
+            c.type AS conversation_type,
+            c.last_message_id AS last_message_id,
+            c.created_at AS created_at,
+            c.updated_at AS updated_at,
+            CASE WHEN c.user1_id = #{userId} THEN c.user2_id ELSE c.user1_id END AS peer_id,
+            u.nickname AS peer_nickname,
+            u.avatar AS peer_avatar,
+            m.content AS last_content,
+            m.type AS last_type,
+            m.created_at AS last_message_created_at,
+            (
+                SELECT COUNT(*)
+                FROM messages msg
+                WHERE msg.conversation_id = c.id
+                  AND msg.sender_id != #{userId}
+                  AND msg.is_read = 0
+            ) AS unread_count
+        FROM conversations c
+        LEFT JOIN users u ON u.id = CASE WHEN c.user1_id = #{userId} THEN c.user2_id ELSE c.user1_id END
+        LEFT JOIN messages m ON m.id = c.last_message_id
+        WHERE c.user1_id = #{userId} OR c.user2_id = #{userId}
+        ORDER BY c.updated_at DESC
+    </select>
+</mapper>
