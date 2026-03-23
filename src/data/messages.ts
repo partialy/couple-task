@@ -8,6 +8,9 @@ export interface Message {
   text: string;
   type?: string;
   timestamp: string;
+  /**
+   * 己方消息：对方是否已读；对方消息：本人是否已读（与后端 MessageVO.isRead 一致）
+   */
   isRead: boolean;
 }
 

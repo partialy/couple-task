@@ -16,7 +16,7 @@ export function getChatWebSocketUrl(): string {
     return `${wsProto}//${window.location.host}${path}?token=${tokenParam}`;
   }
 
-  const base = import.meta.env.VITE_API_URL as string | undefined;
+  const base = import.meta.env.VITE_API_URL as string | "https://api-yu.hs.partialy.cn";
   const origin = base?.startsWith("http")
     ? base
     : `${window.location.protocol}//${window.location.host}`;

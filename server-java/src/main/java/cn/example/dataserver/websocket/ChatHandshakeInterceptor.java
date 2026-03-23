@@ -43,6 +43,7 @@ public class ChatHandshakeInterceptor implements HandshakeInterceptor {
             log.warn("聊天 WebSocket 握手失败：无法解析用户 ID");
             return false;
         }
+        log.info("用户连接成功：{}", userId);
         attributes.put("userId", userId);
         return true;
     }

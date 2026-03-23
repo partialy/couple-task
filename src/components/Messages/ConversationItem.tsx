@@ -9,6 +9,7 @@ interface ConversationItemProps {
 
 export default function ConversationItem({ conversation, onClick }: ConversationItemProps) {
   const isSystem = conversation.kind === "system";
+  const hasUnread = conversation.unreadCount > 0;
 
   return (
     <button
@@ -42,14 +43,28 @@ export default function ConversationItem({ conversation, onClick }: Conversation
 
       <div className="ml-3 flex-1 overflow-hidden text-left">
         <div className="flex justify-between items-baseline mb-1">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 truncate pr-2">
+          <h3
+            className={`truncate pr-2 ${
+              hasUnread
+                ? "font-bold text-slate-900 dark:text-white"
+                : "font-bold text-slate-800 dark:text-slate-200"
+            }`}
+          >
             {conversation.userName}
           </h3>
           <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">
             {conversation.lastMessageTime}
           </span>
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{conversation.lastMessage}</p>
+        <p
+          className={`truncate text-sm ${
+            hasUnread
+              ? "font-semibold text-slate-700 dark:text-slate-200"
+              : "text-slate-500 dark:text-slate-400"
+          }`}
+        >
+          {conversation.lastMessage}
+        </p>
       </div>
     </button>
   );

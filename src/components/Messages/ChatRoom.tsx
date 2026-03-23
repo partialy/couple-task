@@ -46,6 +46,8 @@ export default function ChatRoom({
 
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  /** 对方连续发消息时合并 markRead，减少请求次数 */
+  const markReadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPartner = conversation.kind === "partner";
   const convId = isPartner ? conversation.id : null;
 
@@ -85,20 +87,43 @@ export default function ChatRoom({
   }, [isPartner, initialMessages]);
 
   useEffect(() => {
-    if (!isPartner || !convId) return;
+    if (!isPartner || !convId || !currentUserId) return;
+
+    const scheduleMarkRead = () => {
+      if (markReadDebounceRef.current) {
+        clearTimeout(markReadDebounceRef.current);
+      }
+      markReadDebounceRef.current = setTimeout(() => {
+        markReadDebounceRef.current = null;
+        void (async () => {
+          await chatService.markRead({ conversationId: convId });
+          onRefreshList();
+        })();
+      }, 250);
+    };
+
     const handler = (payload: MessageVO) => {
       if (payload.conversationId !== convId) return;
+      const fromPeer = payload.senderId !== currentUserId;
       setMessages((prev) => {
         if (prev.some((p) => p.id === payload.id)) return prev;
         return [...prev, apiMessageToUi(payload)];
       });
-      onRefreshList();
+      if (fromPeer) {
+        scheduleMarkRead();
+      } else {
+        onRefreshList();
+      }
     };
     eventBus.on("CHAT_MESSAGE_INCOMING", handler);
     return () => {
+      if (markReadDebounceRef.current) {
+        clearTimeout(markReadDebounceRef.current);
+        markReadDebounceRef.current = null;
+      }
       eventBus.off("CHAT_MESSAGE_INCOMING", handler);
     };
-  }, [isPartner, convId, onRefreshList]);
+  }, [isPartner, convId, currentUserId, onRefreshList]);
 
   const handleSendMessage = async (text: string) => {
     if (!isPartner || !convId || !currentUserId) return;

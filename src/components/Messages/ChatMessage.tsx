@@ -57,9 +57,24 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
         />
         <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
           {bubble}
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 px-1">
-            {message.timestamp}
-          </span>
+          <div
+            className={`mt-1 flex items-center gap-1.5 px-1 ${isMe ? "justify-end" : "justify-start"}`}
+          >
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+              {message.timestamp}
+            </span>
+            {isMe && (
+              <span
+                className={`text-[10px] font-medium ${
+                  message.isRead
+                    ? "text-indigo-600 dark:text-indigo-400"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                {message.isRead ? "已读" : "未读"}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
