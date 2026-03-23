@@ -14,7 +14,7 @@ interface TaskHeaderProps {
   onToggleBookmark?: (taskId: string | number) => void;
   onUnpublishTask?: (taskId: string | number) => void | Promise<void>;
   onPublishListingTask?: (taskId: string | number) => void | Promise<void>;
-  onDeleteTask?: (taskId: string | number) => void;
+  onDeleteTask?: (taskId: string | number) => void | Promise<void>;
   /** 点击「编辑」：由外层关闭菜单并进入编辑流（TaskDetail 内组装 initialData） */
   onEditTask?: () => void;
 }
@@ -110,7 +110,16 @@ export default function TaskHeader({
                           {listStatus === 'draft' ? '发布任务' : '上架'}
                         </button>
                       )}
-                    <button onClick={() => { setShowMenu(false); onDeleteTask && onDeleteTask(taskId); }} className="px-4 py-3 text-sm font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left transition-colors">删除</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMenu(false);
+                        void onDeleteTask?.(taskId);
+                      }}
+                      className="px-4 py-3 text-sm font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left transition-colors"
+                    >
+                      删除
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col">

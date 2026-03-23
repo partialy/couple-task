@@ -48,6 +48,7 @@ export default function Profile({
   const toggleBookmark = useTaskStore((s) => s.toggleBookmark);
   const unpublishTaskApi = useTaskStore((s) => s.unpublishTask);
   const publishListingTaskApi = useTaskStore((s) => s.publishListingTask);
+  const deleteTaskApi = useTaskStore((s) => s.deleteTask);
   const [taskListScreen, setTaskListScreen] = useState<TaskListScreenMode | null>(null);
   const [activeList, setActiveList] = useState<{ title: string, filter: (t: any) => boolean } | null>(null);
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
@@ -411,9 +412,14 @@ export default function Profile({
             key="task-detail"
             task={selectedTask} 
             onClose={closeModal} 
-            onDeleteTask={(taskId) => {
-              setTasks(tasks.filter(t => t.id !== taskId));
-              closeModal();
+            onDeleteTask={async (taskId) => {
+              const r = await deleteTaskApi(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已删除');
+                closeModal();
+              } else {
+                message.error(r.msg || '删除失败');
+              }
             }}
             onUnpublishTask={async (taskId) => {
               const r = await unpublishTaskApi(String(taskId));

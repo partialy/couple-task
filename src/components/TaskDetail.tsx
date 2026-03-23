@@ -44,7 +44,7 @@ export default function TaskDetail({
     newStatus: string,
   ) => Promise<boolean> | boolean;
   onToggleBookmark?: (taskId: string) => void | Promise<void>;
-  onDeleteTask?: (taskId: string) => void;
+  onDeleteTask?: (taskId: string) => void | Promise<void>;
   onUnpublishTask?: (taskId: string) => void | Promise<void>;
   onPublishListingTask?: (taskId: string) => void | Promise<void>;
   /** 进入发布页编辑：由 App 设置 templateData 并打开 publish */

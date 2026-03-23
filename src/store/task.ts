@@ -24,7 +24,7 @@ interface TaskState {
   abandonTask: (taskId: string) => Promise<Result<string>>;
   completeTask: (taskId: string) => Promise<Result<string>>;
   updateTaskStatus: (taskId: string | number, status: string) => void;
-  deleteTask: (taskId: string | number) => void;
+  deleteTask: (taskId: string | number) => Promise<Result<string>>;
   toggleBookmark: (taskId: string | number) => Promise<void>;
   unpublishTask: (taskId: string) => Promise<Result<string>>;
   publishListingTask: (taskId: string) => Promise<Result<string>>;
@@ -144,10 +144,18 @@ export const useTaskStore = create<TaskState>()((set, get) => ({
         }));
       },
 
-      deleteTask: (taskId) => {
-        set((state) => ({
-          tasks: state.tasks.filter((t) => t.id !== taskId),
-        }));
+      deleteTask: async (taskId) => {
+        set({ loading: true });
+        try {
+          const id = String(taskId);
+          const result = await taskService.delete(id);
+          if (result.success) {
+            await get().fetchTasks();
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
       },
 
       unpublishTask: async (taskId) => {

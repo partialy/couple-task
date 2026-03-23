@@ -27,8 +27,15 @@ export default function InProgress({
   >("in-progress");
   const [roleTab, setRoleTab] = useState<"my" | "ta">("my");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { completeTask, abandonTask, fetchTasks, toggleBookmark, unpublishTask, publishListingTask } =
-    useTaskStore();
+  const {
+    completeTask,
+    abandonTask,
+    fetchTasks,
+    toggleBookmark,
+    unpublishTask,
+    publishListingTask,
+    deleteTask,
+  } = useTaskStore();
   const currentUser = useUserStore((s) => s.currentUser);
 
 
@@ -127,9 +134,14 @@ export default function InProgress({
           <TaskDetail
             task={selectedTask}
             onClose={handleCloseTaskDetail}
-            onDeleteTask={(taskId) => {
-              setTasks(tasks.filter((t) => t.id !== taskId));
-              handleCloseTaskDetail();
+            onDeleteTask={async (taskId) => {
+              const r = await deleteTask(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已删除');
+                handleCloseTaskDetail();
+              } else {
+                message.error(r.msg || '删除失败');
+              }
             }}
             onUnpublishTask={async (taskId) => {
               const r = await unpublishTask(String(taskId));

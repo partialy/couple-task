@@ -79,6 +79,7 @@ export default function Home({
     toggleBookmark,
     unpublishTask,
     publishListingTask,
+    deleteTask,
   } = useTaskStore();
   const { collapsed: isSquareHeaderCollapsed } = useScrollCollapse(scrollRef, {
     collapseThresholdPx: 120,
@@ -259,9 +260,14 @@ export default function Home({
             key="task-detail"
             task={selectedTask}
             onClose={handleCloseTaskDetail}
-            onDeleteTask={(taskId) => {
-              setTasks(tasks.filter((t) => t.id !== taskId));
-              handleCloseTaskDetail();
+            onDeleteTask={async (taskId) => {
+              const r = await deleteTask(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已删除');
+                handleCloseTaskDetail();
+              } else {
+                message.error(r.msg || '删除失败');
+              }
             }}
             onUnpublishTask={async (taskId) => {
               const r = await unpublishTask(String(taskId));

@@ -126,6 +126,11 @@ const taskService = {
   async publishListing(taskId: string): Promise<ApiResponse<string>> {
     return await request.post(`/task/${encodeURIComponent(taskId)}/publish-listing`);
   },
+
+  /** 删除任务（软删除，仅发布者、待接取） */
+  async delete(taskId: string): Promise<ApiResponse<string>> {
+    return await request.delete(`/task/${encodeURIComponent(taskId)}`);
+  },
 };
 
 export default taskService;

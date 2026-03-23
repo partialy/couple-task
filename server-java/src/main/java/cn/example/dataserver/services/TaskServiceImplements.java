@@ -232,6 +232,43 @@ public class TaskServiceImplements {
         return Result.success("已上架").toJson();
     }
 
+    /**
+     * 删除任务（软删除）：仅发布者、待接取状态
+     *
+     * @param token   认证令牌
+     * @param taskId  任务主键
+     * @return JSON 字符串
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String deleteTask(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!StrUtil.equals(task.getAuthorId(), currentUser.getId())) {
+            return Result.fail("只有发布者可以删除").toJson();
+        }
+        if (!TaskStatus.PENDING.getValue().equals(task.getStatus())) {
+            return Result.fail("仅待接取状态的任务可删除").toJson();
+        }
+        Date now = new Date();
+        task.setDeletedAt(now);
+        task.setUpdatedAt(now);
+        tasksService.updateById(task);
+        userFavoritesService.lambdaUpdate()
+                .eq(UserFavorites::getTargetType, FAVORITE_TARGET_TASK)
+                .eq(UserFavorites::getTargetId, taskId)
+                .remove();
+        return Result.success("删除成功").toJson();
+    }
+
     private static String normalizeListStatus(String listStatus) {
         return StrUtil.isBlank(listStatus) ? LIST_PUBLISHED : listStatus;
     }
@@ -337,6 +374,7 @@ public class TaskServiceImplements {
         // 3. 获取该绑定的所有任务
         List<Tasks> tasks = tasksService.lambdaQuery()
                 .eq(Tasks::getBelongBindingId, bindRelation.getId())
+                .isNull(Tasks::getDeletedAt)
                 .orderByDesc(Tasks::getCreatedAt)
                 .list();
 
@@ -537,7 +575,7 @@ public class TaskServiceImplements {
     public String acceptTask(String token, String taskId) {
         Users currentUser = authService.checkToken(token);
         Tasks task = tasksService.getById(taskId);
-        if (ObjectUtil.isNull(task)) {
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
             return Result.fail("任务不存在").toJson();
         }
 

@@ -123,4 +123,12 @@ public class TaskController {
     public String publishListing(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
         return taskService.publishListing(token, taskId);
     }
+
+    /**
+     * 删除任务（软删除）
+     */
+    @DeleteMapping("/{taskId}")
+    public String deleteTask(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.deleteTask(token, taskId);
+    }
 }
