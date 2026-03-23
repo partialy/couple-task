@@ -558,6 +558,11 @@ export interface Tasks {
      * 任务状态 (pending, accepted, completed, cancelled)
      */
     status?: string; // 可选字段
+
+    /**
+     * 上架状态：draft | published | unpublished
+     */
+    listStatus?: string;
   
     /**
      * 是否为私密任务

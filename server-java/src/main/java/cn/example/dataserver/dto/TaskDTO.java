@@ -23,6 +23,8 @@ public class TaskDTO {
     private Boolean isPrivileged;  // 是否加急
     private String taskType;       // 任务类型 (one-time, daily, weekly, monthly)
     private String repeatConfig;   // 重复配置 (JSON字符串)
+    /** 创建时 true 表示保存为草稿（list_status=draft） */
+    private Boolean saveAsDraft;
 
     @Data
     public static class RewardDTO {

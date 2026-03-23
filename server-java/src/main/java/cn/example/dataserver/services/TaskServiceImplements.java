@@ -39,6 +39,10 @@ import java.util.stream.Collectors;
 public class TaskServiceImplements {
 
     private static final String FAVORITE_TARGET_TASK = "task";
+    /** 上架状态：草稿 / 已上架 / 已下架 */
+    private static final String LIST_DRAFT = "draft";
+    private static final String LIST_PUBLISHED = "published";
+    private static final String LIST_UNPUBLISHED = "unpublished";
 
     private final TasksService tasksService;
     private final TaskRewardsService taskRewardsService;
@@ -82,6 +86,11 @@ public class TaskServiceImplements {
             return Result.fail("请先绑定另一半再发布任务").toJson();
         }
 
+        boolean saveAsDraft = Boolean.TRUE.equals(taskDTO.getSaveAsDraft());
+        if (!saveAsDraft && StrUtil.isBlank(taskDTO.getTitle())) {
+            return Result.fail("请填写任务标题").toJson();
+        }
+
         // 2. 创建任务实体
         Tasks task = new Tasks();
         String taskId = UUID.randomUUID().toString();
@@ -89,15 +98,21 @@ public class TaskServiceImplements {
         task.setAuthorId(userId);
         task.setBelongBindingId(bindRelation.getId());
         task.setReceiverId(userId.equals(bindRelation.getUserId()) ? bindRelation.getTargetId() : bindRelation.getUserId());
-        task.setTitle(taskDTO.getTitle());
+        if (saveAsDraft) {
+            task.setTitle(StrUtil.isBlank(taskDTO.getTitle()) ? "(无标题草稿)" : taskDTO.getTitle().trim());
+            task.setListStatus(LIST_DRAFT);
+        } else {
+            task.setTitle(taskDTO.getTitle().trim());
+            task.setListStatus(LIST_PUBLISHED);
+        }
         task.setDescription(taskDTO.getDescription());
         task.setCoverImage(taskDTO.getCoverImage());
-        task.setCategoryId(taskDTO.getCategoryId());
-        task.setLevelId(taskDTO.getLevelId());
+        task.setCategoryId(StrUtil.isNotBlank(taskDTO.getCategoryId()) ? taskDTO.getCategoryId() : null);
+        task.setLevelId(StrUtil.isNotBlank(taskDTO.getLevelId()) ? taskDTO.getLevelId() : null);
         task.setStatus(TaskStatus.PENDING.getValue()); // 初始状态为待处理
         task.setIsPrivate(taskDTO.getIsPrivate() ? 1 : 0);
         task.setIsPrivileged(taskDTO.getIsPrivileged() ? 1 : 0);
-        task.setRepeatType(taskDTO.getTaskType());
+        task.setRepeatType(StrUtil.isNotBlank(taskDTO.getTaskType()) ? taskDTO.getTaskType() : "one-time");
         task.setRepeatConfig(taskDTO.getRepeatConfig());
         task.setTags(CollUtil.isNotEmpty(taskDTO.getTags()) ? JSON.toJSONString(taskDTO.getTags()) : null);
         task.setCreatedAt(new Date());
@@ -145,7 +160,80 @@ public class TaskServiceImplements {
             taskRewardsService.saveBatch(rewards);
         }
 
+        if (saveAsDraft) {
+            return Result.success("草稿已保存", taskId).toJson();
+        }
         return Result.success("任务发布成功", taskId).toJson();
+    }
+
+    /**
+     * 下架：仅作者、待接取、已上架
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String unpublishTask(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!StrUtil.equals(task.getAuthorId(), currentUser.getId())) {
+            return Result.fail("只有发布者可以下架").toJson();
+        }
+        if (!TaskStatus.PENDING.getValue().equals(task.getStatus())) {
+            return Result.fail("仅待接取状态的任务可下架").toJson();
+        }
+        if (!LIST_PUBLISHED.equals(normalizeListStatus(task.getListStatus()))) {
+            return Result.fail("当前任务不是上架状态").toJson();
+        }
+        task.setListStatus(LIST_UNPUBLISHED);
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+        return Result.success("已下架").toJson();
+    }
+
+    /**
+     * 上架（含草稿首次发布）：仅作者、待接取、草稿或已下架
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String publishListing(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+        if (StrUtil.isBlank(taskId)) {
+            return Result.fail("任务ID不能为空").toJson();
+        }
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!StrUtil.equals(task.getAuthorId(), currentUser.getId())) {
+            return Result.fail("只有发布者可以上架").toJson();
+        }
+        if (!TaskStatus.PENDING.getValue().equals(task.getStatus())) {
+            return Result.fail("仅待接取状态的任务可上架").toJson();
+        }
+        String ls = normalizeListStatus(task.getListStatus());
+        if (!LIST_DRAFT.equals(ls) && !LIST_UNPUBLISHED.equals(ls)) {
+            return Result.fail("当前状态不可上架").toJson();
+        }
+        if (StrUtil.isBlank(task.getTitle()) || "(无标题草稿)".equals(task.getTitle())) {
+            return Result.fail("请先完善任务标题后再上架").toJson();
+        }
+        task.setListStatus(LIST_PUBLISHED);
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+        return Result.success("已上架").toJson();
+    }
+
+    private static String normalizeListStatus(String listStatus) {
+        return StrUtil.isBlank(listStatus) ? LIST_PUBLISHED : listStatus;
     }
 
     /**
@@ -171,11 +259,11 @@ public class TaskServiceImplements {
         task.setTitle(taskDTO.getTitle());
         task.setDescription(taskDTO.getDescription());
         task.setCoverImage(taskDTO.getCoverImage());
-        task.setCategoryId(taskDTO.getCategoryId());
-        task.setLevelId(taskDTO.getLevelId());
+        task.setCategoryId(StrUtil.isNotBlank(taskDTO.getCategoryId()) ? taskDTO.getCategoryId() : null);
+        task.setLevelId(StrUtil.isNotBlank(taskDTO.getLevelId()) ? taskDTO.getLevelId() : null);
         task.setIsPrivate(taskDTO.getIsPrivate() ? 1 : 0);
         task.setIsPrivileged(taskDTO.getIsPrivileged() ? 1 : 0);
-        task.setRepeatType(taskDTO.getTaskType());
+        task.setRepeatType(StrUtil.isNotBlank(taskDTO.getTaskType()) ? taskDTO.getTaskType() : task.getRepeatType());
         task.setRepeatConfig(taskDTO.getRepeatConfig());
         task.setTags(CollUtil.isNotEmpty(taskDTO.getTags()) ? JSON.toJSONString(taskDTO.getTags()) : null);
         task.setUpdatedAt(new Date());
@@ -256,6 +344,7 @@ public class TaskServiceImplements {
         List<TaskVO> taskVOs = tasks.stream().map(task -> {
             TaskVO vo = new TaskVO();
             BeanUtils.copyProperties(task, vo);
+            vo.setListStatus(normalizeListStatus(task.getListStatus()));
 
             // 获取发布者
             Users author = usersService.lambdaQuery()
@@ -266,15 +355,15 @@ public class TaskServiceImplements {
             vo.setGender(author.getGender());
 
             // 获取分类
-            Categories category = categoriesService.lambdaQuery()
+            Categories category = task.getCategoryId() == null ? null : categoriesService.lambdaQuery()
                     .eq(Categories::getId, task.getCategoryId())
                     .one();
-            vo.setCategory(category.getName());
+            vo.setCategory(category != null ? category.getName() : "");
             // 获取等级
-            TaskLevels level = taskLevelsService.lambdaQuery()
+            TaskLevels level = task.getLevelId() == null ? null : taskLevelsService.lambdaQuery()
                     .eq(TaskLevels::getId, task.getLevelId())
                     .one();
-            vo.setLevel(level.getName());
+            vo.setLevel(level != null ? level.getName() : "");
 
             // 获取奖励
             List<TaskRewards> rewards = taskRewardsService.lambdaQuery()
@@ -330,8 +419,20 @@ public class TaskServiceImplements {
             return Result.fail("任务不存在").toJson();
         }
 
+        String ls = normalizeListStatus(task.getListStatus());
+        boolean isAuthor = StrUtil.equals(task.getAuthorId(), currentUser.getId());
+        if (!isAuthor) {
+            if (!StrUtil.equals(currentUser.getId(), task.getReceiverId())) {
+                return Result.fail("无权查看该任务").toJson();
+            }
+            if (!LIST_PUBLISHED.equals(ls)) {
+                return Result.fail("任务未上架").toJson();
+            }
+        }
+
         TaskDetailVO detailVO = new TaskDetailVO();
         BeanUtils.copyProperties(task, detailVO);
+        detailVO.setListStatus(ls);
 
         // 获取奖励
         List<TaskRewards> rewards = taskRewardsService.lambdaQuery()
@@ -442,6 +543,10 @@ public class TaskServiceImplements {
 
         if (!TaskStatus.PENDING.getValue().equals(task.getStatus())) {
             return Result.fail("任务状态不允许接取").toJson();
+        }
+
+        if (!LIST_PUBLISHED.equals(normalizeListStatus(task.getListStatus()))) {
+            return Result.fail("任务未上架，无法接取").toJson();
         }
 
         // 验证权限：只有接收者可以接取

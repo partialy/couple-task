@@ -8,6 +8,7 @@ import Messages from '../Messages';
 import TaskDetail from '../TaskDetail';
 
 import { useTaskStore } from '@/store/task';
+import { message } from '@/utils/pure/message';
 
 import SquareHeader from './components/SquareHeader';
 import QuickEntrances from './components/QuickEntrances';
@@ -71,7 +72,14 @@ export default function Home({
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { acceptTask, completeTask, abandonTask, toggleBookmark } = useTaskStore();
+  const {
+    acceptTask,
+    completeTask,
+    abandonTask,
+    toggleBookmark,
+    unpublishTask,
+    publishListingTask,
+  } = useTaskStore();
   const { collapsed: isSquareHeaderCollapsed } = useScrollCollapse(scrollRef, {
     collapseThresholdPx: 120,
     expandThresholdPx: 80,
@@ -255,9 +263,23 @@ export default function Home({
               setTasks(tasks.filter((t) => t.id !== taskId));
               handleCloseTaskDetail();
             }}
-            onUnpublishTask={(taskId) => {
-              setTasks(tasks.map((t) => (t.id === taskId ? { ...t, status: 'unpublished' } : t)));
-              handleCloseTaskDetail();
+            onUnpublishTask={async (taskId) => {
+              const r = await unpublishTask(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已下架');
+                handleCloseTaskDetail();
+              } else {
+                message.error(r.msg || '下架失败');
+              }
+            }}
+            onPublishListingTask={async (taskId) => {
+              const r = await publishListingTask(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已上架');
+                handleCloseTaskDetail();
+              } else {
+                message.error(r.msg || '上架失败');
+              }
             }}
             onUpdateTask={async (taskId, newStatus) => {
               if (newStatus === 'in-progress') {

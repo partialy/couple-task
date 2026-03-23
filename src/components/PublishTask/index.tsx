@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { TaskReward, useTaskStore, useUserStore } from "../../store";
+import type { TaskCreateDTO } from "@/api/service/task";
 import { message } from "@/utils/pure/message";
 import { uploadToQiniu, revokeLocalPreview } from "@/utils/qiniu";
 
@@ -272,104 +273,103 @@ export default function PublishTask({
   };
   const rewardIcons = Object.keys(icons);
 
+  const buildTaskPayload = async (): Promise<TaskCreateDTO | null> => {
+    let finalCoverImage = coverImage;
+    if (coverFile) {
+      try {
+        finalCoverImage = await uploadToQiniu(coverFile, "task/cover");
+      } catch {
+        message.error("封面图片上传失败");
+        return null;
+      }
+    }
+
+    const finalOtherImages: string[] = [];
+    for (let i = 0; i < otherImages.length; i++) {
+      const img = otherImages[i];
+      if (img.startsWith("blob:")) {
+        const fileIndex = otherImages
+          .slice(0, i)
+          .filter((url) => url.startsWith("blob:")).length;
+        const file = otherFiles[fileIndex];
+        if (file) {
+          try {
+            const uploadedUrl = await uploadToQiniu(file, "task/other");
+            finalOtherImages.push(uploadedUrl);
+          } catch {
+            message.error("任务图片上传失败");
+            return null;
+          }
+        }
+      } else {
+        finalOtherImages.push(img);
+      }
+    }
+
+    const safeWildcardAmount = Math.max(1, Math.min(10, Math.floor(wildcardAmount || 1)));
+    const safePointsAmount = Math.max(1, Math.min(1000, Math.floor(pointsAmount || 100)));
+    const normalRewards = rewards
+      .filter((r) => r.text.trim() !== "")
+      .map((r) => ({
+        text: r.text.trim(),
+        color: r.color,
+        icon: r.icon,
+        type: "normal" as const,
+        amount: 1,
+        description: r.description,
+      }));
+    const extraReward =
+      rewardType === "wild_card"
+        ? {
+            text: `${safeWildcardAmount} 张万能卡`,
+            color: "purple",
+            icon: "Sparkles",
+            type: "wild_card" as const,
+            amount: safeWildcardAmount,
+            description: `${safeWildcardAmount} 张万能卡`,
+          }
+        : {
+            text: `${safePointsAmount} 积分`,
+            color: "amber",
+            icon: "Star",
+            type: "points" as const,
+            amount: safePointsAmount,
+            description: `${safePointsAmount} 积分`,
+          };
+    const finalRewards = [...normalRewards, extraReward];
+
+    return {
+      title,
+      description: desc,
+      categoryId: categoryId || "",
+      levelId: taskLevelId || "",
+      ...(deadline ? { deadline } : {}),
+      coverImage: finalCoverImage || "https://picsum.photos/seed/new/400/600",
+      otherImages: finalOtherImages,
+      tags: tags,
+      rewards: finalRewards,
+      isPrivate: isPrivate,
+      isPrivileged: usePrivilegeCard,
+      taskType: taskType.value,
+      repeatConfig:
+        (taskType.value === "weekly" || taskType.value === "monthly") &&
+        selectedDays.length > 0
+          ? JSON.stringify({ days: selectedDays })
+          : undefined,
+    };
+  };
+
   const handlePublish = async () => {
     if (!title.trim()) return;
     if (isPublishing) return;
-
     setIsPublishing(true);
-
     try {
-      // 1. 上传图片到七牛云
-      let finalCoverImage = coverImage;
-      if (coverFile) {
-        try {
-          finalCoverImage = await uploadToQiniu(coverFile, "task/cover");
-        } catch (error) {
-          message.error("封面图片上传失败");
-          setIsPublishing(false);
-          return;
-        }
-      }
-
-      const finalOtherImages: string[] = [];
-      for (let i = 0; i < otherImages.length; i++) {
-        const img = otherImages[i];
-        if (img.startsWith("blob:")) {
-          // 找到对应的 File 对象
-          const fileIndex = otherImages
-            .slice(0, i)
-            .filter((url) => url.startsWith("blob:")).length;
-          const file = otherFiles[fileIndex];
-          if (file) {
-            try {
-              const uploadedUrl = await uploadToQiniu(file, "task/other");
-              finalOtherImages.push(uploadedUrl);
-            } catch (error) {
-              message.error("任务图片上传失败");
-              setIsPublishing(false);
-              return;
-            }
-          }
-        } else {
-          finalOtherImages.push(img);
-        }
-      }
-
-      const safeWildcardAmount = Math.max(1, Math.min(10, Math.floor(wildcardAmount || 1)));
-      const safePointsAmount = Math.max(1, Math.min(1000, Math.floor(pointsAmount || 100)));
-      const normalRewards = rewards
-        .filter((r) => r.text.trim() !== "")
-        .map((r) => ({
-          text: r.text.trim(),
-          color: r.color,
-          icon: r.icon,
-          type: "normal" as const,
-          amount: 1,
-          description: r.description,
-        }));
-      const extraReward =
-        rewardType === "wild_card"
-          ? {
-              text: `${safeWildcardAmount} 张万能卡`,
-              color: "purple",
-              icon: "Sparkles",
-              type: "wild_card" as const,
-              amount: safeWildcardAmount,
-              description: `${safeWildcardAmount} 张万能卡`,
-            }
-          : {
-              text: `${safePointsAmount} 积分`,
-              color: "amber",
-              icon: "Star",
-              type: "points" as const,
-              amount: safePointsAmount,
-              description: `${safePointsAmount} 积分`,
-            };
-      const finalRewards = [...normalRewards, extraReward];
-
-      const taskData = {
-        title,
-        description: desc,
-        categoryId,
-        levelId: taskLevelId,
-        ...(deadline ? { deadline } : {}),
-        coverImage: finalCoverImage || "https://picsum.photos/seed/new/400/600",
-        otherImages: finalOtherImages,
-        tags: tags,
-        rewards: finalRewards,
-        isPrivate: isPrivate,
-        isPrivileged: usePrivilegeCard,
-        taskType: taskType.value,
-        repeatConfig:
-          (taskType.value === "weekly" || taskType.value === "monthly") &&
-          selectedDays.length > 0
-            ? JSON.stringify({ days: selectedDays })
-            : undefined,
-      };
-
-      const result = isEditMode && initialData?.taskId
-        ? await updateTask(initialData.taskId, taskData)
-        : await createTask(taskData);
+      const taskData = await buildTaskPayload();
+      if (!taskData) return;
+      const result =
+        isEditMode && initialData?.taskId
+          ? await updateTask(initialData.taskId, taskData)
+          : await createTask(taskData);
       if (result.success) {
         message.success(isEditMode ? "任务已保存" : "任务发布成功");
         onPublish();
@@ -378,6 +378,28 @@ export default function PublishTask({
       }
     } catch (error) {
       console.error("Failed to publish task", error);
+      message.error("网络错误，请稍后再试");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (isEditMode) return;
+    if (isPublishing) return;
+    setIsPublishing(true);
+    try {
+      const taskData = await buildTaskPayload();
+      if (!taskData) return;
+      const result = await createTask({ ...taskData, saveAsDraft: true });
+      if (result.success) {
+        message.success("草稿已保存");
+        onPublish();
+      } else {
+        message.error(result.msg || "保存草稿失败");
+      }
+    } catch (error) {
+      console.error("Failed to save draft", error);
       message.error("网络错误，请稍后再试");
     } finally {
       setIsPublishing(false);
@@ -398,6 +420,8 @@ export default function PublishTask({
         canPublish={!!title.trim()}
         isPublishing={isPublishing}
         isEditMode={isEditMode}
+        showSaveDraft={!isEditMode}
+        onSaveDraft={handleSaveDraft}
       />
 
       {/* 表单内容 */}

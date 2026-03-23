@@ -26,6 +26,8 @@ interface TaskState {
   updateTaskStatus: (taskId: string | number, status: string) => void;
   deleteTask: (taskId: string | number) => void;
   toggleBookmark: (taskId: string | number) => Promise<void>;
+  unpublishTask: (taskId: string) => Promise<Result<string>>;
+  publishListingTask: (taskId: string) => Promise<Result<string>>;
   getTaskById: (id: string | number) => any | undefined;
   setTasks: (tasks: UiTask[]) => void;
   fetchPublishConfig: (bindId: string) => Promise<void>;
@@ -146,6 +148,32 @@ export const useTaskStore = create<TaskState>()((set, get) => ({
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== taskId),
         }));
+      },
+
+      unpublishTask: async (taskId) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.unpublish(taskId);
+          if (result.success) {
+            await get().fetchTasks();
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      publishListingTask: async (taskId) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.publishListing(taskId);
+          if (result.success) {
+            await get().fetchTasks();
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
       },
 
       toggleBookmark: async (taskId) => {

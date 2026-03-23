@@ -490,6 +490,7 @@ create table tasks
     deadline          date                                  null comment '截止日期',
     location          varchar(100)                          null comment '任务地点',
     status            varchar(20) default 'pending'         null comment '任务状态 (pending, accepted, completed, cancelled)',
+    list_status       varchar(20) default 'published'       not null comment 'draft|published|unpublished',
     is_private        tinyint(1)  default 0                 null comment '是否为私密任务',
     is_privileged     tinyint(1)  default 0                 null comment '是否使用了特权卡加急',
     repeat_type       varchar(20) default 'none'            null comment '重复类型 (none, daily, weekly, monthly)',

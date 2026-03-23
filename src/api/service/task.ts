@@ -24,6 +24,8 @@ export interface TaskCreateDTO {
   isPrivileged: boolean;
   taskType: string;
   repeatConfig?: string;
+  /** 创建时 true 表示保存草稿 */
+  saveAsDraft?: boolean;
 }
 
 const taskService = {
@@ -113,6 +115,16 @@ const taskService = {
   /** 取消收藏 */
   async unfavoriteTask(taskId: string): Promise<ApiResponse<string>> {
     return await request.delete(`/task/favorite/${taskId}`);
+  },
+
+  /** 下架（广场不可见） */
+  async unpublish(taskId: string): Promise<ApiResponse<string>> {
+    return await request.post(`/task/${encodeURIComponent(taskId)}/unpublish`);
+  },
+
+  /** 上架 / 草稿首次发布 */
+  async publishListing(taskId: string): Promise<ApiResponse<string>> {
+    return await request.post(`/task/${encodeURIComponent(taskId)}/publish-listing`);
   },
 };
 

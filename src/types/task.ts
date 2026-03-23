@@ -10,6 +10,8 @@ export interface UiTask {
   level: string;
   rewards: TaskRewards[];
   status: string;
+  /** draft | published | unpublished */
+  listStatus?: string;
   authorId: string;
   author: string;
   authorAvatar: string;

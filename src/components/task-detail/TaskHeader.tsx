@@ -6,9 +6,14 @@ interface TaskHeaderProps {
   taskId: string | number;
   isBookmarked: boolean;
   isMyTask: boolean;
+  /** 任务流程状态 pending / in-progress / completed */
+  taskStatus?: string;
+  /** draft / published / unpublished */
+  listStatus?: string;
   onClose: () => void;
   onToggleBookmark?: (taskId: string | number) => void;
-  onUnpublishTask?: (taskId: string | number) => void;
+  onUnpublishTask?: (taskId: string | number) => void | Promise<void>;
+  onPublishListingTask?: (taskId: string | number) => void | Promise<void>;
   onDeleteTask?: (taskId: string | number) => void;
   /** 点击「编辑」：由外层关闭菜单并进入编辑流（TaskDetail 内组装 initialData） */
   onEditTask?: () => void;
@@ -18,9 +23,12 @@ export default function TaskHeader({
   taskId,
   isBookmarked,
   isMyTask,
+  taskStatus,
+  listStatus = 'published',
   onClose,
   onToggleBookmark,
   onUnpublishTask,
+  onPublishListingTask,
   onDeleteTask,
   onEditTask,
 }: TaskHeaderProps) {
@@ -76,7 +84,32 @@ export default function TaskHeader({
                     >
                       编辑
                     </button>
-                    <button onClick={() => { setShowMenu(false); onUnpublishTask && onUnpublishTask(taskId); }} className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors border-b border-slate-50 dark:border-slate-700/50">下架</button>
+                    {taskStatus === 'pending' && listStatus === 'published' && onUnpublishTask && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMenu(false);
+                          void onUnpublishTask(taskId);
+                        }}
+                        className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors border-b border-slate-50 dark:border-slate-700/50"
+                      >
+                        下架
+                      </button>
+                    )}
+                    {taskStatus === 'pending' &&
+                      (listStatus === 'draft' || listStatus === 'unpublished') &&
+                      onPublishListingTask && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowMenu(false);
+                            void onPublishListingTask(taskId);
+                          }}
+                          className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-left transition-colors border-b border-slate-50 dark:border-slate-700/50"
+                        >
+                          {listStatus === 'draft' ? '发布任务' : '上架'}
+                        </button>
+                      )}
                     <button onClick={() => { setShowMenu(false); onDeleteTask && onDeleteTask(taskId); }} className="px-4 py-3 text-sm font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left transition-colors">删除</button>
                   </div>
                 ) : (

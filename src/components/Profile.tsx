@@ -1,19 +1,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, ChevronRight, Star, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox } from 'lucide-react';
+import { Settings, ChevronRight, Star, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox, Archive, FileEdit } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TaskCard from './TaskCard';
 import TaskDetail from './TaskDetail';
 import QrScanner from './QrScanner';
 import ProfileEdit from './profile/ProfileEdit';
 import ProfileTaskListScreen from './profile/ProfileTaskListScreen';
-import { filterMyPublishedTasks, filterMyReceivedTasks } from './profile/profileTaskFilters';
+import {
+  filterMyPublishedTasks,
+  filterMyReceivedTasks,
+  filterMyUnpublishedTasks,
+  filterMyDraftTasks,
+} from './profile/profileTaskFilters';
 import RewardCenter from './RewardCenter';
 import { useUserStore } from '@/store';
 import { useTaskStore } from '@/store/task';
+import { message } from '@/utils/pure/message';
 import { UiTask } from '@/types/task';
 import type { PublishTaskInitialData } from '@/mappers/task';
 
-type TaskListScreenMode = 'published' | 'received';
+type TaskListScreenMode = 'published' | 'received' | 'draftbox' | 'mydrafts';
 
 export default function Profile({
   onOpenItems,
@@ -40,6 +46,8 @@ export default function Profile({
 }) {
   const { currentUser } = useUserStore();
   const toggleBookmark = useTaskStore((s) => s.toggleBookmark);
+  const unpublishTaskApi = useTaskStore((s) => s.unpublishTask);
+  const publishListingTaskApi = useTaskStore((s) => s.publishListingTask);
   const [taskListScreen, setTaskListScreen] = useState<TaskListScreenMode | null>(null);
   const [activeList, setActiveList] = useState<{ title: string, filter: (t: any) => boolean } | null>(null);
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
@@ -98,6 +106,14 @@ export default function Profile({
     [tasks, uid],
   );
   const bookmarkedTasks = tasks.filter((t) => t.isBookmarked);
+  const unpublishedTasks = useMemo(
+    () => filterMyUnpublishedTasks(tasks as UiTask[], uid),
+    [tasks, uid],
+  );
+  const draftTasks = useMemo(
+    () => filterMyDraftTasks(tasks as UiTask[], uid),
+    [tasks, uid],
+  );
 
   const openTaskListScreen = (mode: TaskListScreenMode) => {
     window.history.pushState({ modal: 'profile-sub' }, '', '#profile-sub');
@@ -259,6 +275,18 @@ export default function Profile({
               openModal(setActiveList, { title: '我的收藏', filter: (t) => t.isBookmarked })
             }
           />
+          <MenuItem
+            icon={<Archive className="w-5 h-5 text-slate-500" />}
+            title="草稿箱"
+            count={unpublishedTasks.length}
+            onClick={() => openTaskListScreen('draftbox')}
+          />
+          <MenuItem
+            icon={<FileEdit className="w-5 h-5 text-violet-500" />}
+            title="我的草稿"
+            count={draftTasks.length}
+            onClick={() => openTaskListScreen('mydrafts')}
+          />
         </div>
       </div>
 
@@ -285,6 +313,30 @@ export default function Profile({
             onSelectTask={(task) => openModal(setSelectedTask, task)}
             emptyTitle="暂无相关任务"
             emptyHint="接取并完成任务后，或任务完成后会出现在这里"
+            listVariant="received"
+          />
+        )}
+        {taskListScreen === 'draftbox' && (
+          <ProfileTaskListScreen
+            key="draftbox"
+            title="草稿箱"
+            tasks={unpublishedTasks}
+            onBack={closeModal}
+            onSelectTask={(task) => openModal(setSelectedTask, task)}
+            emptyTitle="暂无下架任务"
+            emptyHint="在任务详情中可将待接取任务下架，下架后会出现在这里"
+            listVariant="received"
+          />
+        )}
+        {taskListScreen === 'mydrafts' && (
+          <ProfileTaskListScreen
+            key="mydrafts"
+            title="我的草稿"
+            tasks={draftTasks}
+            onBack={closeModal}
+            onSelectTask={(task) => openModal(setSelectedTask, task)}
+            emptyTitle="暂无草稿"
+            emptyHint="在发布页可保存草稿，完善后再上架"
             listVariant="received"
           />
         )}
@@ -363,9 +415,23 @@ export default function Profile({
               setTasks(tasks.filter(t => t.id !== taskId));
               closeModal();
             }}
-            onUnpublishTask={(taskId) => {
-              setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'unpublished' } : t));
-              closeModal();
+            onUnpublishTask={async (taskId) => {
+              const r = await unpublishTaskApi(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已下架');
+                closeModal();
+              } else {
+                message.error(r.msg || '下架失败');
+              }
+            }}
+            onPublishListingTask={async (taskId) => {
+              const r = await publishListingTaskApi(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已上架');
+                closeModal();
+              } else {
+                message.error(r.msg || '上架失败');
+              }
             }}
             onUpdateTask={(taskId, newStatus) => {
               setTasks(tasks.map(t => {

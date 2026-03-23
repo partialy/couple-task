@@ -82,6 +82,12 @@ public class Tasks implements Serializable {
     private String status;
 
     /**
+     * 上架状态：draft（草稿）/ published（广场可见）/ unpublished（已下架）
+     */
+    @TableField(value = "list_status")
+    private String listStatus;
+
+    /**
      * 是否为私密任务
      */
     @TableField(value = "is_private")

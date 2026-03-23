@@ -107,4 +107,20 @@ public class TaskController {
     public String removeFavorite(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
         return taskService.removeFavorite(token, taskId);
     }
+
+    /**
+     * 下架（广场不可见）
+     */
+    @PostMapping("/{taskId}/unpublish")
+    public String unpublish(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.unpublishTask(token, taskId);
+    }
+
+    /**
+     * 上架（含草稿首次发布）
+     */
+    @PostMapping("/{taskId}/publish-listing")
+    public String publishListing(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.publishListing(token, taskId);
+    }
 }

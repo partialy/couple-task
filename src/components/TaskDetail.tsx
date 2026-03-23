@@ -34,6 +34,7 @@ export default function TaskDetail({
   onToggleBookmark,
   onDeleteTask,
   onUnpublishTask,
+  onPublishListingTask,
   onEditTask,
 }: {
   task: UiTask;
@@ -44,7 +45,8 @@ export default function TaskDetail({
   ) => Promise<boolean> | boolean;
   onToggleBookmark?: (taskId: string) => void | Promise<void>;
   onDeleteTask?: (taskId: string) => void;
-  onUnpublishTask?: (taskId: string) => void;
+  onUnpublishTask?: (taskId: string) => void | Promise<void>;
+  onPublishListingTask?: (taskId: string) => void | Promise<void>;
   /** 进入发布页编辑：由 App 设置 templateData 并打开 publish */
   onEditTask?: (initialData: PublishTaskInitialData) => void;
   key?: string;
@@ -176,9 +178,12 @@ export default function TaskDetail({
         taskId={displayTask.id}
         isBookmarked={displayTask.isBookmarked}
         isMyTask={isMyTask}
+        taskStatus={displayTask.status}
+        listStatus={displayTask.listStatus ?? "published"}
         onClose={onClose}
         onToggleBookmark={onToggleBookmark}
         onUnpublishTask={onUnpublishTask}
+        onPublishListingTask={onPublishListingTask}
         onDeleteTask={onDeleteTask}
         onEditTask={onEditTask ? handleEditTask : undefined}
       />

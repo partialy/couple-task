@@ -73,7 +73,10 @@ export default function TaskWaterfall({
   onLoginPrompt,
   onPublish,
 }: TaskWaterfallProps) {
-  const pendingTasks = tasks.filter((task) => task.status === 'pending');
+  const pendingTasks = tasks.filter(
+    (task) =>
+      task.status === 'pending' && (task.listStatus ?? 'published') === 'published',
+  );
   const filteredTasks = pendingTasks
     .filter((task) => activeCategory === '全部' || task.category === activeCategory)
     .sort((a, b) => {
