@@ -78,12 +78,19 @@ export default function InProgress({
       (t) => t.receiverId && t.receiverId !== currentUser.id,
     ) || [];
 
-  const myCompletedTasks =
-    completedTasks.filter((t) => t.receiverId === currentUser.id) || [];
-  const taCompletedTasks =
-    completedTasks.filter(
-      (t) => t.receiverId && t.receiverId !== currentUser.id,
-    ) || [];
+    function compareFinishTimeDesc(a: { finishTime?: string }, b: { finishTime?: string }) {
+      const dateA = a.finishTime ? new Date(a.finishTime).getTime() : 0;
+      const dateB = b.finishTime ? new Date(b.finishTime).getTime() : 0;
+      return dateB - dateA;
+    }
+
+    const myCompletedTasks = (completedTasks
+      .filter((t) => t.receiverId === currentUser.id)
+      .sort(compareFinishTimeDesc)) || [];
+    
+    const taCompletedTasks = (completedTasks
+      .filter((t) => t.receiverId && t.receiverId !== currentUser.id)
+      .sort(compareFinishTimeDesc)) || [];
 
   const displayTasks =
     activeStatusTab === "in-progress"

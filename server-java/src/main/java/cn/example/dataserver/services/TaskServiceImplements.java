@@ -668,7 +668,7 @@ public class TaskServiceImplements {
         }
 
         if (!TaskStatus.IN_PROGRESS.getValue().equals(task.getStatus())
-                || !TaskStatus.APPLYING.getValue().equals(task.getStatus())) {
+                && !TaskStatus.APPLYING.getValue().equals(task.getStatus())) {
             return Result.fail("任务状态不允许完成").toJson();
         }
 
@@ -808,32 +808,7 @@ public class TaskServiceImplements {
      */
     @Transactional(rollbackFor = Exception.class)
     public String approveTaskAudit(String token, String taskId) {
-        Users currentUser = authService.checkToken(token);
-        Tasks task = tasksService.getById(taskId);
-        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
-            return Result.fail("任务不存在").toJson();
-        }
-        if (!TaskStatus.APPLYING.getValue().equals(task.getStatus())) {
-            return Result.fail("任务状态不允许审核同意").toJson();
-        }
-        if (!currentUser.getId().equals(task.getAuthorId())) {
-            return Result.fail("仅发布者可审核").toJson();
-        }
-
-        task.setStatus("completed");
-        task.setUpdatedAt(new Date());
-        tasksService.updateById(task);
-
-        TaskLogs log = new TaskLogs();
-        log.setTaskId(taskId);
-        log.setUserId(currentUser.getId());
-        log.setAction("audit_approve");
-        log.setPreviousStatus("applying");
-        log.setNewStatus("completed");
-        log.setCreatedAt(new Date());
-        taskLogsService.save(log);
-
-        return Result.success("审核通过").toJson();
+        return this.completeTask(token, taskId);
     }
 
     /**
