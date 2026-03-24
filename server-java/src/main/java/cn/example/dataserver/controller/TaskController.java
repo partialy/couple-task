@@ -93,6 +93,30 @@ public class TaskController {
     }
 
     /**
+     * 申请完成任务（接收者发起）
+     */
+    @PostMapping("/apply-complete/{taskId}")
+    public String applyCompleteTask(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.applyCompleteTask(token, taskId);
+    }
+
+    /**
+     * 审核同意（发布者）
+     */
+    @PostMapping("/audit/approve/{taskId}")
+    public String approveTaskAudit(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.approveTaskAudit(token, taskId);
+    }
+
+    /**
+     * 审核拒绝（发布者）
+     */
+    @PostMapping("/audit/reject/{taskId}")
+    public String rejectTaskAudit(@RequestHeader("Authorization") String token, @PathVariable String taskId) {
+        return taskService.rejectTaskAudit(token, taskId);
+    }
+
+    /**
      * 收藏任务
      */
     @PostMapping("/favorite/{taskId}")

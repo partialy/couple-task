@@ -84,6 +84,27 @@ const taskService = {
   },
 
   /**
+   * 申请完成任务（接收者）
+   */
+  async applyComplete(taskId: string): Promise<ApiResponse<string>> {
+    return await request.post(`/task/apply-complete/${taskId}`);
+  },
+
+  /**
+   * 审核同意（发布者）
+   */
+  async approveAudit(taskId: string): Promise<ApiResponse<string>> {
+    return await request.post(`/task/audit/approve/${taskId}`);
+  },
+
+  /**
+   * 审核拒绝（发布者）
+   */
+  async rejectAudit(taskId: string): Promise<ApiResponse<string>> {
+    return await request.post(`/task/audit/reject/${taskId}`);
+  },
+
+  /**
    * 获取任务评论列表
    * @param taskId 任务ID
    */

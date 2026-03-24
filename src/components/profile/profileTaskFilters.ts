@@ -34,3 +34,16 @@ export function filterMyReceivedTasks(tasks: UiTask[], uid: string | undefined):
       (t.status === 'in-progress' || t.status === 'completed'),
   );
 }
+
+/**
+ * 等待我审核的任务，任务状态applying
+ */
+export function filterApplyingTasks(tasks: UiTask[], uid: string | undefined): UiTask[] {
+  if (!uid) return [];
+  return tasks.filter(
+    (t) =>
+      t.authorId === uid &&
+      (t.status === 'applying'),
+  );
+}
+

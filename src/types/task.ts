@@ -27,6 +27,7 @@ export interface UiTask {
   isBookmarked: boolean;
   otherImages: string[];
   createdAt?: string;
+  finishTime: string | null;
 }
 
 export interface UiTaskDetail extends UiTask {

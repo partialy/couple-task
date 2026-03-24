@@ -13,16 +13,18 @@ export function getChatWebSocketUrl(): string {
   );
   const path = "/api/ws/chat";
 
+  
+
   if (import.meta.env.DEV) {
     const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
     return `${wsProto}//${window.location.host}${path}?token=${tokenParam}`;
   }
 
-  const base = request.defaults.baseURL?.replace("/api","") || import.meta.env.VITE_API_URL as string || "https://api-yu.hs.partialy.cn";
+  const base = import.meta.env.VITE_API_URL as string || "https://api-yu.hs.partialy.cn";
   const origin = base?.startsWith("http")
     ? base
     : `${window.location.protocol}//${window.location.host}`;
   const u = new URL(origin);
   const wsProto = u.protocol === "https:" ? "wss:" : "ws:";
-  return `${wsProto}//${u.host}${path}?token=${tokenParam}`;
+  return `${wsProto}//echo.hs.partialy.cn${path}?token=${tokenParam}`;
 }

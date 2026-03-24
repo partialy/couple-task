@@ -138,6 +138,7 @@ export function mapTaskVOToUiTask(task: TaskVO): UiTask {
       .map((item) => item.imageUrl)
       .filter(Boolean),
     createdAt: task.createdAt,
+    finishTime: task.status == 'completed' ? task.updatedAt : null
   };
 }
 

@@ -18,6 +18,7 @@ import {
   taskDetailVOToPublishInitial,
 } from "@/mappers/task";
 import { useUserStore } from "@/store/user";
+import { useTaskStore } from "@/store/task";
 import { message } from "@/utils/pure/message";
 import TaskCover from "./task-detail/TaskCover";
 import TaskMeta from "./task-detail/TaskMeta";
@@ -52,17 +53,18 @@ export default function TaskDetail({
   key?: string;
 }) {
   const currentUser = useUserStore((state) => state.currentUser);
+  const applyCompleteTaskApi = useTaskStore((s) => s.applyCompleteTask);
   const [isRevealed, setIsRevealed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [detail, setDetail] = useState<TaskDetailVO | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    type: "accept" | "complete" | "abandon" | null;
+    type: "accept" | "complete" | "abandon" | "apply" | null;
   }>({ isOpen: false, type: null });
   const [previewImageSrc, setPreviewImageSrc] = useState<string | null>(null);
 
-  const handleAction = (type: "accept" | "complete" | "abandon") => {
+  const handleAction = (type: "accept" | "complete" | "abandon" | "apply") => {
     setConfirmModal({ isOpen: true, type });
   };
 
@@ -93,6 +95,17 @@ export default function TaskDetail({
             onClose();
           }, 2000);
         } else {
+          setConfirmModal({ isOpen: false, type: null });
+        }
+        return;
+      } else if (confirmModal.type === "apply") {
+        const result = await applyCompleteTaskApi(task.id);
+        if (result.success) {
+          message.success(result.msg || "已提交完成申请");
+          setConfirmModal({ isOpen: false, type: null });
+          onClose();
+        } else {
+          message.error(result.msg || "申请失败");
           setConfirmModal({ isOpen: false, type: null });
         }
         return;
@@ -246,6 +259,7 @@ export default function TaskDetail({
         status={displayTask.status}
         isAuthorTask={isAuthorTask}
         isReceiverTask={isReceiverTask}
+        finishTime={task.finishTime}
         onAction={handleAction}
       />
 
@@ -256,6 +270,8 @@ export default function TaskDetail({
             ? "确认接受任务？"
             : confirmModal.type === "complete"
               ? "确认对方完成任务？"
+              : confirmModal.type === "apply"
+                ? "确认申请完成任务？"
               : isAuthorTask
                 ? "确认撤回任务？"
                 : "确认放弃任务？"
@@ -265,6 +281,8 @@ export default function TaskDetail({
             ? '接受后任务将进入你的"进行中"列表，要开始这个心愿吗？'
             : confirmModal.type === "complete"
               ? "确认对方已完成该任务后，将发放任务奖励给接取人。"
+              : confirmModal.type === "apply"
+                ? "提交申请后将进入审核列表，等待对方确认。"
               : isAuthorTask
                 ? "撤回后任务将回到待处理状态，等待对方重新接取。"
                 : "放弃后任务将重新回到广场，确定要放弃吗？"
@@ -274,6 +292,8 @@ export default function TaskDetail({
             ? "接受"
             : confirmModal.type === "complete"
               ? "已完成"
+              : confirmModal.type === "apply"
+                ? "确认申请"
               : isAuthorTask
                 ? "撤回"
                 : "放弃"
@@ -283,6 +303,8 @@ export default function TaskDetail({
             ? "bg-cyan-500 hover:bg-cyan-600"
             : confirmModal.type === "complete"
               ? "bg-emerald-500 hover:bg-emerald-600"
+              : confirmModal.type === "apply"
+                ? "bg-emerald-500 hover:bg-emerald-600"
               : "bg-rose-500 hover:bg-rose-600"
         }
         onConfirm={confirmAction}

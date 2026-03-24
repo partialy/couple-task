@@ -6,11 +6,13 @@ import TaskDetail from './TaskDetail';
 import QrScanner from './QrScanner';
 import ProfileEdit from './profile/ProfileEdit';
 import ProfileTaskListScreen from './profile/ProfileTaskListScreen';
+import ProfileAuditListScreen from '@/components/profile/ProfileAuditListScreen';
 import {
   filterMyPublishedTasks,
   filterMyReceivedTasks,
   filterMyUnpublishedTasks,
   filterMyDraftTasks,
+  filterApplyingTasks,
 } from './profile/profileTaskFilters';
 import RewardCenter from './RewardCenter';
 import { useUserStore } from '@/store';
@@ -19,7 +21,7 @@ import { message } from '@/utils/pure/message';
 import { UiTask } from '@/types/task';
 import type { PublishTaskInitialData } from '@/mappers/task';
 
-type TaskListScreenMode = 'published' | 'received' | 'draftbox' | 'mydrafts';
+type TaskListScreenMode = 'published' | 'received' | 'draftbox' | 'mydrafts' | 'audit';
 
 export default function Profile({
   onOpenItems,
@@ -38,8 +40,8 @@ export default function Profile({
   onOpenSpecialRewards?: () => void;
   onOpenSettings?: () => void;
   onOpenPointsDetail?: () => void;
-  tasks: any[];
-  setTasks: (tasks: any[]) => void;
+  tasks: UiTask[];
+  setTasks: (tasks: UiTask[]) => void;
   onEditTask?: (initialData: PublishTaskInitialData) => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
@@ -49,6 +51,8 @@ export default function Profile({
   const unpublishTaskApi = useTaskStore((s) => s.unpublishTask);
   const publishListingTaskApi = useTaskStore((s) => s.publishListingTask);
   const deleteTaskApi = useTaskStore((s) => s.deleteTask);
+  const approveTaskAuditApi = useTaskStore((s) => s.approveTaskAudit);
+  const rejectTaskAuditApi = useTaskStore((s) => s.rejectTaskAudit);
   const [taskListScreen, setTaskListScreen] = useState<TaskListScreenMode | null>(null);
   const [activeList, setActiveList] = useState<{ title: string, filter: (t: any) => boolean } | null>(null);
   const [selectedTask, setSelectedTask] = useState<UiTask | null>(null);
@@ -92,11 +96,11 @@ export default function Profile({
   const uid = currentUser?.id;
 
   const publishedTasks = useMemo(
-    () => filterMyPublishedTasks(tasks as UiTask[], uid),
+    () => filterMyPublishedTasks(tasks, uid),
     [tasks, uid],
   );
   const receivedTasks = useMemo(
-    () => filterMyReceivedTasks(tasks as UiTask[], uid),
+    () => filterMyReceivedTasks(tasks, uid),
     [tasks, uid],
   );
   const completedTasks = useMemo(
@@ -108,12 +112,17 @@ export default function Profile({
   );
   const bookmarkedTasks = tasks.filter((t) => t.isBookmarked);
   const unpublishedTasks = useMemo(
-    () => filterMyUnpublishedTasks(tasks as UiTask[], uid),
+    () => filterMyUnpublishedTasks(tasks, uid),
     [tasks, uid],
   );
   const draftTasks = useMemo(
-    () => filterMyDraftTasks(tasks as UiTask[], uid),
+    () => filterMyDraftTasks(tasks, uid),
     [tasks, uid],
+  );
+
+  const applyingTask = useMemo(
+    () => filterApplyingTasks(tasks, uid),
+    [tasks, uid]
   );
 
   const openTaskListScreen = (mode: TaskListScreenMode) => {
@@ -197,19 +206,19 @@ export default function Profile({
           onClick={onOpenItems}
           className="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center space-x-3 hover:shadow-md transition-shadow text-left"
         >
-          <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0">
             <Package className="w-6 h-6" />
           </div>
           <div>
             <p className="text-sm font-bold text-slate-800 dark:text-white">道具</p>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">查看剩余</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">查看/使用</p>
           </div>
         </button>
         <button 
           onClick={onOpenShop}
           className="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center space-x-3 hover:shadow-md transition-shadow text-left"
         >
-          <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-500 flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-500 shrink-0">
             <Gift className="w-6 h-6" />
           </div>
           <div>
@@ -219,34 +228,31 @@ export default function Profile({
         </button>
       </div>
 
-      {/* Special Prizes Card */}
-      <div className="px-3 mt-3">
-        <button 
+      {/* Special Rewards / Redeem Code */}
+      <div className="px-3 mt-3 grid grid-cols-2 gap-4">
+        <button
           onClick={onOpenSpecialRewards}
-          className="w-full bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center space-x-3 hover:shadow-md transition-shadow text-left border border-pink-100/50 dark:border-pink-900/20"
+          className="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center space-x-3 hover:shadow-md transition-shadow text-left border border-pink-100/50 dark:border-pink-900/20"
         >
-          <div className="w-12 h-12 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-500 flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-500 shrink-0">
             <Star className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800 dark:text-white">特别奖品</p>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">发布和兑换特别奖励</p>
+            <p className="text-sm font-bold text-slate-800 dark:text-white">特别奖励</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">特别礼物</p>
           </div>
         </button>
-      </div>
 
-      {/* Reward Center Card */}
-      <div className="px-3 mt-3">
-        <button 
+        <button
           onClick={() => openModal(setShowRewardCenter, true)}
-          className="w-full bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center space-x-3 hover:shadow-md transition-shadow text-left border border-indigo-100/50 dark:border-indigo-900/20"
+          className="bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-sm flex items-center space-x-3 hover:shadow-md transition-shadow text-left border border-indigo-100/50 dark:border-indigo-900/20"
         >
-          <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 flex-shrink-0">
-            <Gift className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+            <QrCode className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800 dark:text-white">给TA奖励</p>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">发布兑换码，使用后可以获得相应道具</p>
+            <p className="text-sm font-bold text-slate-800 dark:text-white">兑换码</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">发布兑换码</p>
           </div>
         </button>
       </div>
@@ -287,6 +293,12 @@ export default function Profile({
             title="我的草稿"
             count={draftTasks.length}
             onClick={() => openTaskListScreen('mydrafts')}
+          />
+          <MenuItem
+            icon={<Star className="w-5 h-5 text-emerald-500" />}
+            title="审核列表"
+            count={applyingTask.length}
+            onClick={() => openTaskListScreen('audit')}
           />
         </div>
       </div>
@@ -339,6 +351,31 @@ export default function Profile({
             emptyTitle="暂无草稿"
             emptyHint="在发布页可保存草稿，完善后再上架"
             listVariant="received"
+          />
+        )}
+        {taskListScreen === 'audit' && (
+          <ProfileAuditListScreen
+            key="audit"
+            tasks={applyingTask}
+            onBack={closeModal}
+            onApprove={async (taskId) => {
+              const r = await approveTaskAuditApi(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已同意');
+              } else {
+                message.error(r.msg || '操作失败');
+              }
+              return r;
+            }}
+            onReject={async (taskId) => {
+              const r = await rejectTaskAuditApi(String(taskId));
+              if (r.success) {
+                message.success(r.msg || '已拒绝');
+              } else {
+                message.error(r.msg || '操作失败');
+              }
+              return r;
+            }}
           />
         )}
       </AnimatePresence>
@@ -443,11 +480,6 @@ export default function Profile({
               setTasks(tasks.map(t => {
                 if (t.id === taskId) {
                   const updatedTask = { ...t, status: newStatus };
-                  if (newStatus === 'in-progress') {
-                    updatedTask.assignee = '兔兔';
-                  } else if (newStatus === 'pending') {
-                    delete updatedTask.assignee;
-                  }
                   return updatedTask;
                 }
                 return t;

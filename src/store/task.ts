@@ -23,6 +23,9 @@ interface TaskState {
   acceptTask: (taskId: string) => Promise<Result<string>>;
   abandonTask: (taskId: string) => Promise<Result<string>>;
   completeTask: (taskId: string) => Promise<Result<string>>;
+  applyCompleteTask: (taskId: string) => Promise<Result<string>>;
+  approveTaskAudit: (taskId: string) => Promise<Result<string>>;
+  rejectTaskAudit: (taskId: string) => Promise<Result<string>>;
   updateTaskStatus: (taskId: string | number, status: string) => void;
   deleteTask: (taskId: string | number) => Promise<Result<string>>;
   toggleBookmark: (taskId: string | number) => Promise<void>;
@@ -127,6 +130,57 @@ export const useTaskStore = create<TaskState>()((set, get) => ({
             set((state) => ({
               tasks: state.tasks.map((t) =>
                 t.id === taskId ? { ...t, status: "completed" } : t,
+              ),
+            }));
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      applyCompleteTask: async (taskId: string) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.applyComplete(taskId);
+          if (result.success) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId ? { ...t, status: "applying" } : t,
+              ),
+            }));
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      approveTaskAudit: async (taskId: string) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.approveAudit(taskId);
+          if (result.success) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId ? { ...t, status: "completed" } : t,
+              ),
+            }));
+          }
+          return result;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      rejectTaskAudit: async (taskId: string) => {
+        set({ loading: true });
+        try {
+          const result = await taskService.rejectAudit(taskId);
+          if (result.success) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId ? { ...t, status: "in-progress" } : t,
               ),
             }));
           }

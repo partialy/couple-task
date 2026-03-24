@@ -4,6 +4,7 @@ import { useUserStore } from "@/store/user";
 import eventBus from "@/utils/eventBus";
 import { notification } from "@/utils/pure/notification";
 import type { MessageVO } from "@/api/service/chat";
+import { message } from "@/utils/pure/message";
 
 /** 避免在 CONNECTING 阶段直接 close 触发浏览器 “closed before established” 警告（Strict Mode 双挂载时常见） */
 export function closeWebSocketSafely(ws: WebSocket | null) {
@@ -73,6 +74,7 @@ export function connectChatWebSocket() {
     if (import.meta.env.DEV) {
       console.debug("[chat ws] connected");
     }
+    message.success("websocket 已连接")
   };
 
   ws.onmessage = (ev) => {
@@ -132,8 +134,9 @@ export function connectChatWebSocket() {
     }
   };
 
-  ws.onerror = () => {
+  ws.onerror = (e) => {
     useMessageStore.getState().setPartnerOnline(false);
+    message.error("websocket 出错")
   };
 
   ws.onclose = (ev) => {

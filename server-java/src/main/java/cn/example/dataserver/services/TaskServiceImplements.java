@@ -624,7 +624,7 @@ public class TaskServiceImplements {
             return Result.fail("任务不存在").toJson();
         }
 
-        if (!"in-progress".equals(task.getStatus())) {
+        if (!TaskStatus.IN_PROGRESS.getValue().equals(task.getStatus())) {
             return Result.fail("任务状态不允许放弃").toJson();
         }
 
@@ -636,7 +636,7 @@ public class TaskServiceImplements {
         }
 
         // 更新状态
-        task.setStatus("pending");
+        task.setStatus(TaskStatus.PENDING.getValue());
         task.setUpdatedAt(new Date());
         tasksService.updateById(task);
 
@@ -645,8 +645,8 @@ public class TaskServiceImplements {
         log.setTaskId(taskId);
         log.setUserId(currentUser.getId());
         log.setAction("abandon");
-        log.setPreviousStatus("in-progress");
-        log.setNewStatus("pending");
+        log.setPreviousStatus(TaskStatus.IN_PROGRESS.getValue());
+        log.setNewStatus(TaskStatus.PENDING.getValue());
         log.setCreatedAt(new Date());
         taskLogsService.save(log);
 
@@ -667,7 +667,8 @@ public class TaskServiceImplements {
             return Result.fail("任务不存在").toJson();
         }
 
-        if (!"in-progress".equals(task.getStatus())) {
+        if (!TaskStatus.IN_PROGRESS.getValue().equals(task.getStatus())
+                || !TaskStatus.APPLYING.getValue().equals(task.getStatus())) {
             return Result.fail("任务状态不允许完成").toJson();
         }
 
@@ -686,7 +687,7 @@ public class TaskServiceImplements {
         }
 
         // 更新状态
-        task.setStatus("completed");
+        task.setStatus(TaskStatus.COMPLETED.getValue());
         task.setUpdatedAt(new Date());
         tasksService.updateById(task);
 
@@ -695,8 +696,8 @@ public class TaskServiceImplements {
         log.setTaskId(taskId);
         log.setUserId(currentUser.getId());
         log.setAction("complete");
-        log.setPreviousStatus("in-progress");
-        log.setNewStatus("completed");
+        log.setPreviousStatus(TaskStatus.APPLYING.getValue());
+        log.setNewStatus(TaskStatus.COMPLETED.getValue());
         log.setCreatedAt(new Date());
         taskLogsService.save(log);
 
@@ -764,6 +765,108 @@ public class TaskServiceImplements {
             }
         }
         return Result.success("任务完成").toJson();
+    }
+
+    /**
+     * 申请完成任务（接收者）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String applyCompleteTask(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        if (ObjectUtil.isNull(currentUser)) {
+            return Result.unauthorized("登录已过期，请重新登录").toJson();
+        }
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!TaskStatus.IN_PROGRESS.getValue().equals(task.getStatus())) {
+            return Result.fail("任务状态不允许申请完成").toJson();
+        }
+        if (!currentUser.getId().equals(task.getReceiverId())) {
+            return Result.fail("仅接取人可申请完成").toJson();
+        }
+
+        task.setStatus(TaskStatus.APPLYING.getValue());
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+
+        TaskLogs log = new TaskLogs();
+        log.setTaskId(taskId);
+        log.setUserId(currentUser.getId());
+        log.setAction("apply_complete");
+        log.setPreviousStatus(TaskStatus.IN_PROGRESS.getValue());
+        log.setNewStatus(TaskStatus.APPLYING.getValue());
+        log.setCreatedAt(new Date());
+        taskLogsService.save(log);
+
+        return Result.success("已提交完成申请").toJson();
+    }
+
+    /**
+     * 审核同意（发布者）：applying -> completed
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String approveTaskAudit(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!TaskStatus.APPLYING.getValue().equals(task.getStatus())) {
+            return Result.fail("任务状态不允许审核同意").toJson();
+        }
+        if (!currentUser.getId().equals(task.getAuthorId())) {
+            return Result.fail("仅发布者可审核").toJson();
+        }
+
+        task.setStatus("completed");
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+
+        TaskLogs log = new TaskLogs();
+        log.setTaskId(taskId);
+        log.setUserId(currentUser.getId());
+        log.setAction("audit_approve");
+        log.setPreviousStatus("applying");
+        log.setNewStatus("completed");
+        log.setCreatedAt(new Date());
+        taskLogsService.save(log);
+
+        return Result.success("审核通过").toJson();
+    }
+
+    /**
+     * 审核拒绝（发布者）：applying -> in-progress
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String rejectTaskAudit(String token, String taskId) {
+        Users currentUser = authService.checkToken(token);
+        Tasks task = tasksService.getById(taskId);
+        if (ObjectUtil.isNull(task) || ObjectUtil.isNotNull(task.getDeletedAt())) {
+            return Result.fail("任务不存在").toJson();
+        }
+        if (!TaskStatus.APPLYING.getValue().equals(task.getStatus())) {
+            return Result.fail("任务状态不允许审核拒绝").toJson();
+        }
+        if (!currentUser.getId().equals(task.getAuthorId())) {
+            return Result.fail("仅发布者可审核").toJson();
+        }
+
+        task.setStatus(TaskStatus.IN_PROGRESS.getValue());
+        task.setUpdatedAt(new Date());
+        tasksService.updateById(task);
+
+        TaskLogs log = new TaskLogs();
+        log.setTaskId(taskId);
+        log.setUserId(currentUser.getId());
+        log.setAction("audit_reject");
+        log.setPreviousStatus(TaskStatus.APPLYING.getValue());
+        log.setNewStatus(TaskStatus.IN_PROGRESS.getValue());
+        log.setCreatedAt(new Date());
+        taskLogsService.save(log);
+
+        return Result.success("已拒绝该申请").toJson();
     }
 
     private List<String> parseTaskTags(Object rawTags) {
