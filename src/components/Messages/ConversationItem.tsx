@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Bell } from "lucide-react";
 import { Conversation } from "../../data/messages";
 
@@ -17,7 +17,7 @@ export default function ConversationItem({ conversation, onClick }: Conversation
       onClick={onClick}
       className="w-full flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-none"
     >
-      <div className="relative flex-shrink-0">
+      <div className="relative shrink-0">
         {conversation.userAvatar && !isSystem ? (
           <img
             src={conversation.userAvatar}
@@ -42,17 +42,19 @@ export default function ConversationItem({ conversation, onClick }: Conversation
       </div>
 
       <div className="ml-3 flex-1 overflow-hidden text-left">
-        <div className="flex justify-between items-baseline mb-1">
-          <h3
-            className={`truncate pr-2 ${
-              hasUnread
-                ? "font-bold text-slate-900 dark:text-white"
-                : "font-bold text-slate-800 dark:text-slate-200"
-            }`}
-          >
-            {conversation.userName}
-          </h3>
-          <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">
+        <div className="flex justify-between items-start mb-0.5">
+          <div className="min-w-0 pr-2">
+            <h3
+              className={`truncate ${
+                hasUnread
+                  ? "font-bold text-slate-900 dark:text-white"
+                  : "font-bold text-slate-800 dark:text-slate-200"
+              }`}
+            >
+              {conversation.userName}
+            </h3>
+          </div>
+          <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0 pt-0.5">
             {conversation.lastMessageTime}
           </span>
         </div>

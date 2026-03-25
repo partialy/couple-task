@@ -1,16 +1,24 @@
 package cn.example.dataserver.websocket;
 
 import cn.example.dataserver.services.ChatPresenceService;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * 聊天下行通道：连接建立后登记用户，关闭时移除；客户端上行可忽略或后续扩展心跳
+ * 聊天 WebSocket 通道：连接登记、心跳响应、断开清理
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ChatWebSocketHandler extends TextWebSocketHandler {
@@ -29,7 +37,39 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        // 当前版本仅服务端推送，客户端上行可留空；可后续扩展 ping/pong
+        String userId = (String) session.getAttributes().get("userId");
+        if (userId == null) return;
+
+        try {
+            JSONObject json = JSON.parseObject(message.getPayload());
+            String event = json.getString("event");
+            if ("ping".equals(event)) {
+                handlePing(session, userId);
+            }
+        } catch (Exception e) {
+            log.warn("解析客户端上行消息失败 userId={}", userId, e);
+        }
+    }
+
+    /**
+     * 处理客户端心跳 ping，回复 pong 并附带伙伴在线状态
+     */
+    private void handlePing(WebSocketSession session, String userId) {
+        String peerId = chatPresenceService.findAcceptedPeerUserId(userId);
+        boolean partnerOnline = peerId != null && chatWebSocketSessionRegistry.isOnline(peerId);
+
+        Map<String, Object> data = new HashMap<>(4);
+        data.put("partnerOnline", partnerOnline);
+
+        Map<String, Object> payload = new HashMap<>(4);
+        payload.put("event", "pong");
+        payload.put("data", data);
+
+        try {
+            session.sendMessage(new TextMessage(JSON.toJSONString(payload)));
+        } catch (IOException e) {
+            log.error("心跳 pong 发送失败 userId={}", userId, e);
+        }
     }
 
     @Override

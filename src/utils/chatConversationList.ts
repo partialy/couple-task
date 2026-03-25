@@ -49,6 +49,7 @@ export function buildConversationRows(
         bindUser.nickname?.trim() ||
         bindUser.username,
       userAvatar: partnerVo.peerUser.avatar || bindUser.avatar || "",
+      lastLoginAt: partnerVo.peerUser.lastLoginAt,
       lastMessage: previewLastMessage(partnerVo),
       lastMessageTime: formatListTime(
         partnerVo.lastMessage?.createdAt || partnerVo.updatedAt,

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { ChevronLeft, MoreVertical, Phone, Video } from "lucide-react";
+import { ChevronLeft, Loader2, MoreVertical, Phone, Video } from "lucide-react";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import { Message, Conversation } from "../../data/messages";
@@ -9,6 +10,7 @@ import { chatService, type MessageVO } from "@/api/service/chat";
 import eventBus from "@/utils/eventBus";
 import { message as toast } from "@/utils/pure/message";
 import { useUserStore } from "@/store/user";
+import { useMessageStore } from "@/store/message";
 import { uploadToQiniu } from "@/utils/qiniu";
 import type { ChatAttachmentKind } from "@/components/ui/ChatAttachmentModal";
 
@@ -18,6 +20,9 @@ interface ChatRoomProps {
   onBack: () => void;
   onRefreshList: () => void;
 }
+
+const PAGE_SIZE = 100;
+const START_INDEX = 100_000;
 
 function formatMsgTime(iso: string): string {
   const d = new Date(iso);
@@ -44,34 +49,34 @@ export default function ChatRoom({
 }: ChatRoomProps) {
   const currentUser = useUserStore((s) => s.currentUser);
   const bindUser = useUserStore((s) => s.bindUser);
+  const partnerOnline = useMessageStore((s) => s.partnerOnline);
   const currentUserId = currentUser?.id ?? null;
 
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  /** 对方连续发消息时合并 markRead，减少请求次数 */
+  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
   const markReadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPartner = conversation.kind === "partner";
   const convId = isPartner ? conversation.id : null;
 
-  const scrollToBottom = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-    }
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const loadHistory = useCallback(async () => {
     if (!isPartner || !convId || !currentUserId) return;
-    const res = await chatService.listMessages(convId, 1, 80);
+    const res = await chatService.listMessages(convId, 1, PAGE_SIZE);
     if (!res.success || !res.data?.records) {
       toast.error(res.msg || "加载消息失败");
       return;
     }
     const asc = [...res.data.records].reverse();
-    setMessages(asc.map((m) => apiMessageToUi(m)));
+    const uiMessages = asc.map((m) => apiMessageToUi(m));
+    setMessages(uiMessages);
+    setFirstItemIndex(START_INDEX);
+    setCurrentPage(1);
+    const totalRecords = res.data.total ?? 0;
+    setHasMore(uiMessages.length < totalRecords);
     await chatService.markRead({ conversationId: convId });
     onRefreshList();
   }, [isPartner, convId, currentUserId, onRefreshList]);
@@ -85,8 +90,40 @@ export default function ChatRoom({
   useEffect(() => {
     if (!isPartner) {
       setMessages(initialMessages);
+      setFirstItemIndex(START_INDEX);
+      setCurrentPage(1);
+      setHasMore(false);
     }
   }, [isPartner, initialMessages]);
+
+  const loadMore = useCallback(async () => {
+    if (!isPartner || !convId || !hasMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const res = await chatService.listMessages(convId, nextPage, PAGE_SIZE);
+      if (!res.success || !res.data?.records || res.data.records.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      const olderAsc = [...res.data.records].reverse();
+      const olderUi = olderAsc.map((m) => apiMessageToUi(m));
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const fresh = olderUi.filter((m) => !existingIds.has(m.id));
+        return [...fresh, ...prev];
+      });
+      setFirstItemIndex((prev) => prev - olderUi.length);
+      setCurrentPage(nextPage);
+      const total = res.data.total ?? 0;
+      const loaded = nextPage * PAGE_SIZE;
+      setHasMore(loaded < total);
+    } catch {
+      toast.error("加载更多消息失败");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [isPartner, convId, hasMore, loadingMore, currentPage]);
 
   useEffect(() => {
     if (!isPartner || !convId || !currentUserId) return;
@@ -235,7 +272,12 @@ export default function ChatRoom({
             <div className="min-w-0">
               <h3 className="font-bold text-slate-800 dark:text-white leading-tight truncate">{displayName}</h3>
               {isPartner ? (
-                <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">聊天</p>
+                <p className="flex items-center gap-1 text-xs font-medium">
+                  <span className={`inline-block w-2 h-2 rounded-full ${partnerOnline ? "bg-green-500" : "bg-slate-400"}`} />
+                  <span className={partnerOnline ? "text-green-600 dark:text-green-400" : "text-slate-400 dark:text-slate-500"}>
+                    {partnerOnline ? "在线" : "离线"}
+                  </span>
+                </p>
               ) : (
                 <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">系统</p>
               )}
@@ -266,20 +308,46 @@ export default function ChatRoom({
         ) : null}
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
-        {messages.map((msg) => (
-          <ChatMessage
-            key={msg.id}
-            message={msg}
-            isMe={!!currentUserId && msg.senderId === currentUserId}
-            avatar={
-              msg.senderId === currentUserId
-                ? myAvatar || "https://picsum.photos/seed/me/100/100"
-                : partnerAvatar || "https://picsum.photos/seed/partner/100/100"
-            }
-          />
-        ))}
-      </div>
+{/* 隐藏滚动条 */}
+      <Virtuoso
+        ref={virtuosoRef}
+        className="flex-1 no-scrollbar"
+        data={messages}
+        firstItemIndex={firstItemIndex}
+        initialTopMostItemIndex={messages.length > 0 ? messages.length - 1 : 0}
+        followOutput="smooth"
+        startReached={() => {
+          if (hasMore && !loadingMore) {
+            void loadMore();
+          }
+        }}
+        components={{
+          Header: () =>
+            loadingMore ? (
+              <div className="flex items-center justify-center py-3">
+                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                <span className="ml-2 text-xs text-slate-400">加载更多...</span>
+              </div>
+            ) : !hasMore && messages.length > 0 ? (
+              <div className="py-3 text-center text-xs text-slate-400 dark:text-slate-500">
+                没有更多消息了
+              </div>
+            ) : null,
+        }}
+        itemContent={(_index, msg) => (
+          <div className="px-4 py-2">
+            <ChatMessage
+              message={msg}
+              isMe={!!currentUserId && msg.senderId === currentUserId}
+              avatar={
+                msg.senderId === currentUserId
+                  ? myAvatar || "https://picsum.photos/seed/me/100/100"
+                  : partnerAvatar || "https://picsum.photos/seed/partner/100/100"
+              }
+            />
+          </div>
+        )}
+      />
 
       {isPartner ? (
         <ChatInput

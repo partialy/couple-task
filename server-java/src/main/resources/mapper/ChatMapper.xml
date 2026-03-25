@@ -14,6 +14,7 @@
             CASE WHEN c.user1_id = #{userId} THEN c.user2_id ELSE c.user1_id END AS peer_id,
             u.nickname AS peer_nickname,
             u.avatar AS peer_avatar,
+            u.last_login_at AS peer_last_login_at,
             m.content AS last_content,
             m.type AS last_type,
             m.created_at AS last_message_created_at,

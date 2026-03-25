@@ -23,6 +23,7 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
+  lastLoginAt?: string;
 }
 
 export const mockMessages: Record<string, Message[]> = {

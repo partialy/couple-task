@@ -5,6 +5,7 @@ export interface PeerUserVO {
   id: string;
   nickname?: string;
   avatar?: string;
+  lastLoginAt?: string;
 }
 
 export interface LastMessagePreviewVO {

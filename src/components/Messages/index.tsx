@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AnimatePresence } from "motion/react";
 import { Heart } from "lucide-react";
 import ConversationList from "./ConversationList";
@@ -7,6 +7,22 @@ import { mockMessages } from "../../data/messages";
 import { useMessageStore } from "../../store";
 import { useUserStore } from "@/store/user";
 import { fetchChatConversationRows } from "@/utils/chatConversationList";
+
+function formatLastLogin(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return "刚刚";
+  if (diffMin < 60) return `${diffMin}分钟前`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}小时前`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 30) return `${diffDay}天前`;
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
 
 export default function Messages({
   onOpenPartnerProfile,
@@ -66,6 +82,12 @@ export default function Messages({
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
 
+  const partnerConv = conversations.find((c) => c.kind === "partner");
+  const lastLoginText = useMemo(
+    () => formatLastLogin(partnerConv?.lastLoginAt),
+    [partnerConv?.lastLoginAt],
+  );
+
   return (
     <div className="w-full h-full relative overflow-hidden flex flex-col">
       <div className="px-4 pt-4 pb-3 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between gap-3">
@@ -77,13 +99,22 @@ export default function Messages({
             className="flex min-w-0 max-w-[55%] items-center gap-2 rounded-full py-1 pl-3 pr-1 transition-colors hover:bg-slate-100/90 dark:hover:bg-slate-800/80"
             aria-label="查看对方资料"
           >
-            <Heart
+            
+            <div className="min-w-0 text-right">
+            
+              <span className="flex flex-row items-cnter justify-end gap-2 truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <Heart
               className={`h-4 w-4 shrink-0 ${partnerOnline ? "fill-rose-500 text-rose-500" : "text-slate-300 dark:text-slate-600"}`}
               aria-hidden
             />
-            <span className="truncate text-right text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {bindUser.nickname?.trim() || bindUser.username}
-            </span>
+                {bindUser.nickname?.trim() || bindUser.username}
+              </span>
+              {lastLoginText && (
+                <span className="block truncate text-[11px] text-slate-400 dark:text-slate-500 leading-tight">
+                  上次心动：{lastLoginText}
+                </span>
+              )}
+            </div>
             {bindUser.avatar ? (
               <img
                 src={bindUser.avatar}

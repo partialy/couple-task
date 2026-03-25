@@ -322,6 +322,7 @@ public class ChatService {
                 .id(peerId)
                 .nickname(peer != null ? peer.getNickname() : null)
                 .avatar(peer != null ? peer.getAvatar() : null)
+                .lastLoginAt(peer != null ? peer.getLastLoginAt() : null)
                 .build();
 
         LastMessagePreviewVO last = null;
@@ -356,6 +357,7 @@ public class ChatService {
                 .id(r.getPeerId())
                 .nickname(r.getPeerNickname())
                 .avatar(r.getPeerAvatar())
+                .lastLoginAt(r.getPeerLastLoginAt())
                 .build();
         LastMessagePreviewVO last = null;
         if (StrUtil.isNotBlank(r.getLastContent())) {

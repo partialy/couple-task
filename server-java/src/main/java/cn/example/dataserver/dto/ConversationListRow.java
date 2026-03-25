@@ -24,4 +24,5 @@ public class ConversationListRow {
     private String lastType;
     private Date lastMessageCreatedAt;
     private Long unreadCount;
+    private Date peerLastLoginAt;
 }

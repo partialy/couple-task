@@ -1,14 +1,23 @@
-import React, { useMemo, useState } from "react";
-import { Download, FileText } from "lucide-react";
+import React, { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { Copy, Download, FileText } from "lucide-react";
 import { Message } from "../../data/messages";
 import ImagePreview from "@/components/ui/ImagePreview";
 import Modal from "@/components/ui/Modal";
+import { message as toast } from "@/utils/pure/message";
 
 interface ChatMessageProps {
   message: Message;
   isMe: boolean;
   avatar: string;
 }
+
+interface MenuPos {
+  x: number;
+  y: number;
+}
+
+const LONG_PRESS_MS = 500;
 
 export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps) {
   const type = message.type || "text";
@@ -17,6 +26,69 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [videoPreviewOpen, setVideoPreviewOpen] = useState(false);
   const [filePreviewOpen, setFilePreviewOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<MenuPos | null>(null);
+
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    const textToCopy = message.text;
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast.success("已复制");
+    } catch {
+      toast.error("复制失败");
+    }
+    setMenuPos(null);
+  }, [message.text]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuPos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    clearLongPress();
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      if (touchStartPosRef.current) {
+        setMenuPos({ x: touchStartPosRef.current.x, y: touchStartPosRef.current.y });
+      }
+    }, LONG_PRESS_MS);
+  }, [clearLongPress]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPosRef.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      clearLongPress();
+    }
+  }, [clearLongPress]);
+
+  const handleTouchEnd = useCallback(() => {
+    clearLongPress();
+  }, [clearLongPress]);
+
+  useEffect(() => {
+    if (!menuPos) return;
+    const close = () => setMenuPos(null);
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [menuPos]);
+
+  useEffect(() => () => clearLongPress(), [clearLongPress]);
 
   const attachmentName = useMemo(() => {
     if (type !== "file") return "";
@@ -72,6 +144,7 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
           <img
             src={message.text}
             alt=""
+            loading="lazy"
             className="max-w-[220px] max-h-48 rounded-lg object-cover"
             referrerPolicy="no-referrer"
           />
@@ -87,6 +160,7 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
             src={message.text}
             controls={false}
             muted
+            preload="none"
             className="pointer-events-none max-w-[240px] max-h-48 rounded-lg"
           />
         </button>
@@ -128,10 +202,38 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
     </div>
   );
 
+  const contextMenu = menuPos
+    ? createPortal(
+        <div
+          className="fixed z-9999 min-w-[100px] rounded-xl bg-white dark:bg-slate-800 shadow-xl ring-1 ring-slate-200/80 dark:ring-slate-600 py-1 animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            left: Math.min(menuPos.x, window.innerWidth - 120),
+            top: Math.min(menuPos.y, window.innerHeight - 50),
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            onClick={() => void handleCopy()}
+          >
+            <Copy className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            复制
+          </button>
+        </div>,
+        document.body,
+      )
+    : null;
+
   return (
     <div className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}>
       <div
         className={`flex max-w-[75%] ${isMe ? "flex-row-reverse" : "flex-row"} items-end space-x-2`}
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         <img
           src={avatar || "https://picsum.photos/seed/u/100/100"}
@@ -161,6 +263,7 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
           </div>
         </div>
       </div>
+      {contextMenu}
       <ImagePreview
         src={type === "image" ? message.text : ""}
         isOpen={imagePreviewOpen}
