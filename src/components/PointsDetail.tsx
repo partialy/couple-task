@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, HelpCircle, X } from 'lucide-react';
+import { HelpCircle, X } from 'lucide-react';
 import { usePointsStore } from '../store/points';
 import { useUserStore } from '../store/user';
 import dayjs from 'dayjs';
+import PageHeader from './ui/PageHeader';
 
 interface PointsDetailProps {
   onBack: () => void;
@@ -35,23 +36,20 @@ export default function PointsDetail({ onBack, defaultTab = 'income' }: PointsDe
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex flex-col"
     >
-      <div className="flex items-center justify-between p-4 pt-3 bg-white dark:bg-slate-800 shadow-sm z-10">
-        <button 
-          onClick={onBack}
-          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white">我的积分</h2>
-        <button 
-          onClick={() => setShowRulesModal(true)}
-          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </button>
-      </div>
+      <PageHeader
+        title="我的积分"
+        onBack={onBack}
+        rightSlot={
+          <button
+            onClick={() => setShowRulesModal(true)}
+            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+        }
+      />
       
-      <div className="flex-1 overflow-y-auto pb-32 no-scrollbar">
+      <div className="flex-1 overflow-y-auto pb-2 no-scrollbar">
         {/* Points Header */}
         <div className="bg-white dark:bg-slate-800 px-3 py-8 rounded-b-[40px] shadow-sm flex flex-col items-center">
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-2">当前可用积分</p>

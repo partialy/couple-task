@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft } from "lucide-react";
 import { userService } from "@/api/service/user";
 import type { PartnerOverviewResponse } from "@/api/types";
 import { message } from "@/utils/pure/message";
@@ -8,6 +7,7 @@ import PartnerProfileHero from "./PartnerProfileHero";
 import PartnerProfileAssets from "./PartnerProfileAssets";
 import PartnerProfileTaskStats from "./PartnerProfileTaskStats";
 import PartnerProfileMoreStats from "./PartnerProfileMoreStats";
+import PageHeader from "../ui/PageHeader";
 
 export default function PartnerProfilePage({ onBack }: { onBack: () => void }) {
   const [data, setData] = useState<PartnerOverviewResponse | null>(null);
@@ -40,18 +40,7 @@ export default function PartnerProfilePage({ onBack }: { onBack: () => void }) {
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-900"
     >
-      <div className="flex shrink-0 items-center justify-between px-3 py-3 pt-3 shadow-sm dark:bg-slate-800/95 dark:shadow-slate-900/40">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-          aria-label="返回"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <h1 className="text-lg font-bold text-slate-800 dark:text-white">TA 的资料</h1>
-        <div className="w-10" aria-hidden />
-      </div>
+      <PageHeader title="TA 的资料" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {loading && (

@@ -133,7 +133,7 @@ export default function Profile({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto pb-32 no-scrollbar bg-slate-50 dark:bg-slate-900 h-full">
+    <div className="flex-1 overflow-y-auto pb-24 no-scrollbar bg-slate-50 dark:bg-slate-900 h-full">
       {/* Header / User Info */}
       <div className="px-3 pt-3 pb-8 bg-white dark:bg-slate-800 rounded-b-[40px] shadow-sm relative">
         <div className="absolute top-12 right-6 flex items-center space-x-3 z-10">
@@ -260,7 +260,7 @@ export default function Profile({
       </div>
 
       {/* 我的任务：点击进入全屏列表 */}
-      <div className="px-3 mt-8 space-y-4">
+      <div className="px-3 mt-6 space-y-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">我的任务</h3>
 
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
@@ -387,7 +387,7 @@ export default function Profile({
         )}
       </AnimatePresence>
 
-      <div className="px-3 mt-8 space-y-4">
+      <div className="px-3 mt-6 space-y-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">更多服务</h3>
         
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
@@ -417,7 +417,7 @@ export default function Profile({
               <div className="w-10 h-10"></div> {/* Placeholder for balance */}
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 pb-32 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 no-scrollbar">
               {tasks.filter(activeList.filter).length > 0 ? (
                 <div className="flex space-x-3 items-start w-full">
                   <div className="w-1/2 space-y-3">

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, MoreHorizontal, PackageSearch, Search } from 'lucide-react';
+import { MoreHorizontal, PackageSearch, Search } from 'lucide-react';
 import DashboardStats from './DashboardStats';
+import PageHeader from '../ui/PageHeader';
 import ItemFilter, { FilterType } from './ItemFilter';
 import ItemCard from './ItemCard';
 import ItemRedemptionModal from './ItemRedemptionModal';
@@ -144,30 +145,26 @@ export default function ItemsDashboard({ onBack }: ItemsDashboardProps) {
       exit={{ opacity: 0, x: 20 }}
       className="absolute inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex flex-col"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 shadow-sm z-10">
-        <button
-          onClick={onBack}
-          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white">我的道具</h2>
-        <button
-          type="button"
-          onClick={() => {
-            setMoreOpenNonce((n) => n + 1);
-            setIsMoreOpen(true);
-          }}
-          aria-label="更多"
-          className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-colors"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-      </div>
+      <PageHeader
+        title="我的道具"
+        onBack={onBack}
+        rightSlot={
+          <button
+            type="button"
+            onClick={() => {
+              setMoreOpenNonce((n) => n + 1);
+              setIsMoreOpen(true);
+            }}
+            aria-label="更多"
+            className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-colors"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        }
+      />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 pb-32 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
         <DashboardStats
           pointsBalance={pointsBalance}
           wildcardBalance={wildcardBalance}

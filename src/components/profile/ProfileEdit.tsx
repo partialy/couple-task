@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, Camera, User, Phone, Mail, Calendar, Heart, Smile, MapPin, Award } from 'lucide-react';
+import { Camera, User, Phone, Mail, Calendar, Heart, Smile, MapPin, Award } from 'lucide-react';
 import { useUserStore } from '@/store';
 import { message } from '@/utils/pure/message';
 import { uploadToQiniu, createLocalPreview, revokeLocalPreview } from '@/utils/qiniu';
 import { datePicker } from '@/utils/pure/datePicker';
 import { formatDateToYmd } from '@/utils/pure/formatDate';
+import PageHeader from '@/components/ui/PageHeader';
 
 interface ProfileEditProps {
   onBack: () => void;
@@ -110,23 +111,20 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="absolute inset-0 bg-slate-50 dark:bg-slate-900 z-50 flex flex-col h-full overflow-hidden"
     >
-      <div className="px-3 pt-3 pb-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 flex items-center justify-between sticky top-0 z-10">
-        <button
-          onClick={onBack}
-          className="p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white">个人信息</h2>
-        <button
-          onClick={handleSave}
-          disabled={isLoading}
-          className="px-4 py-1.5 rounded-full text-sm font-bold bg-cyan-500 text-white shadow-md shadow-cyan-500/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-        >
-          {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : null}
-          保存
-        </button>
-      </div>
+      <PageHeader
+        title="个人信息"
+        onBack={onBack}
+        rightSlot={
+          <button
+            onClick={handleSave}
+            disabled={isLoading}
+            className="px-4 py-1.5 rounded-full text-sm font-bold bg-cyan-500 text-white shadow-md shadow-cyan-500/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : null}
+            保存
+          </button>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="flex flex-col items-center justify-center py-6">

@@ -116,7 +116,7 @@ export default function InProgress({
         <RoleSwitch value={roleTab} onChange={setRoleTab} />
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-32 no-scrollbar">
+      <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
         <StatsCards
           total={totalCount}
           inProgress={inProgressCount}

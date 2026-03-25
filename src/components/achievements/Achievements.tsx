@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, Trophy, Search, Filter, Star } from 'lucide-react';
+import { Search, Filter, Star } from 'lucide-react';
 import { mockCategories, AchievementCategory } from '../../data/achievements';
 import CategoryCard from './CategoryCard';
 import AchievementDetail from './AchievementDetail';
+import PageHeader from '../ui/PageHeader';
 
 interface AchievementsProps {
   key?: React.Key;
@@ -72,24 +73,11 @@ export default function Achievements({ onBack }: AchievementsProps) {
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden"
     >
-      {/* Header */}
-      <div className="px-4 pt-6 pb-4 bg-white dark:bg-slate-800 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 z-10 sticky top-0">
-        <button 
-          onClick={onBack}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
-          <Trophy className="w-5 h-5 mr-2 text-amber-500" />
-          成就系统
-        </h2>
-        <div className="w-10 h-10"></div> {/* Spacer for centering */}
-      </div>
+      <PageHeader title="成就系统" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {/* Overview Card */}
-        <div className="p-4">
+        <div className="p-3">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg shadow-indigo-500/30 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl -ml-10 -mb-10"></div>
@@ -125,7 +113,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 mb-6">
+        <div className="p-3">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
@@ -144,7 +132,7 @@ export default function Achievements({ onBack }: AchievementsProps) {
         </div>
 
         {/* Categories List */}
-        <div className="px-4 pb-12 space-y-4">
+        <div className="p-3 space-y-4">
           <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">成就图鉴</h3>
           {categories.map((category) => (
             <CategoryCard 

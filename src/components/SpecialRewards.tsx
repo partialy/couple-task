@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpecialItem } from './special/types';
 import RedeemTab from './special/RedeemTab';
 import PublishTab from './special/PublishTab';
+import PageHeader from './ui/PageHeader';
 
 interface SpecialRewardsProps {
   onBack?: () => void;
@@ -34,24 +34,10 @@ export default function SpecialRewards({
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-900 h-full overflow-hidden"
     >
-      {/* Header */}
-      <div className="px-3 pt-3 pb-4 bg-white dark:bg-slate-800 shadow-sm relative z-20">
-        <div className="flex items-center mb-6">
-          {onBack && (
-            <button 
-              onClick={onBack}
-              className="p-2 -ml-2 mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors bg-slate-50 dark:bg-slate-700/50 rounded-full relative z-50"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-          )}
-          <div className="flex items-center space-x-2">
-            <Crown className="w-6 h-6 text-indigo-500" />
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">特别奖励</h2>
-          </div>
-        </div>
+      <PageHeader title="特别奖励" onBack={onBack} />
 
-        {/* Tabs */}
+      {/* Tabs */}
+      <div className="px-3 pb-3 bg-white/80 dark:bg-slate-900/80 relative z-20">
         <div className="flex p-1 bg-slate-100 dark:bg-slate-900/50 rounded-2xl">
           <button
             onClick={() => setActiveTab('redeem')}
@@ -76,7 +62,7 @@ export default function SpecialRewards({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-32 no-scrollbar">
+      <div className="flex-1 overflow-y-auto pb-2 no-scrollbar">
         <AnimatePresence mode="wait">
           {activeTab === 'redeem' ? (
             <RedeemTab 

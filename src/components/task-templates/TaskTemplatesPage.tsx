@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, Sparkles } from 'lucide-react';
 import TemplateSearch from './TemplateSearch';
 import TemplateFilter from './TemplateFilter';
 import TemplateList from './TemplateList';
 import TemplatePreview from './TemplatePreview';
 import { taskTemplates, TaskTemplate } from '../../data/taskTemplates';
+import PageHeader from '../ui/PageHeader';
 
 interface TaskTemplatesPageProps {
   onBack: () => void;
@@ -52,23 +52,7 @@ export default function TaskTemplatesPage({ onBack, onUseTemplate }: TaskTemplat
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="absolute inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col h-full overflow-hidden"
     >
-      {/* Header */}
-      <div className="px-3 py-3 flex items-center justify-between border-b border-slate-50 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20">
-        <button
-          onClick={onBack}
-          className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <div className="flex flex-col items-center">
-          <h1 className="text-lg font-bold text-slate-800 dark:text-white">任务模板库</h1>
-          <div className="flex items-center space-x-1">
-            <Sparkles className="w-3 h-3 text-cyan-500" />
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Task Templates</span>
-          </div>
-        </div>
-        <div className="w-10" /> {/* Spacer for centering */}
-      </div>
+      <PageHeader title="任务模板库" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {/* Search & Filters Section */}
@@ -104,7 +88,7 @@ export default function TaskTemplatesPage({ onBack, onUseTemplate }: TaskTemplat
         </div>
 
         {/* Templates Grid */}
-        <div className="px-3 pb-24">
+        <div className="p-3">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white">
               {filteredTemplates.length} 个匹配模板

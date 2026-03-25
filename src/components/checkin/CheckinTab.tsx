@@ -50,7 +50,7 @@ export default function CheckinTab() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="px-4 py-4 space-y-4"
+      className="p-3 space-y-4"
     >
       {targetPlans.map((item) => (
         <PlanCheckinCard

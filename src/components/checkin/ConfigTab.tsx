@@ -79,7 +79,7 @@ export default function ConfigTab() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="px-4 py-4"
+      className="p-3"
     >
       {/* 新建按钮 */}
       <button

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, Delete, PaintBucket, RotateCcw, Save } from 'lucide-react';
+import { RotateCcw, Save } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { CheckinPlanPayload, DayRewardItem, TimeWindow } from '@/api/service/checkin';
 import TimeWindowPicker from './TimeWindowPicker';
 import DayRewardEditor from './DayRewardEditor';
 import type { CheckinPlanFull } from './types';
 import { message } from '@/utils/pure/message';
+import PageHeader from '@/components/ui/PageHeader';
 
 const DRAFT_KEY = 'checkin_plan_draft';
 
@@ -119,25 +120,15 @@ export default function PlanForm({ editPlan, onSubmit, onBack }: PlanFormProps) 
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="absolute inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden"
     >
-      {/* Header */}
-      <div className="px-3 pt-3 pb-4 bg-white dark:bg-slate-800 shadow-sm shrink-0">
-        <div className="flex items-center">
-          <button
-            onClick={
-              onBack
-            }
-            className="p-2 -ml-2 mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors bg-slate-50 dark:bg-slate-700/50 rounded-full"
-          >
-            <ChevronLeft className="w-6 h-6" />
+      <PageHeader
+        title={editPlan ? '编辑签到计划' : '新建签到计划'}
+        onBack={onBack}
+        rightSlot={
+          <button onClick={handleReset} className="text-red-500 text-sm font-bold bg-red-500/10 dark:bg-red-500/20 dark:text-red-500 py-1 px-2 rounded-lg flex flex-row items-center justify-center gap-1 cursor-pointer">
+            <RotateCcw className="w-4 h-4" />重置
           </button>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-            {editPlan ? '编辑签到计划' : '新建签到计划'}
-          </h2>
-          <button onClick={handleReset} className='text-red-500 text-sm font-bold bg-red-500/10 dark:bg-red-500/20 dark:text-red-500 py-1 px-2 rounded-lg flex flex-row items-center justify-center ml-auto gap-1 cursor-pointer'>
-            <RotateCcw className='w-4 h-4' />重置
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-24 no-scrollbar">

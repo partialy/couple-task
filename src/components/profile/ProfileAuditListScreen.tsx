@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Check, ChevronLeft, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useUserStore } from '@/store';
 import { UiTask } from '@/types/task';
 import { Result } from '@/api/sql_models';
+import PageHeader from '@/components/ui/PageHeader';
 
 type PendingAction = {
   taskId: string;
@@ -61,18 +62,9 @@ export default function ProfileAuditListScreen({
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col"
     >
-      <div className="flex items-center justify-between p-4 pt-3 bg-white dark:bg-slate-800 shadow-sm z-10">
-        <button
-          onClick={onBack}
-          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white">审核列表</h2>
-        <div className="w-10 h-10" />
-      </div>
+      <PageHeader title="审核列表" onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto p-4 pb-24 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-3 no-scrollbar">
         {tasks.length === 0 ? (
           <div className="h-60 flex items-center justify-center text-slate-500 dark:text-slate-400">
             暂无待审核任务

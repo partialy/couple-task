@@ -88,7 +88,7 @@ export default function TaskWaterfall({
   const { leftColumn, rightColumn } = splitColumns(filteredTasks);
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 pb-32 no-scrollbar z-10 relative">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 pb-24 no-scrollbar z-10 relative">
       {!isLoggedIn ? (
         <LoginPromptOverlay pageName="任务广场" onLoginPrompt={onLoginPrompt} />
       ) : filteredTasks.length > 0 ? (

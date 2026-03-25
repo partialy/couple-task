@@ -18,7 +18,7 @@ export default function TimelineList({
   onSelectTask,
 }: TimelineListProps) {
   return (
-    <div className="px-4 mt-6 pb-8">
+    <div className="px-4 mt-6">
       {tasks.length > 0 ? (
         <div className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-3 space-y-8">
           <AnimatePresence mode="popLayout">

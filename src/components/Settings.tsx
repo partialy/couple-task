@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, User, Shield, Bell, HelpCircle, Info, LogOut, ChevronRight, Smartphone, Moon, Globe } from 'lucide-react';
+import { User, Shield, Bell, HelpCircle, Info, LogOut, ChevronRight, Smartphone, Moon, Globe } from 'lucide-react';
 import ProfileEdit from './profile/ProfileEdit';
 import { useUserStore } from '@/store';
 import eventBus from '@/utils/eventBus';
+import PageHeader from './ui/PageHeader';
 
 export default function Settings({ onBack }: { onBack: () => void, key?: string }) {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -25,17 +26,7 @@ export default function Settings({ onBack }: { onBack: () => void, key?: string 
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex flex-col"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 pt-3 bg-white dark:bg-slate-800 shadow-sm z-10">
-        <button 
-          onClick={onBack}
-          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h2 className="text-lg font-bold text-slate-800 dark:text-white">设置</h2>
-        <div className="w-10 h-10"></div>
-      </div>
+      <PageHeader title="设置" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto p-3 space-y-8 no-scrollbar">
         {/* Account Section */}
