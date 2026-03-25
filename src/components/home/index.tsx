@@ -38,6 +38,7 @@ interface HomeProps {
   onOpenTemplates?: () => void;
   onOpenPartnerProfile?: () => void;
   onOpenCheckinManage?: () => void;
+  onOpenSchedule?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -62,6 +63,7 @@ export default function Home({
   onOpenTemplates,
   onOpenPartnerProfile,
   onOpenCheckinManage,
+  onOpenSchedule,
   activeTab,
   setActiveTab,
   isLoggedIn,
@@ -155,13 +157,14 @@ export default function Home({
                   className={[
                     'overflow-hidden',
                     'transition-[max-height,opacity,transform] duration-600 ease-linear',
-                    squareCollapsed ? 'max-h-0 opacity-0 -translate-y-2' : 'max-h-[120px] opacity-100 translate-y-0',
+                    squareCollapsed ? 'max-h-0 opacity-0 -translate-y-2' : 'max-h-[240px] opacity-100 translate-y-0',
                   ].join(' ')}
                 >
                   <QuickEntrances
                     onOpenCheckin={onOpenCheckin}
                     onOpenTemplates={onOpenTemplates}
                     onOpenAchievements={onOpenAchievements}
+                    onOpenSchedule={onOpenSchedule}
                   />
                 </div>
               </div>

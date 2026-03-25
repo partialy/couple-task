@@ -1,10 +1,11 @@
 import React from 'react';
-import { Award, CalendarCheck, Star, Zap } from 'lucide-react';
+import { Award, CalendarCheck, CalendarDays, Star, Zap, Gift, Heart, Bookmark } from 'lucide-react';
 
 interface QuickEntrancesProps {
   onOpenCheckin?: () => void;
   onOpenTemplates?: () => void;
   onOpenAchievements?: () => void;
+  onOpenSchedule?: () => void;
 }
 
 type EntranceItem = {
@@ -16,20 +17,27 @@ type EntranceItem = {
 };
 
 /**
- * 广场快捷入口（四宫格）
+ * 广场快捷入口（双排八宫格）
  */
-export default function QuickEntrances({ onOpenCheckin, onOpenTemplates, onOpenAchievements }: QuickEntrancesProps) {
-  const items: EntranceItem[] = [
+export default function QuickEntrances({ onOpenCheckin, onOpenTemplates, onOpenAchievements, onOpenSchedule }: QuickEntrancesProps) {
+  const row1: EntranceItem[] = [
     { icon: CalendarCheck, label: '签到', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', onClick: onOpenCheckin },
     { icon: Star, label: '任务', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', onClick: onOpenTemplates },
     { icon: Award, label: '成就', color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20', onClick: onOpenAchievements },
     { icon: Zap, label: '动态', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
   ];
 
-  return (
-    <div className="grid grid-cols-4 gap-4 mt-6 px-1">
+  const row2: EntranceItem[] = [
+    { icon: CalendarDays, label: '日程', color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-900/20', onClick: onOpenSchedule },
+    { icon: Gift, label: '礼物', color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/20' },
+    { icon: Heart, label: '心愿', color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+    { icon: Bookmark, label: '收藏', color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+  ];
+
+  const renderRow = (items: EntranceItem[], keyPrefix: string) => (
+    <div className="grid grid-cols-4 gap-4 px-1">
       {items.map((item, idx) => (
-        <button key={idx} onClick={item.onClick} className="flex flex-col items-center space-y-2 group">
+        <button key={`${keyPrefix}-${idx}`} onClick={item.onClick} className="flex flex-col items-center space-y-2 group">
           <div
             className={`w-full aspect-square max-w-[56px] rounded-2xl ${item.bg} flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:-translate-y-1 group-active:scale-95 transition-all duration-300`}
           >
@@ -40,6 +48,13 @@ export default function QuickEntrances({ onOpenCheckin, onOpenTemplates, onOpenA
           </span>
         </button>
       ))}
+    </div>
+  );
+
+  return (
+    <div className="mt-6 space-y-4">
+      {renderRow(row1, 'r1')}
+      {renderRow(row2, 'r2')}
     </div>
   );
 }
