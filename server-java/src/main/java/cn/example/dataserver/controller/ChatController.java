@@ -52,4 +52,11 @@ public class ChatController {
     public String markRead(@RequestHeader("Authorization") String token, @RequestBody ChatReadDTO dto) {
         return chatService.markRead(authService.checkToken(token), dto);
     }
+
+    @GetMapping("/presence/{userId}")
+    public String getUserPresence(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String userId) {
+        return chatService.getUserPresence(authService.checkToken(token), userId);
+    }
 }

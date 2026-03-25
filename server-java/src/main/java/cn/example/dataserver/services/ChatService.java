@@ -21,6 +21,8 @@ import cn.example.dataserver.vo.ConversationVO;
 import cn.example.dataserver.vo.LastMessagePreviewVO;
 import cn.example.dataserver.vo.MessageVO;
 import cn.example.dataserver.vo.PeerUserVO;
+import cn.example.dataserver.vo.PresenceVO;
+import cn.example.dataserver.websocket.ChatWebSocketSessionRegistry;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -60,6 +62,7 @@ public class ChatService {
     private final UsersService usersService;
     private final BindingRelationsService bindingRelationsService;
     private final ChatWebSocketPushService chatWebSocketPushService;
+    private final ChatWebSocketSessionRegistry chatWebSocketSessionRegistry;
 
     /**
      * 分页查询当前用户的会话列表；若为空且存在已绑定伙伴则自动创建会话后再查（兼容历史用户无会话记录）
@@ -242,6 +245,24 @@ public class ChatService {
         chatWebSocketPushService.pushConversationRead(messageSenderUserId, dto.getConversationId(), user.getId());
 
         return Result.success("已更新").toJson();
+    }
+
+    /**
+     * 查询指定用户在线状态（仅允许查询自己或已绑定伙伴）
+     */
+    public String getUserPresence(Users user, String targetUserId) {
+        if (StrUtil.isBlank(targetUserId)) {
+            throw new BusinessException("目标用户 ID 不能为空");
+        }
+        if (!targetUserId.equals(user.getId())) {
+            assertAcceptedBinding(user.getId(), targetUserId);
+        }
+        boolean online = chatWebSocketSessionRegistry.isOnline(targetUserId);
+        PresenceVO vo = PresenceVO.builder()
+                .userId(targetUserId)
+                .online(online)
+                .build();
+        return Result.success(vo).toJson();
     }
 
     private void assertAcceptedBinding(String userIdA, String userIdB) {

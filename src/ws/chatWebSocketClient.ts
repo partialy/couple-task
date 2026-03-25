@@ -3,7 +3,7 @@ import { useMessageStore } from "@/store/message";
 import { useUserStore } from "@/store/user";
 import eventBus from "@/utils/eventBus";
 import { notification } from "@/utils/pure/notification";
-import type { MessageVO } from "@/api/service/chat";
+import { chatService, type MessageVO } from "@/api/service/chat";
 import { message } from "@/utils/pure/message";
 
 /** 避免在 CONNECTING 阶段直接 close 触发浏览器 “closed before established” 警告（Strict Mode 双挂载时常见） */
@@ -74,7 +74,23 @@ export function connectChatWebSocket() {
     if (import.meta.env.DEV) {
       console.debug("[chat ws] connected");
     }
-    message.success("websocket 已连接")
+    message.success("websocket 已连接");
+
+    const bindUserId = useUserStore.getState().bindUser?.id;
+    if (!bindUserId) {
+      useMessageStore.getState().setPartnerOnline(false);
+      return;
+    }
+    void (async () => {
+      const res = await chatService.getPresence(bindUserId);
+      // 若请求返回时当前连接已被替换，忽略旧连接结果
+      if (socket !== ws) return;
+      if (res.success && res.data?.userId === bindUserId) {
+        useMessageStore.getState().setPartnerOnline(!!res.data.online);
+        return;
+      }
+      useMessageStore.getState().setPartnerOnline(false);
+    })();
   };
 
   ws.onmessage = (ev) => {
@@ -136,7 +152,7 @@ export function connectChatWebSocket() {
 
   ws.onerror = (e) => {
     useMessageStore.getState().setPartnerOnline(false);
-    message.error("websocket 出错")
+    message.error("websocket 出错");
   };
 
   ws.onclose = (ev) => {

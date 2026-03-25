@@ -41,6 +41,11 @@ export interface ChatReadBody {
   conversationId: string;
 }
 
+export interface PresenceVO {
+  userId: string;
+  online: boolean;
+}
+
 export const chatService = {
   /** 与指定用户获取或创建会话（返回单条会话） */
   getOrCreateWithPeer: async (
@@ -72,5 +77,9 @@ export const chatService = {
 
   markRead: async (body: ChatReadBody): Promise<ApiResponse<string>> => {
     return await request.post("/chat/messages/read", body);
+  },
+
+  getPresence: async (userId: string): Promise<ApiResponse<PresenceVO>> => {
+    return await request.get(`/chat/presence/${userId}`);
   },
 };
