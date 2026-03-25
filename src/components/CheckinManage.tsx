@@ -20,7 +20,7 @@ export default function CheckinManage({ onBack }: CheckinManageProps) {
       className="absolute inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-900 h-full overflow-hidden"
     >
       {/* Header */}
-      <div className="px-3 pt-3 pb-4 bg-white dark:bg-slate-800 shadow-sm shrink-0">
+      <div className="px-4 py-2 bg-white dark:bg-slate-800 shadow-sm shrink-0">
         <div className="flex items-center">
           {onBack && (
             <button

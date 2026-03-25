@@ -27,11 +27,11 @@ export default function RoleSwitch({ value, onChange }: RoleSwitchProps) {
 
   return (
     <div
-      className="px-4 py-3 bg-white dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10"
+      className="py-2 px-4 h-[65px] bg-white dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="flex items-end gap-6 h-7">
+      <div className="flex items-center gap-6 h-full">
         <button
           onClick={() => onChange("my")}
           className={`transition-all ${

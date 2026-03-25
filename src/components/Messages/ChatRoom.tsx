@@ -24,6 +24,43 @@ interface ChatRoomProps {
 const PAGE_SIZE = 100;
 const START_INDEX = 100_000;
 
+interface VirtuosoCtx {
+  loadingMore: boolean;
+  hasMore: boolean;
+  count: number;
+}
+
+const StableScroller = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  function VirtuosoScroller(props, ref) {
+    return <div {...props} ref={ref} className={`${props.className ?? ""} no-scrollbar`} />;
+  },
+);
+
+function StableHeader({ context }: { context?: VirtuosoCtx }) {
+  if (!context) return null;
+  if (context.loadingMore) {
+    return (
+      <div className="flex items-center justify-center py-3">
+        <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+        <span className="ml-2 text-xs text-slate-400">加载更多...</span>
+      </div>
+    );
+  }
+  if (!context.hasMore && context.count > 0) {
+    return (
+      <div className="py-3 text-center text-xs text-slate-400 dark:text-slate-500">
+        没有更多消息了
+      </div>
+    );
+  }
+  return null;
+}
+
+const virtuosoComponents = {
+  Scroller: StableScroller,
+  Header: StableHeader,
+};
+
 function formatMsgTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -58,16 +95,19 @@ export default function ChatRoom({
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const markReadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPartner = conversation.kind === "partner";
   const convId = isPartner ? conversation.id : null;
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const markReadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** true = 首次历史加载完毕，已可渲染；false = 还在加载中 */
+  const [historyReady, setHistoryReady] = useState(!isPartner);
 
   const loadHistory = useCallback(async () => {
     if (!isPartner || !convId || !currentUserId) return;
     const res = await chatService.listMessages(convId, 1, PAGE_SIZE);
     if (!res.success || !res.data?.records) {
       toast.error(res.msg || "加载消息失败");
+      setHistoryReady(true);
       return;
     }
     const asc = [...res.data.records].reverse();
@@ -77,6 +117,7 @@ export default function ChatRoom({
     setCurrentPage(1);
     const totalRecords = res.data.total ?? 0;
     setHasMore(uiMessages.length < totalRecords);
+    setHistoryReady(true);
     await chatService.markRead({ conversationId: convId });
     onRefreshList();
   }, [isPartner, convId, currentUserId, onRefreshList]);
@@ -308,46 +349,41 @@ export default function ChatRoom({
         ) : null}
       </div>
 
-{/* 隐藏滚动条 */}
-      <Virtuoso
-        ref={virtuosoRef}
-        className="flex-1 no-scrollbar"
-        data={messages}
-        firstItemIndex={firstItemIndex}
-        initialTopMostItemIndex={messages.length > 0 ? messages.length - 1 : 0}
-        followOutput="smooth"
-        startReached={() => {
-          if (hasMore && !loadingMore) {
-            void loadMore();
-          }
-        }}
-        components={{
-          Header: () =>
-            loadingMore ? (
-              <div className="flex items-center justify-center py-3">
-                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
-                <span className="ml-2 text-xs text-slate-400">加载更多...</span>
-              </div>
-            ) : !hasMore && messages.length > 0 ? (
-              <div className="py-3 text-center text-xs text-slate-400 dark:text-slate-500">
-                没有更多消息了
-              </div>
-            ) : null,
-        }}
-        itemContent={(_index, msg) => (
-          <div className="px-4 py-2">
-            <ChatMessage
-              message={msg}
-              isMe={!!currentUserId && msg.senderId === currentUserId}
-              avatar={
-                msg.senderId === currentUserId
-                  ? myAvatar || "https://picsum.photos/seed/me/100/100"
-                  : partnerAvatar || "https://picsum.photos/seed/partner/100/100"
-              }
-            />
-          </div>
-        )}
-      />
+      {historyReady ? (
+        <Virtuoso
+          ref={virtuosoRef}
+          className="flex-1 no-scrollbar"
+          style={{ overscrollBehavior: "contain" }}
+          data={messages}
+          context={{ loadingMore, hasMore, count: messages.length } satisfies VirtuosoCtx}
+          firstItemIndex={firstItemIndex}
+          initialTopMostItemIndex={messages.length > 0 ? messages.length - 1 : 0}
+          followOutput="smooth"
+          startReached={() => {
+            if (hasMore && !loadingMore) {
+              void loadMore();
+            }
+          }}
+          components={virtuosoComponents}
+          itemContent={(_index, msg) => (
+            <div className="px-4 py-2">
+              <ChatMessage
+                message={msg}
+                isMe={!!currentUserId && msg.senderId === currentUserId}
+                avatar={
+                  msg.senderId === currentUserId
+                    ? myAvatar || "https://picsum.photos/seed/me/100/100"
+                    : partnerAvatar || "https://picsum.photos/seed/partner/100/100"
+                }
+              />
+            </div>
+          )}
+        />
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      )}
 
       {isPartner ? (
         <ChatInput

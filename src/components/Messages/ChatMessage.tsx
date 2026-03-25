@@ -228,7 +228,7 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
   return (
     <div className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`flex max-w-[75%] ${isMe ? "flex-row-reverse" : "flex-row"} items-end space-x-2`}
+        className={`flex max-w-[75%] ${isMe ? "flex-row-reverse" : "flex-row"} items-end gap-2`}
         onContextMenu={handleContextMenu}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -238,7 +238,7 @@ export default function ChatMessage({ message, isMe, avatar }: ChatMessageProps)
         <img
           src={avatar || "https://picsum.photos/seed/u/100/100"}
           alt=""
-          className={`w-8 h-8 rounded-full object-cover shrink-0 ${isMe ? "ml-2" : "mr-2"}`}
+          className="w-8 h-8 rounded-full object-cover shrink-0"
           referrerPolicy="no-referrer"
         />
         <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
