@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, ChevronRight, Star, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox, Archive, FileEdit } from 'lucide-react';
+import { Settings, ChevronRight, Star, Gift, CreditCard, Moon, Sun, Package, ChevronLeft, QrCode, Send, Inbox, Archive, FileEdit, CalendarCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import TaskCard from './TaskCard';
 import TaskDetail from './TaskDetail';
@@ -29,6 +29,7 @@ export default function Profile({
   onOpenSpecialRewards,
   onOpenSettings,
   onOpenPointsDetail,
+  onOpenCheckinManage,
   tasks,
   setTasks,
   onEditTask,
@@ -40,6 +41,7 @@ export default function Profile({
   onOpenSpecialRewards?: () => void;
   onOpenSettings?: () => void;
   onOpenPointsDetail?: () => void;
+  onOpenCheckinManage?: () => void;
   tasks: UiTask[];
   setTasks: (tasks: UiTask[]) => void;
   onEditTask?: (initialData: PublishTaskInitialData) => void;
@@ -262,6 +264,11 @@ export default function Profile({
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">我的任务</h3>
 
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
+          <MenuItem
+            icon={<CalendarCheck className="w-5 h-5 text-emerald-500" />}
+            title="签到管理"
+            onClick={onOpenCheckinManage}
+          />
           <MenuItem
             icon={<Send className="w-5 h-5 text-pink-500" />}
             title="我的发布"

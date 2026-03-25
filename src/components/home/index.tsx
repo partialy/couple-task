@@ -29,6 +29,7 @@ interface HomeProps {
   /** 从任务详情进入编辑发布页 */
   onEditTask?: (initialData: PublishTaskInitialData) => void;
   onOpenShop?: () => void;
+  onOpenCheckin?: () => void;
   onOpenItems?: () => void;
   onOpenSpecialRewards?: () => void;
   onOpenAchievements?: () => void;
@@ -36,6 +37,7 @@ interface HomeProps {
   onOpenPointsDetail?: () => void;
   onOpenTemplates?: () => void;
   onOpenPartnerProfile?: () => void;
+  onOpenCheckinManage?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -51,6 +53,7 @@ export default function Home({
   onPublish,
   onEditTask,
   onOpenShop,
+  onOpenCheckin,
   onOpenItems,
   onOpenSpecialRewards,
   onOpenAchievements,
@@ -58,6 +61,7 @@ export default function Home({
   onOpenPointsDetail,
   onOpenTemplates,
   onOpenPartnerProfile,
+  onOpenCheckinManage,
   activeTab,
   setActiveTab,
   isLoggedIn,
@@ -155,7 +159,7 @@ export default function Home({
                   ].join(' ')}
                 >
                   <QuickEntrances
-                    onOpenShop={onOpenShop}
+                    onOpenCheckin={onOpenCheckin}
                     onOpenTemplates={onOpenTemplates}
                     onOpenAchievements={onOpenAchievements}
                   />
@@ -194,6 +198,7 @@ export default function Home({
                 onOpenSpecialRewards={onOpenSpecialRewards}
                 onOpenSettings={onOpenSettings}
                 onOpenPointsDetail={onOpenPointsDetail}
+                onOpenCheckinManage={onOpenCheckinManage}
                 tasks={tasks}
                 setTasks={setTasks}
                 onEditTask={onEditTask}

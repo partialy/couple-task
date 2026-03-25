@@ -1,14 +1,14 @@
 import React from 'react';
-import { Award, Gift, Star, Zap } from 'lucide-react';
+import { Award, CalendarCheck, Star, Zap } from 'lucide-react';
 
 interface QuickEntrancesProps {
-  onOpenShop?: () => void;
+  onOpenCheckin?: () => void;
   onOpenTemplates?: () => void;
   onOpenAchievements?: () => void;
 }
 
 type EntranceItem = {
-  icon: typeof Gift;
+  icon: typeof CalendarCheck;
   label: string;
   color: string;
   bg: string;
@@ -18,9 +18,9 @@ type EntranceItem = {
 /**
  * 广场快捷入口（四宫格）
  */
-export default function QuickEntrances({ onOpenShop, onOpenTemplates, onOpenAchievements }: QuickEntrancesProps) {
+export default function QuickEntrances({ onOpenCheckin, onOpenTemplates, onOpenAchievements }: QuickEntrancesProps) {
   const items: EntranceItem[] = [
-    { icon: Gift, label: '礼物', color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/20', onClick: onOpenShop },
+    { icon: CalendarCheck, label: '签到', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', onClick: onOpenCheckin },
     { icon: Star, label: '任务', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', onClick: onOpenTemplates },
     { icon: Award, label: '成就', color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20', onClick: onOpenAchievements },
     { icon: Zap, label: '动态', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
