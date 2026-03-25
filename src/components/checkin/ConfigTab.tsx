@@ -202,16 +202,15 @@ export default function ConfigTab() {
       </AnimatePresence>
 
       {/* 删除确认 */}
-      {deletingId && (
-        <ConfirmModal
-          title="删除签到计划"
-          message="确定删除该签到计划吗？删除后不可恢复。"
-          confirmText="删除"
-          confirmColor="red"
-          onConfirm={handleDelete}
-          onCancel={() => setDeletingId(null)}
-        />
-      )}
+      <ConfirmModal
+        isOpen={deletingId !== null}
+        title="删除签到计划"
+        message="确定删除该签到计划吗？删除后不可恢复。"
+        confirmText="删除"
+        confirmColor="bg-red-500 hover:bg-red-600"
+        onConfirm={handleDelete}
+        onCancel={() => setDeletingId(null)}
+      />
     </motion.div>
   );
 }

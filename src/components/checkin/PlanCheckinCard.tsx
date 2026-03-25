@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, Coins, CreditCard, Package } from 'lucide-react';
+import { Flame, Coins, CreditCard, Package, Clock } from 'lucide-react';
 import type { TargetPlanItem } from '@/api/service/checkin';
 import { mapPlanFromApi, mapDayRewardFromApi, getRewardDisplayText } from './types';
 import type { DayReward } from './types';
@@ -153,6 +153,16 @@ export default function PlanCheckinCard({ item, onCheckin, checkingIn }: PlanChe
           >
             {checkingIn ? '签到中...' : '立即签到'}
           </button>
+        )}
+
+        {/* Time window hint */}
+        {plan.timeWindows.length > 0 && (
+          <div className="flex items-center justify-center gap-1.5 mt-2">
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs text-slate-400">
+              可签到时间：{plan.timeWindows.map((w) => `${w.start}-${w.end}`).join('、')}
+            </span>
+          </div>
         )}
       </div>
     </div>
