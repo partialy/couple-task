@@ -102,6 +102,8 @@ export default function SchedulePage({ onBack }: SchedulePageProps) {
     yearMonthPicker.show({
       initialYear: viewYear,
       initialMonth: viewMonth + 1,
+      minYear: viewYear - 10,
+      maxYear: viewYear + 10,
       onSelect: ({ year, month }) => {
         setViewYear(year);
         setViewMonth(month - 1);
