@@ -7,6 +7,7 @@ import { mockMessages } from "../../data/messages";
 import { useMessageStore } from "../../store";
 import { useUserStore } from "@/store/user";
 import { fetchChatConversationRows } from "@/utils/chatConversationList";
+import AndroidPadding from "../ui/AndroidPadding";
 
 function formatLastLogin(iso?: string): string {
   if (!iso) return "";
@@ -90,6 +91,7 @@ export default function Messages({
 
   return (
     <div className="w-full h-full relative overflow-hidden flex flex-col">
+      <AndroidPadding />
       <div className="py-2 px-4 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between gap-3">
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white shrink-0">消息</h2>
         {bindUser && onOpenPartnerProfile ? (

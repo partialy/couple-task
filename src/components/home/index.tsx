@@ -20,6 +20,7 @@ import useScrollCollapse from './hooks/useScrollCollapse';
 import { Users } from '@/api/sql_models';
 import { UiTask } from '@/types/task';
 import type { PublishTaskInitialData } from '@/mappers/task';
+import AndroidPadding from '../ui/AndroidPadding';
 
 interface HomeProps {
   key?: string;
@@ -142,6 +143,7 @@ export default function Home({
             className="absolute inset-0 flex flex-col"
           >
             {/* 顶部区域：任务广场/天气固定显示 */}
+            <AndroidPadding />
             <div className="shrink-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
               <div className="px-3 pt-3 pb-4">
                 {/* 标题/天气固定 */}

@@ -20,6 +20,7 @@ import { useTaskStore } from '@/store/task';
 import { message } from '@/utils/pure/message';
 import { UiTask } from '@/types/task';
 import type { PublishTaskInitialData } from '@/mappers/task';
+import AndroidPadding from './ui/AndroidPadding';
 
 type TaskListScreenMode = 'published' | 'received' | 'draftbox' | 'mydrafts' | 'audit';
 
@@ -134,6 +135,7 @@ export default function Profile({
 
   return (
     <div className="flex-1 overflow-y-auto pb-24 no-scrollbar bg-slate-50 dark:bg-slate-900 h-full">
+      <AndroidPadding className='bg-white dark:bg-slate-800'/>
       {/* Header / User Info */}
       <div className="px-3 pt-3 pb-8 bg-white dark:bg-slate-800 rounded-b-[40px] shadow-sm relative">
         <div className="absolute top-12 right-6 flex items-center space-x-3 z-10">
