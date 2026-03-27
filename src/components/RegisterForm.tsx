@@ -120,12 +120,12 @@ export default function RegisterForm({ onSwitch, onBack }: { onSwitch: () => voi
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-0 p-8 flex flex-col h-full overflow-y-auto no-scrollbar"
+      className="absolute inset-0 pt-10 pb-4 px-6 flex flex-col items-center justify-center h-full"
     >
       {/* Back Button */}
       <button 
         onClick={onBack} 
-        className="absolute top-8 left-8 p-2 rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors z-10"
+        className="absolute top-12 left-8 p-2 rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors z-10"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>

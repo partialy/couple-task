@@ -36,6 +36,7 @@ import {
   disconnectChatWebSocket,
   setChatHomeActiveTab,
 } from '@/ws/chatWebSocketClient';
+import AndroidPadding from './components/ui/AndroidPadding';
 
 
 export default function App() {
@@ -273,15 +274,6 @@ export default function App() {
       <div className="absolute top-[20%] right-[-10%] w-80 h-80 bg-cyan-200 dark:bg-cyan-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob animation-delay-2000 transition-colors duration-500"></div>
       <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-purple-200 dark:bg-purple-900/40 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-60 animate-blob animation-delay-4000 transition-colors duration-500"></div> */}
 
-      {/* Theme Toggle Button */}
-      {(view === 'login' || view === 'register') && (
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-white/20 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 hover:scale-110 transition-all"
-        >
-          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-      )}
 
       {/* Main App Container */}
       <div className="w-full h-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative flex flex-col transition-colors duration-500">
@@ -290,12 +282,15 @@ export default function App() {
           {/* Auth Layer */}
           <AnimatePresence>
             {view === 'login' && (
+              <>
+              <AndroidPadding />
               <LoginForm 
                 key="login" 
                 onSwitch={() => navigateTo('register')} 
                 onBack={handleBack} 
                 onLogin={handleLogin} 
               />
+              </>
             )}
             {view === 'register' && (
               <RegisterForm key="register" onSwitch={() => navigateTo('login')} onBack={handleBack} />

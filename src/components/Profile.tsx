@@ -137,7 +137,7 @@ export default function Profile({
     <div className="flex-1 overflow-y-auto pb-24 no-scrollbar bg-slate-50 dark:bg-slate-900 h-full">
       <AndroidPadding className='bg-white dark:bg-slate-800'/>
       {/* Header / User Info */}
-      <div className="px-3 pt-3 pb-8 bg-white dark:bg-slate-800 rounded-b-[40px] shadow-sm relative">
+      <div className="px-3 pt-3 pb-8 bg-white dark:bg-slate-800 rounded-b-[40px] border-b border-slate-200 dark:border-slate-700 relative">
         <div className="absolute top-12 right-6 flex items-center space-x-3 z-10">
           <button 
             className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors bg-slate-50 dark:bg-slate-700/50 rounded-full"
@@ -161,7 +161,7 @@ export default function Profile({
         
         <div className="flex items-center space-x-5 relative">
           <div 
-            className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-cyan-400 to-blue-500 shadow-lg shadow-cyan-200/50 dark:shadow-cyan-900/50 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+            className="w-20 h-20 rounded-full p-1 bg-linear-to-tr from-cyan-400 to-blue-500 shadow-lg shadow-cyan-200/50 dark:shadow-cyan-900/50 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => openModal(setShowPersonalInfo, true)}
           >
             <img src={currentUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.username || '兔兔'}`} alt="avatar" className="w-full h-full rounded-full bg-white dark:bg-slate-800 object-cover" />
@@ -393,7 +393,7 @@ export default function Profile({
         <h3 className="text-lg font-bold text-slate-800 dark:text-white px-1">更多服务</h3>
         
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-sm">
-          <MenuItem icon={<CreditCard className="w-5 h-5 text-indigo-500" />} title="我的钱包" />
+          <MenuItem icon={<CreditCard className="w-5 h-5 text-indigo-500" />} title="我的钱包" onClick={() => {}}/>
           <MenuItem icon={<Settings className="w-5 h-5 text-slate-500" />} title="通用设置" onClick={onOpenSettings} />
         </div>
       </div>

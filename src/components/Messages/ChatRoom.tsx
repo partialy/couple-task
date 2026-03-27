@@ -13,6 +13,7 @@ import { useUserStore } from "@/store/user";
 import { useMessageStore } from "@/store/message";
 import { uploadToQiniu } from "@/utils/qiniu";
 import type { ChatAttachmentKind } from "@/components/ui/ChatAttachmentModal";
+import AndroidPadding from "../ui/AndroidPadding";
 
 interface ChatRoomProps {
   conversation: Conversation;
@@ -288,7 +289,8 @@ export default function ChatRoom({
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
       className="fixed inset-0 z-100 bg-slate-50 dark:bg-slate-900 flex flex-col"
     >
-      <div className="flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
+      <AndroidPadding />
+      <div className="flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center space-x-3 min-w-0">
           <button
             type="button"
