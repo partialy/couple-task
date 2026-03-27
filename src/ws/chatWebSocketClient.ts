@@ -59,7 +59,13 @@ function startHeartbeat(ws: WebSocket) {
   clearHeartbeat();
   heartbeatTimer = setInterval(() => {
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ event: "ping" }));
+      const peerUserId = localStorage.getItem('bindUserId') || null;
+      ws.send(
+        JSON.stringify({
+          event: "ping",
+          data: { peerUserId: peerUserId || null },
+        }),
+      );
     }
   }, HEARTBEAT_INTERVAL);
 }
