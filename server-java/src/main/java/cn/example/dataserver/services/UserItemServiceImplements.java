@@ -114,6 +114,23 @@ public class UserItemServiceImplements {
     }
 
     /**
+     * 核销前获取道具信息
+     * @param code 核销码
+     * @return 道具信息
+     */
+    public String getItemInfo(String code) {
+        UserItems userItem = userItemsService.lambdaQuery()
+                .eq(UserItems::getCode, code)
+                .eq(UserItems::getStatus, ItemStatus.USABLE.getValue())
+                .one();
+        if (userItem == null) {
+            return Result.fail("核销码无效或已使用").toJson();
+        }
+        return Result.success(userItem).toJson();
+    }
+
+
+    /**
      * 绑定对象输入核销码，将对方背包中可用道具置为已使用并记录流水
      */
     @Transactional(rollbackFor = Exception.class)

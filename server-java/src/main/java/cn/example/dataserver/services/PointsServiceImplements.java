@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -118,12 +120,13 @@ public class PointsServiceImplements {
                 it.setTransactionType("redeem_code");
                 it.setReferenceId(rewardCode.getCode());
                 it.setDescription("兑换获得道具：" + rewardCode.getRewardName());
+                it.setQuantity(rewardCode.getRewardCount());
                 it.setCreatedAt(new Date());
                 itemTransactionsService.save(it);
             }
         }
 
-        return Result.success("兑换成功").toJson();
+        return Result.success("兑换成功", rewardCode).toJson();
     }
 
     @Transactional(rollbackFor = Exception.class)

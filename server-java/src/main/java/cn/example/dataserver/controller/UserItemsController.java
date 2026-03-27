@@ -53,6 +53,14 @@ public class UserItemsController {
     }
 
     /**
+     * 核销前获取道具信息
+     */
+    @GetMapping("/info")
+    public String getItemInfo(@RequestParam String code) {
+        return userItemService.getItemInfo(code);
+    }
+
+    /**
      * 核销：绑定对象输入对方道具的核销码
      */
     @PostMapping("/verify")
