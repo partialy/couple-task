@@ -41,6 +41,7 @@ interface HomeProps {
   onOpenCheckinManage?: () => void;
   onOpenSchedule?: () => void;
   onOpenMemorial?: () => void;
+  onOpenWish?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -67,6 +68,7 @@ export default function Home({
   onOpenCheckinManage,
   onOpenSchedule,
   onOpenMemorial,
+  onOpenWish,
   activeTab,
   setActiveTab,
   isLoggedIn,
@@ -89,8 +91,8 @@ export default function Home({
     deleteTask,
   } = useTaskStore();
   const { collapsed: isSquareHeaderCollapsed } = useScrollCollapse(scrollRef, {
-    collapseThresholdPx: 120,
-    expandThresholdPx: 80,
+    collapseThresholdPx: 200,
+    expandThresholdPx: 100,
   });
 
   // Handle back button for modal
@@ -170,6 +172,7 @@ export default function Home({
                     onOpenAchievements={onOpenAchievements}
                     onOpenSchedule={onOpenSchedule}
                     onOpenMemorial={onOpenMemorial}
+                    onOpenWish={onOpenWish}
                   />
                 </div>
               </div>

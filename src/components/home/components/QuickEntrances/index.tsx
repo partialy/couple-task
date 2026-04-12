@@ -7,6 +7,7 @@ interface QuickEntrancesProps {
   onOpenAchievements?: () => void;
   onOpenSchedule?: () => void;
   onOpenMemorial?: () => void;
+  onOpenWish?: () => void;
 }
 
 type EntranceItem = {
@@ -26,6 +27,7 @@ export default function QuickEntrances({
   onOpenAchievements,
   onOpenSchedule,
   onOpenMemorial,
+  onOpenWish,
 }: QuickEntrancesProps) {
   const row1: EntranceItem[] = [
     { icon: CalendarCheck, label: '签到', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', onClick: onOpenCheckin },
@@ -37,7 +39,7 @@ export default function QuickEntrances({
   const row2: EntranceItem[] = [
     { icon: CalendarDays, label: '日程', color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-900/20', onClick: onOpenSchedule },
     { icon: CalendarHeart, label: '倒数日', color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/20', onClick: onOpenMemorial },
-    { icon: Heart, label: '心愿', color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+    { icon: Heart, label: '心愿', color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20', onClick: onOpenWish },
     { icon: Bookmark, label: '收藏', color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-900/20' },
   ];
 

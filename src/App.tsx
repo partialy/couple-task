@@ -21,6 +21,7 @@ const Checkin = lazy(() => import('./components/Checkin'));
 const CheckinManage = lazy(() => import('./components/CheckinManage'));
 const SchedulePage = lazy(() => import('./components/schedule/SchedulePage'));
 const MemorialPage = lazy(() => import('./components/memorial/MemorialPage'));
+const WishPage = lazy(() => import('./components/wish/WishPage'));
 
 import { useUserStore, useTaskStore, useMessageStore } from './store';
 import { fetchChatConversationRows } from '@/utils/chatConversationList';
@@ -41,7 +42,7 @@ import AndroidPadding from './components/ui/AndroidPadding';
 
 
 export default function App() {
-  const [view, setView] = useState<'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile' | 'checkin' | 'checkin-manage' | 'schedule' | 'memorial'>('home');
+  const [view, setView] = useState<'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile' | 'checkin' | 'checkin-manage' | 'schedule' | 'memorial' | 'wish'>('home');
   const [activeTab, setActiveTab] = useState('square'); // 'square' | 'inprogress' | 'messages' | 'profile'
   const [templateData, setTemplateData] = useState<any>(null);
   
@@ -199,7 +200,7 @@ export default function App() {
   }, [view, isLoggedIn, loadSpecialItems]);
 
   const navigateTo = useCallback(
-    (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile' | 'checkin' | 'checkin-manage' | 'schedule' | 'memorial') => {
+    (newView: 'login' | 'register' | 'home' | 'publish' | 'shop' | 'settings' | 'points-detail' | 'special-rewards' | 'achievements' | 'items-dashboard' | 'task-templates' | 'partner-profile' | 'checkin' | 'checkin-manage' | 'schedule' | 'memorial' | 'wish') => {
       setView((prev) => {
         if (newView !== prev) {
           window.history.pushState({ view: newView }, '', `#${newView}`);
@@ -300,7 +301,7 @@ export default function App() {
 
           {/* Main App Layer - Keep Home mounted when sub-pages are open to prevent blank gaps */}
           <AnimatePresence>
-            {(view === 'home' || view === 'publish' || view === 'shop' || view === 'settings' || view === 'points-detail' || view === 'special-rewards' || view === 'achievements' || view === 'items-dashboard' || view === 'task-templates' || view === 'partner-profile' || view === 'checkin' || view === 'checkin-manage' || view === 'schedule' || view === 'memorial') && (
+            {(view === 'home' || view === 'publish' || view === 'shop' || view === 'settings' || view === 'points-detail' || view === 'special-rewards' || view === 'achievements' || view === 'items-dashboard' || view === 'task-templates' || view === 'partner-profile' || view === 'checkin' || view === 'checkin-manage' || view === 'schedule' || view === 'memorial' || view === 'wish') && (
               <Home 
                 key="home" 
                 tasks={storeTasks} 
@@ -325,6 +326,7 @@ export default function App() {
                 onOpenPartnerProfile={() => navigateTo('partner-profile')}
                 onOpenSchedule={() => navigateTo('schedule')}
                 onOpenMemorial={() => navigateTo('memorial')}
+                onOpenWish={() => navigateTo('wish')}
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 isLoggedIn={isLoggedIn}
@@ -417,6 +419,7 @@ export default function App() {
             {view === 'memorial' && (
               <MemorialPage onBack={handleBack} />
             )}
+            {view === 'wish' && <WishPage onBack={handleBack} />}
             {showBindingPage && (
               <BindingPage 
                 onClose={() => setShowBindingPage(false)}
