@@ -40,6 +40,7 @@ interface HomeProps {
   onOpenPartnerProfile?: () => void;
   onOpenCheckinManage?: () => void;
   onOpenSchedule?: () => void;
+  onOpenMemorial?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -65,6 +66,7 @@ export default function Home({
   onOpenPartnerProfile,
   onOpenCheckinManage,
   onOpenSchedule,
+  onOpenMemorial,
   activeTab,
   setActiveTab,
   isLoggedIn,
@@ -167,6 +169,7 @@ export default function Home({
                     onOpenTemplates={onOpenTemplates}
                     onOpenAchievements={onOpenAchievements}
                     onOpenSchedule={onOpenSchedule}
+                    onOpenMemorial={onOpenMemorial}
                   />
                 </div>
               </div>

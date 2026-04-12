@@ -1,11 +1,12 @@
 import React from 'react';
-import { Award, CalendarCheck, CalendarDays, Star, Zap, Gift, Heart, Bookmark } from 'lucide-react';
+import { Award, CalendarCheck, CalendarDays, Star, Zap, Heart, Bookmark, CalendarHeart } from 'lucide-react';
 
 interface QuickEntrancesProps {
   onOpenCheckin?: () => void;
   onOpenTemplates?: () => void;
   onOpenAchievements?: () => void;
   onOpenSchedule?: () => void;
+  onOpenMemorial?: () => void;
 }
 
 type EntranceItem = {
@@ -19,7 +20,13 @@ type EntranceItem = {
 /**
  * 广场快捷入口（双排八宫格）
  */
-export default function QuickEntrances({ onOpenCheckin, onOpenTemplates, onOpenAchievements, onOpenSchedule }: QuickEntrancesProps) {
+export default function QuickEntrances({
+  onOpenCheckin,
+  onOpenTemplates,
+  onOpenAchievements,
+  onOpenSchedule,
+  onOpenMemorial,
+}: QuickEntrancesProps) {
   const row1: EntranceItem[] = [
     { icon: CalendarCheck, label: '签到', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', onClick: onOpenCheckin },
     { icon: Star, label: '任务', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', onClick: onOpenTemplates },
@@ -29,7 +36,7 @@ export default function QuickEntrances({ onOpenCheckin, onOpenTemplates, onOpenA
 
   const row2: EntranceItem[] = [
     { icon: CalendarDays, label: '日程', color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-900/20', onClick: onOpenSchedule },
-    { icon: Gift, label: '礼物', color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/20' },
+    { icon: CalendarHeart, label: '倒数日', color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/20', onClick: onOpenMemorial },
     { icon: Heart, label: '心愿', color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20' },
     { icon: Bookmark, label: '收藏', color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-900/20' },
   ];

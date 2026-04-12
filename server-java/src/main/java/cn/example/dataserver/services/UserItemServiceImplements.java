@@ -70,7 +70,6 @@ public class UserItemServiceImplements {
      */
     public String listMyItems(String token, UserItemQueryDTO query) {
         Users currentUser = authService.checkToken(token);
-
         long pageNo = query.getPage() == null || query.getPage() < 1 ? 1L : query.getPage();
         long pageSize = query.getSize() == null || query.getSize() < 1 ? 10L : Math.min(query.getSize(), 50L);
         String keyword = StrUtil.trimToEmpty(query.getKeyword());

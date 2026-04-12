@@ -1,6 +1,5 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { div } from 'motion/react-client';
 import AndroidPadding from './AndroidPadding';
 
 interface PageHeaderProps {
