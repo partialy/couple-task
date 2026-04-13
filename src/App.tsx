@@ -36,6 +36,7 @@ const SchedulePage = lazy(() => import("./components/schedule/SchedulePage"));
 const MemorialPage = lazy(() => import("./components/memorial/MemorialPage"));
 const WishPage = lazy(() => import("./components/wish/WishPage"));
 const MomentsPage = lazy(() => import("./components/moments/MomentsPage"));
+const DiaryPage = lazy(() => import("./components/diary/DiaryPage"));
 
 import { useUserStore, useTaskStore, useMessageStore } from "./store";
 import { fetchChatConversationRows } from "@/utils/chatConversationList";
@@ -89,6 +90,7 @@ export default function App() {
     | "memorial"
     | "wish"
     | "moments"
+    | "diary"
   >("home");
   const [activeTab, setActiveTab] = useState("square"); // 'square' | 'inprogress' | 'messages' | 'profile'
   const [templateData, setTemplateData] = useState<any>(null);
@@ -342,7 +344,8 @@ export default function App() {
         | "schedule"
         | "memorial"
         | "wish"
-        | "moments",
+        | "moments"
+        | "diary",
     ) => {
       setView((prev) => {
         if (newView !== prev) {
@@ -475,7 +478,8 @@ export default function App() {
               view === "schedule" ||
               view === "memorial" ||
               view === "wish" ||
-              view === "moments") && (
+              view === "moments" ||
+              view === "diary") && (
               <Home
                 key="home"
                 tasks={storeTasks}
@@ -502,6 +506,7 @@ export default function App() {
                 onOpenMemorial={() => navigateTo("memorial")}
                 onOpenWish={() => navigateTo("wish")}
                 onOpenMoments={() => navigateTo("moments")}
+                onOpenDiary={() => navigateTo("diary")}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 isLoggedIn={isLoggedIn}
@@ -576,6 +581,7 @@ export default function App() {
               {view === "memorial" && <MemorialPage onBack={handleBack} />}
               {view === "wish" && <WishPage onBack={handleBack} />}
               {view === "moments" && <MomentsPage onBack={handleBack} />}
+              {view === "diary" && <DiaryPage onBack={handleBack} />}
               {showBindingPage && (
                 <BindingPage
                   onClose={() => setShowBindingPage(false)}
