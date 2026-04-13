@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { ChevronLeft, Plus, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ChevronLeft, History, Plus, Sparkles } from 'lucide-react';
 import wishService, { type WishItem } from '@/api/service/wish';
 import { useUserStore } from '@/store/user';
 import { message } from '@/utils/pure/message';
 import MemorialTransparentHeader from '@/components/memorial/MemorialTransparentHeader';
 import MeteorBackground from './MeteorBackground';
 import CanvasCylinderBottle from './CanvasCylinderBottle';
+import WishMyRecordsPanel from './WishMyRecordsPanel';
 import {
   STAR_COLOR_KEYS,
   colorKeyToBgBlur,
@@ -63,8 +64,9 @@ export default function WishPage({ onBack }: WishPageProps) {
   const [newWish, setNewWish] = useState('');
   const [wishColorKey, setWishColorKey] = useState<string>('rose400');
   const [pickedWish, setPickedWish] = useState<WishItem | null>(null);
+  const [recordsOpen, setRecordsOpen] = useState(false);
 
-  /** 与倒数日 / 任务详情一致：系统返回先关弹窗；成功关闭时用 back 同步 history，避免多一层栈 */
+  /** 与倒数日详情层一致：pick / make / 我的心愿 共用 history 栈，系统返回先关最上层 */
   const skipWishPopSyncRef = useRef(false);
   const pickedWishIdRef = useRef<string | null>(null);
   pickedWishIdRef.current = pickedWish?.id ?? null;
@@ -102,20 +104,27 @@ export default function WishPage({ onBack }: WishPageProps) {
   }, [reload]);
 
   useEffect(() => {
-    if (!makeWishModal && !pickWishModal) return;
+    const overlayKind: 'pick' | 'make' | 'records' | null = pickWishModal
+      ? 'pick'
+      : makeWishModal
+        ? 'make'
+        : recordsOpen
+          ? 'records'
+          : null;
 
-    const overlayKind: 'pick' | 'make' = pickWishModal ? 'pick' : 'make';
+    if (!overlayKind) return;
+
     const st = window.history.state as Record<string, unknown> | null;
 
-    if (st?.wishModal === 'pick' && overlayKind === 'make') {
+    if (st?.wishOverlay === 'pick' && overlayKind === 'make') {
       window.history.replaceState(
-        { ...st, view: st.view ?? 'wish', wishModal: 'make' },
+        { ...st, view: st.view ?? 'wish', wishOverlay: 'make' },
         '',
         window.location.href
       );
-    } else if (st?.wishModal !== overlayKind) {
+    } else if (st?.wishOverlay !== overlayKind) {
       window.history.pushState(
-        { ...(st || {}), view: (st?.view as string) || 'wish', wishModal: overlayKind },
+        { ...(st || {}), view: (st?.view as string) || 'wish', wishOverlay: overlayKind },
         '',
         window.location.href
       );
@@ -135,12 +144,14 @@ export default function WishPage({ onBack }: WishPageProps) {
         setPickedWish(null);
       } else if (makeWishModal) {
         setMakeWishModal(false);
+      } else if (recordsOpen) {
+        setRecordsOpen(false);
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [makeWishModal, pickWishModal, reload]);
+  }, [makeWishModal, pickWishModal, recordsOpen, reload]);
 
   const handleMakeWish = async () => {
     if (!bindId) return;
@@ -209,6 +220,10 @@ export default function WishPage({ onBack }: WishPageProps) {
       window.history.back();
       return;
     }
+    if (recordsOpen) {
+      window.history.back();
+      return;
+    }
     onBack();
   };
 
@@ -252,7 +267,20 @@ export default function WishPage({ onBack }: WishPageProps) {
               <ChevronLeft className="h-5 w-5 text-slate-800 dark:text-white" />
             </button>
           }
-          right={<div className="h-10 w-10 shrink-0" aria-hidden />}
+          right={
+            noBinding ? (
+              <div className="h-10 w-10 shrink-0" aria-hidden />
+            ) : (
+              <button
+                type="button"
+                aria-label="查看我的心愿记录"
+                onClick={() => setRecordsOpen(true)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white bg-white/60 shadow-sm backdrop-blur-md transition-colors hover:bg-white active:scale-95 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:hover:bg-slate-800"
+              >
+                <History className="h-5 w-5 text-slate-800 dark:text-white" />
+              </button>
+            )
+          }
         />
 
         {noBinding ? (
@@ -418,6 +446,12 @@ export default function WishPage({ onBack }: WishPageProps) {
           </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {recordsOpen && (
+          <WishMyRecordsPanel key="wish-my-records" onClose={() => window.history.back()} />
+        )}
+      </AnimatePresence>
 
       <style
         dangerouslySetInnerHTML={{

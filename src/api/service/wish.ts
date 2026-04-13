@@ -18,6 +18,8 @@ export interface WishItem {
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
+  /** 仅在「我的心愿」记录列表中隐藏 */
+  recordHiddenAt?: string | number | null;
 }
 
 export interface WishSummary {
@@ -36,8 +38,10 @@ const wishService = {
     return await request.get('/wish/summary', { params: { bindId } });
   },
 
-  async listMine(bindId: string): Promise<ApiResponse<WishItem[]>> {
-    return await request.get('/wish/listMine', { params: { bindId } });
+  async listMine(bindId: string, includeHidden = false): Promise<ApiResponse<WishItem[]>> {
+    return await request.get('/wish/listMine', {
+      params: { bindId, includeHidden: includeHidden ? '1' : '0' },
+    });
   },
 
   async listPartnerPending(bindId: string): Promise<ApiResponse<WishItem[]>> {
@@ -62,6 +66,14 @@ const wishService = {
 
   async remove(id: string): Promise<ApiResponse<unknown>> {
     return await request.post(`/wish/delete/${id}`);
+  },
+
+  async hideRecord(id: string): Promise<ApiResponse<unknown>> {
+    return await request.post(`/wish/hideRecord/${id}`);
+  },
+
+  async unhideRecord(id: string): Promise<ApiResponse<unknown>> {
+    return await request.post(`/wish/unhideRecord/${id}`);
   },
 };
 

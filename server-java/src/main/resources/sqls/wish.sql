@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS `wish_items` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted_at` DATETIME NULL COMMENT '软删除时间',
+  `record_hidden_at` DATETIME NULL COMMENT '发布者在记录页隐藏',
   PRIMARY KEY (`id`),
   INDEX `idx_bind_publisher` (`bind_id`, `publisher_user_id`),
   INDEX `idx_bind_pickable_status` (`bind_id`, `pickable_by_user_id`, `status`),
