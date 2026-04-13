@@ -174,7 +174,7 @@ public class TaskServiceImplements {
         }
         try {
             publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_PUBLISH, "对方发布了新任务",
-                    "TA 发布了任务【" + task.getTitle() + "】");
+                    "对方发布了任务【" + task.getTitle() + "】");
         } catch (Exception e) {
             log.warn("system notice on task create failed", e);
         }
@@ -251,7 +251,7 @@ public class TaskServiceImplements {
         }
         try {
             publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_PUBLISH, "对方发布了新任务",
-                    "TA 发布了任务【" + task.getTitle() + "】");
+                    "对方发布了任务【" + task.getTitle() + "】");
         } catch (Exception e) {
             log.warn("system notice on publishListing failed", e);
         }
@@ -640,7 +640,7 @@ public class TaskServiceImplements {
         }
         try {
             publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_ACCEPT, "对方接取了任务",
-                    "TA 接取了任务【" + task.getTitle() + "】");
+                    "对方接取了任务【" + task.getTitle() + "】");
         } catch (Exception e) {
             log.warn("system notice on acceptTask failed", e);
         }
@@ -901,7 +901,7 @@ public class TaskServiceImplements {
                     SystemNoticeFacadeService.TASK_COMPLETE,
                     taskId,
                     "任务已完成",
-                    "TA 已完成任务【" + task.getTitle() + "】",
+                    "对方已完成任务【" + task.getTitle() + "】",
                     Collections.singletonMap("taskId", taskId)
             );
         }
@@ -912,7 +912,7 @@ public class TaskServiceImplements {
                 SystemNoticeFacadeService.TASK_COMPLETE,
                 taskId,
                 "任务已完成",
-                "我完成了任务【" + task.getTitle() + "】",
+                "你完成了任务【" + task.getTitle() + "】",
                 Collections.singletonMap("taskId", taskId)
         );
     }
@@ -952,7 +952,7 @@ public class TaskServiceImplements {
 
         try {
             publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_APPLY_COMPLETE,
-                    "对方申请完成任务", "TA 申请完成任务【" + task.getTitle() + "】");
+                    "对方申请完成任务", "对方申请完成任务【" + task.getTitle() + "】");
         } catch (Exception e) {
             log.warn("system notice on applyCompleteTask failed", e);
         }

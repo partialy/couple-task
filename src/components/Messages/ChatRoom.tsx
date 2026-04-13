@@ -14,6 +14,7 @@ import { useMessageStore } from "@/store/message";
 import { uploadToQiniu } from "@/utils/qiniu";
 import type { ChatAttachmentKind } from "@/components/ui/ChatAttachmentModal";
 import AndroidPadding from "../ui/AndroidPadding";
+import systemAvatar from "@/assets/icon_128.png";
 
 interface ChatRoomProps {
   conversation: Conversation;
@@ -279,6 +280,7 @@ export default function ChatRoom({
 
   const partnerAvatar = bindUser?.avatar || conversation.userAvatar;
   const myAvatar = currentUser?.avatar || "";
+  const peerAvatar = isPartner ? partnerAvatar || "https://picsum.photos/seed/partner/100/100" : systemAvatar;
   const displayName = conversation.userName;
 
   const chatRoomContent = (
@@ -375,7 +377,7 @@ export default function ChatRoom({
                 avatar={
                   msg.senderId === currentUserId
                     ? myAvatar || "https://picsum.photos/seed/me/100/100"
-                    : partnerAvatar || "https://picsum.photos/seed/partner/100/100"
+                    : peerAvatar
                 }
               />
             </div>

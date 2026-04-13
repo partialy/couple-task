@@ -29,14 +29,14 @@ class NotificationManager {
       if (!this.centerContainer) {
         this.centerContainer = document.createElement('div');
 
-        this.centerContainer.className = extraClass + 'fixed left-1/2 -translate-x-1/2 z-[11000] flex flex-col items-center gap-3 pointer-events-none w-full max-w-[400px] px-4 sm:px-0';
+        this.centerContainer.className = `${extraClass} fixed left-1/2 -translate-x-1/2 z-[11000] flex flex-col items-center gap-3 pointer-events-none w-full max-w-[400px] px-4 sm:px-0`;
         document.body.appendChild(this.centerContainer);
       }
       return this.centerContainer;
     } else {
       if (!this.rightContainer) {
         this.rightContainer = document.createElement('div');
-        this.rightContainer.className = extraClass + 'fixed right-6 z-[11000] flex flex-col gap-3 pointer-events-none w-full max-w-[400px] px-4 sm:px-0';
+        this.rightContainer.className = `${extraClass} fixed right-6 z-[11000] flex flex-col gap-3 pointer-events-none w-full max-w-[400px] px-4 sm:px-0`;
         document.body.appendChild(this.rightContainer);
       }
       return this.rightContainer;
