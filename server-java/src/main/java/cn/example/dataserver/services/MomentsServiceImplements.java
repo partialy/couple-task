@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,12 +31,21 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MomentsServiceImplements {
+
+    public static final String BIZ_SCENE_TASK_PUBLISH = "task_publish";
+    public static final String BIZ_SCENE_TASK_ACCEPT = "task_accept";
+    public static final String BIZ_SCENE_TASK_COMPLETE = "task_complete";
+    public static final String REMARK_SYSTEM = "【系统自动发出】";
 
     private static final int MAX_CONTENT_LEN = 2000;
     private static final int MAX_COMMENT_LEN = 1000;
@@ -183,7 +191,84 @@ public class MomentsServiceImplements {
         vo.setLikes(likeCounts.getOrDefault(m.getId(), 0L).intValue());
         vo.setLikedByMe(likedIds.contains(m.getId()));
         vo.setCommentCount(commentCounts.getOrDefault(m.getId(), 0L).intValue());
+        vo.setBizUuid(m.getBizUuid());
+        vo.setBizScene(m.getBizScene());
+        vo.setRemark(m.getRemark());
         return vo;
+    }
+
+    /**
+     * 服务端自动写入动态（任务完成/发布等）。失败仅打日志，不向调用方抛错。
+     */
+    public void publishSystemMoment(
+            String bindId,
+            String authorUserId,
+            String content,
+            List<String> imageUrls,
+            String bizUuid,
+            String bizScene,
+            String remark) {
+        if (StrUtil.isBlank(bindId) || StrUtil.isBlank(authorUserId)) {
+            log.warn("publishSystemMoment skip: blank bindId or author");
+            return;
+        }
+        BindingRelations br = requireBind(authorUserId, bindId);
+        if (br == null) {
+            log.warn("publishSystemMoment skip: invalid bind bindId={} author={}", bindId, authorUserId);
+            return;
+        }
+        String text = StrUtil.blankToDefault(content, "").trim();
+        List<String> urls = imageUrls == null ? Collections.emptyList() : imageUrls;
+        if (text.isEmpty() && urls.isEmpty()) {
+            log.warn("publishSystemMoment skip: empty content and images");
+            return;
+        }
+        if (text.length() > MAX_CONTENT_LEN) {
+            text = text.substring(0, MAX_CONTENT_LEN);
+        }
+        try {
+            Date now = new Date();
+            String id = UUID.randomUUID().toString();
+            BindMoments row = new BindMoments();
+            row.setId(id);
+            row.setBindId(bindId);
+            row.setAuthorUserId(authorUserId);
+            row.setContent(text.isEmpty() ? "" : text);
+            row.setBizUuid(bizUuid);
+            row.setBizScene(bizScene);
+            row.setRemark(remark);
+            row.setCreatedAt(now);
+            row.setUpdatedAt(now);
+            bindMomentsService.save(row);
+
+            int order = 0;
+            for (String url : urls) {
+                if (StrUtil.isBlank(url) || url.length() > MAX_URL_LEN) {
+                    continue;
+                }
+                if (order >= MAX_IMAGES) {
+                    break;
+                }
+                BindMomentImage img = new BindMomentImage();
+                img.setId(UUID.randomUUID().toString());
+                img.setMomentId(id);
+                img.setUrl(url.trim());
+                img.setSortOrder(order++);
+                bindMomentImageService.save(img);
+            }
+        } catch (DuplicateKeyException e) {
+            log.warn("duplicate system moment bindId={} bizUuid={} scene={}", bindId, bizUuid, bizScene);
+        } catch (DataIntegrityViolationException e) {
+            Throwable cause = e.getMostSpecificCause();
+            String msg = cause != null ? cause.getMessage() : "";
+            if (msg != null && (msg.contains("Duplicate") || msg.contains("duplicate"))) {
+                log.warn("duplicate system moment (integrity) bindId={} bizUuid={} scene={}", bindId, bizUuid, bizScene);
+            } else {
+                log.warn("publishSystemMoment data integrity failed", e);
+            }
+        } catch (Exception e) {
+            log.warn("publishSystemMoment failed", e);
+        }
     }
 
     public String list(String token, String bindId) {

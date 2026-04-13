@@ -217,7 +217,7 @@ export default function MomentsPage({ onBack }: MomentsPageProps) {
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <MemorialTransparentHeader
           variant="title"
-          title="我们的动态"
+          title="动态"
           left={
             <button
               type="button"

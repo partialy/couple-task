@@ -8,6 +8,12 @@ export interface MomentListItem {
   avatar: string;
   createdAt: number;
   content: string;
+  /** 关联业务 id，如任务 id */
+  bizUuid?: string | null;
+  /** task_publish / task_complete 等 */
+  bizScene?: string | null;
+  /** 如【系统自动发出】 */
+  remark?: string | null;
   images: string[];
   likes: number;
   likedByMe: boolean;

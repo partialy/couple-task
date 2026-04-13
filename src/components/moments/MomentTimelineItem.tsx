@@ -55,6 +55,9 @@ export default function MomentTimelineItem({
                 isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'
               }`}
             >
+              {moment.remark ? (
+                <p className="mb-2 text-[10px] font-medium text-slate-400 dark:text-slate-500">{moment.remark}</p>
+              ) : null}
               <p className="text-[14px] leading-relaxed font-medium whitespace-pre-wrap text-slate-800 dark:text-slate-100">
                 {moment.content}
               </p>

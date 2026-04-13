@@ -5,12 +5,16 @@ CREATE TABLE IF NOT EXISTS `bind_moments` (
   `bind_id` VARCHAR(36) NOT NULL COMMENT '绑定关系ID',
   `author_user_id` VARCHAR(36) NOT NULL COMMENT '发布者用户ID',
   `content` TEXT NOT NULL COMMENT '动态正文',
+  `biz_uuid` VARCHAR(36) NULL COMMENT '关联业务主键，如任务 id',
+  `biz_scene` VARCHAR(32) NULL COMMENT '业务场景：task_publish / task_complete',
+  `remark` VARCHAR(255) NULL COMMENT '备注，如【系统自动发出】',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted_at` DATETIME NULL COMMENT '软删除时间',
   PRIMARY KEY (`id`),
   INDEX `idx_bind_created` (`bind_id`, `created_at`),
-  INDEX `idx_deleted_at` (`deleted_at`)
+  INDEX `idx_deleted_at` (`deleted_at`),
+  UNIQUE KEY `uk_bind_moments_biz` (`bind_id`, `biz_uuid`, `biz_scene`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='绑定动态主表';
 
 CREATE TABLE IF NOT EXISTS `bind_moment_images` (

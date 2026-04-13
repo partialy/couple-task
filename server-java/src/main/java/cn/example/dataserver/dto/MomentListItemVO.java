@@ -18,6 +18,12 @@ public class MomentListItemVO {
 
     private String content;
 
+    private String bizUuid;
+
+    private String bizScene;
+
+    private String remark;
+
     private List<String> images;
 
     private int likes;

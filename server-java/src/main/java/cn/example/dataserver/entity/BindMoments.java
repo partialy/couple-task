@@ -23,6 +23,15 @@ public class BindMoments implements Serializable {
     @TableField(value = "content")
     private String content;
 
+    @TableField(value = "biz_uuid")
+    private String bizUuid;
+
+    @TableField(value = "biz_scene")
+    private String bizScene;
+
+    @TableField(value = "remark")
+    private String remark;
+
     @TableField(value = "created_at")
     private Date createdAt;
 

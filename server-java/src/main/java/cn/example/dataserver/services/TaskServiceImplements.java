@@ -7,6 +7,7 @@ import cn.example.dataserver.enums.BindingRelation;
 import cn.example.dataserver.enums.RewardType;
 import cn.example.dataserver.enums.TaskStatus;
 import cn.example.dataserver.service.*;
+import cn.example.dataserver.utils.TaskMomentCopyHelper;
 import cn.example.dataserver.vo.PublisherVO;
 import cn.example.dataserver.vo.TaskDetailVO;
 import cn.example.dataserver.vo.TaskVO;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +61,7 @@ public class TaskServiceImplements {
     private final CardTransactionsService cardTransactionsService;
     private final ItemTransactionsService itemTransactionsService;
     private final UserFavoritesService userFavoritesService;
+    private final MomentsServiceImplements momentsServiceImplements;
 
     /**
      * 发布新任务
@@ -163,6 +166,11 @@ public class TaskServiceImplements {
         if (saveAsDraft) {
             return Result.success("草稿已保存", taskId).toJson();
         }
+        try {
+            publishTaskAutoMomentOnListing(task);
+        } catch (Exception e) {
+            log.warn("auto moment on task create failed", e);
+        }
         return Result.success("任务发布成功", taskId).toJson();
     }
 
@@ -229,6 +237,11 @@ public class TaskServiceImplements {
         task.setListStatus(LIST_PUBLISHED);
         task.setUpdatedAt(new Date());
         tasksService.updateById(task);
+        try {
+            publishTaskAutoMomentOnListing(task);
+        } catch (Exception e) {
+            log.warn("auto moment on publishListing failed", e);
+        }
         return Result.success("已上架").toJson();
     }
 
@@ -598,14 +611,20 @@ public class TaskServiceImplements {
         tasksService.updateById(task);
 
         // 记录日志
-        TaskLogs log = new TaskLogs();
-        log.setTaskId(taskId);
-        log.setUserId(currentUser.getId());
-        log.setAction("accept");
-        log.setPreviousStatus(TaskStatus.PENDING.getValue());
-        log.setNewStatus(TaskStatus.IN_PROGRESS.getValue());
-        log.setCreatedAt(new Date());
-        taskLogsService.save(log);
+        TaskLogs taskLog = new TaskLogs();
+        taskLog.setTaskId(taskId);
+        taskLog.setUserId(currentUser.getId());
+        taskLog.setAction("accept");
+        taskLog.setPreviousStatus(TaskStatus.PENDING.getValue());
+        taskLog.setNewStatus(TaskStatus.IN_PROGRESS.getValue());
+        taskLog.setCreatedAt(new Date());
+        taskLogsService.save(taskLog);
+
+        try {
+            publishTaskAutoMomentOnAccept(task, taskId, currentUser.getId());
+        } catch (Exception e) {
+            log.warn("auto moment on acceptTask failed", e);
+        }
 
         return Result.success("接取成功").toJson();
     }
@@ -692,14 +711,14 @@ public class TaskServiceImplements {
         tasksService.updateById(task);
 
         // 记录日志
-        TaskLogs log = new TaskLogs();
-        log.setTaskId(taskId);
-        log.setUserId(currentUser.getId());
-        log.setAction("complete");
-        log.setPreviousStatus(TaskStatus.APPLYING.getValue());
-        log.setNewStatus(TaskStatus.COMPLETED.getValue());
-        log.setCreatedAt(new Date());
-        taskLogsService.save(log);
+        TaskLogs taskLogs = new TaskLogs();
+        taskLogs.setTaskId(taskId);
+        taskLogs.setUserId(currentUser.getId());
+        taskLogs.setAction("complete");
+        taskLogs.setPreviousStatus(TaskStatus.APPLYING.getValue());
+        taskLogs.setNewStatus(TaskStatus.COMPLETED.getValue());
+        taskLogs.setCreatedAt(new Date());
+        taskLogsService.save(taskLogs);
 
         // 发放奖励
         List<TaskRewards> rewards = taskRewardsService.lambdaQuery()
@@ -764,7 +783,67 @@ public class TaskServiceImplements {
                 }
             }
         }
+        try {
+            publishTaskAutoMomentOnComplete(task, taskId, receiverId, rewards);
+        } catch (Exception e) {
+            log.warn("auto moment on completeTask failed", e);
+        }
         return Result.success("任务完成").toJson();
+    }
+
+    private void publishTaskAutoMomentOnListing(Tasks task) {
+        if (task == null || StrUtil.isBlank(task.getBelongBindingId())) {
+            return;
+        }
+        List<String> imgs = new ArrayList<>();
+        if (StrUtil.isNotBlank(task.getCoverImage())) {
+            imgs.add(task.getCoverImage().trim());
+        }
+        momentsServiceImplements.publishSystemMoment(
+                task.getBelongBindingId(),
+                task.getAuthorId(),
+                TaskMomentCopyHelper.publishContent(task),
+                imgs,
+                task.getId(),
+                MomentsServiceImplements.BIZ_SCENE_TASK_PUBLISH,
+                MomentsServiceImplements.REMARK_SYSTEM);
+    }
+
+    private void publishTaskAutoMomentOnComplete(Tasks task, String taskId, String receiverId, List<TaskRewards> rewards) {
+        if (task == null || StrUtil.isBlank(task.getBelongBindingId()) || StrUtil.isBlank(receiverId)) {
+            return;
+        }
+        List<String> imgs = new ArrayList<>();
+        if (StrUtil.isNotBlank(task.getCoverImage())) {
+            imgs.add(task.getCoverImage().trim());
+        }
+        List<TaskRewards> rlist = rewards == null ? Collections.emptyList() : rewards;
+        momentsServiceImplements.publishSystemMoment(
+                task.getBelongBindingId(),
+                receiverId,
+                TaskMomentCopyHelper.completeContent(task, rlist),
+                imgs,
+                taskId,
+                MomentsServiceImplements.BIZ_SCENE_TASK_COMPLETE,
+                MomentsServiceImplements.REMARK_SYSTEM);
+    }
+
+    private void publishTaskAutoMomentOnAccept(Tasks task, String taskId, String receiverId) {
+        if (task == null || StrUtil.isBlank(task.getBelongBindingId()) || StrUtil.isBlank(receiverId)) {
+            return;
+        }
+        List<String> imgs = new ArrayList<>();
+        if (StrUtil.isNotBlank(task.getCoverImage())) {
+            imgs.add(task.getCoverImage().trim());
+        }
+        momentsServiceImplements.publishSystemMoment(
+                task.getBelongBindingId(),
+                receiverId,
+                TaskMomentCopyHelper.acceptContent(task),
+                imgs,
+                taskId,
+                MomentsServiceImplements.BIZ_SCENE_TASK_ACCEPT,
+                MomentsServiceImplements.REMARK_SYSTEM);
     }
 
     /**
