@@ -22,6 +22,7 @@ const CheckinManage = lazy(() => import('./components/CheckinManage'));
 const SchedulePage = lazy(() => import('./components/schedule/SchedulePage'));
 const MemorialPage = lazy(() => import('./components/memorial/MemorialPage'));
 const WishPage = lazy(() => import('./components/wish/WishPage'));
+const MomentsPage = lazy(() => import('./components/moments/MomentsPage'));
 
 import { useUserStore, useTaskStore, useMessageStore } from './store';
 import { fetchChatConversationRows } from '@/utils/chatConversationList';
@@ -60,6 +61,7 @@ export default function App() {
     | 'schedule'
     | 'memorial'
     | 'wish'
+    | 'moments'
   >('home');
   const [activeTab, setActiveTab] = useState('square'); // 'square' | 'inprogress' | 'messages' | 'profile'
   const [templateData, setTemplateData] = useState<any>(null);
@@ -237,6 +239,7 @@ export default function App() {
         | 'schedule'
         | 'memorial'
         | 'wish'
+        | 'moments'
     ) => {
       setView((prev) => {
         if (newView !== prev) {
@@ -352,7 +355,8 @@ export default function App() {
               view === 'checkin-manage' ||
               view === 'schedule' ||
               view === 'memorial' ||
-              view === 'wish') && (
+              view === 'wish' ||
+              view === 'moments') && (
               <Home 
                 key="home" 
                 tasks={storeTasks} 
@@ -378,6 +382,7 @@ export default function App() {
                 onOpenSchedule={() => navigateTo('schedule')}
                 onOpenMemorial={() => navigateTo('memorial')}
                 onOpenWish={() => navigateTo('wish')}
+                onOpenMoments={() => navigateTo('moments')}
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 isLoggedIn={isLoggedIn}
@@ -471,6 +476,7 @@ export default function App() {
               <MemorialPage onBack={handleBack} />
             )}
             {view === 'wish' && <WishPage onBack={handleBack} />}
+            {view === 'moments' && <MomentsPage onBack={handleBack} />}
             {showBindingPage && (
               <BindingPage 
                 onClose={() => setShowBindingPage(false)}

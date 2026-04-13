@@ -8,6 +8,7 @@ interface QuickEntrancesProps {
   onOpenSchedule?: () => void;
   onOpenMemorial?: () => void;
   onOpenWish?: () => void;
+  onOpenMoments?: () => void;
 }
 
 type EntranceItem = {
@@ -28,12 +29,13 @@ export default function QuickEntrances({
   onOpenSchedule,
   onOpenMemorial,
   onOpenWish,
+  onOpenMoments,
 }: QuickEntrancesProps) {
   const row1: EntranceItem[] = [
     { icon: CalendarCheck, label: '签到', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', onClick: onOpenCheckin },
     { icon: Star, label: '任务', color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', onClick: onOpenTemplates },
     { icon: Award, label: '成就', color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/20', onClick: onOpenAchievements },
-    { icon: Zap, label: '动态', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { icon: Zap, label: '动态', color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', onClick: onOpenMoments },
   ];
 
   const row2: EntranceItem[] = [

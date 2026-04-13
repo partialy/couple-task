@@ -42,6 +42,7 @@ interface HomeProps {
   onOpenSchedule?: () => void;
   onOpenMemorial?: () => void;
   onOpenWish?: () => void;
+  onOpenMoments?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -69,6 +70,7 @@ export default function Home({
   onOpenSchedule,
   onOpenMemorial,
   onOpenWish,
+  onOpenMoments,
   activeTab,
   setActiveTab,
   isLoggedIn,
@@ -173,6 +175,7 @@ export default function Home({
                     onOpenSchedule={onOpenSchedule}
                     onOpenMemorial={onOpenMemorial}
                     onOpenWish={onOpenWish}
+                    onOpenMoments={onOpenMoments}
                   />
                 </div>
               </div>
