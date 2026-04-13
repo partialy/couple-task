@@ -64,6 +64,10 @@ import {
   getNoRemindScheduleIds,
   markScheduleNoRemind,
 } from "./components/schedule/reminderStorage";
+import { authService } from "./api/service/auth";
+
+const TOKEN_REFRESH_AT_KEY = "token_last_refresh_at";
+const TOKEN_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export default function App() {
   const [view, setView] = useState<
@@ -149,6 +153,7 @@ export default function App() {
   const [scheduleReminders, setScheduleReminders] = useState<ScheduleItem[]>([]);
   const [showScheduleReminderModal, setShowScheduleReminderModal] = useState(false);
   const scheduleReminderLoadedRef = useRef<string>("");
+  const tokenRefreshCheckedRef = useRef(false);
 
   // Handle browser back button
   useEffect(() => {
@@ -208,6 +213,41 @@ export default function App() {
     useTaskStore.getState().fetchTasks();
     setLastLoadTaskTime(Date.now());
   }, [view, activeTab, isLoggedIn, lastLoadTaskTime]);
+
+  useEffect(() => {
+    if (!isLoggedIn || view !== "home") {
+      if (!isLoggedIn) {
+        tokenRefreshCheckedRef.current = false;
+      }
+      return;
+    }
+    if (tokenRefreshCheckedRef.current) {
+      return;
+    }
+    tokenRefreshCheckedRef.current = true;
+
+    void (async () => {
+      const now = Date.now();
+      const lastRefreshAtRaw = localStorage.getItem(TOKEN_REFRESH_AT_KEY);
+      const lastRefreshAt = lastRefreshAtRaw ? Number(lastRefreshAtRaw) : 0;
+      const shouldRefresh =
+        !Number.isFinite(lastRefreshAt) ||
+        lastRefreshAt <= 0 ||
+        now - lastRefreshAt >= TOKEN_REFRESH_INTERVAL_MS;
+      if (!shouldRefresh) {
+        return;
+      }
+      try {
+        const res = await authService.refresh();
+        if (res.success && res.data?.token) {
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem(TOKEN_REFRESH_AT_KEY, String(now));
+        }
+      } catch (error) {
+        console.error("刷新token失败", error);
+      }
+    })();
+  }, [isLoggedIn, view]);
 
   // 预拉会话列表，供底栏未读角标与 WS 增量在未打开「消息」页时仍可用
   useEffect(() => {
