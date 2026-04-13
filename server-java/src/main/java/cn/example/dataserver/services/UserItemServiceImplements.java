@@ -39,6 +39,7 @@ public class UserItemServiceImplements {
     private final UserItemsService userItemsService;
     private final BindingRelationsService bindingRelationsService;
     private final ItemRedemptionRecordsService itemRedemptionRecordsService;
+    private final SystemNoticeFacadeService systemNoticeFacadeService;
 
     /**
      * 解析当前用户已接受的绑定关系
@@ -177,6 +178,20 @@ public class UserItemServiceImplements {
         record.setRemark(null);
         record.setCreatedAt(new Date());
         itemRedemptionRecordsService.save(record);
+
+        try {
+            systemNoticeFacadeService.createAndPush(
+                    partnerId,
+                    redeemer.getId(),
+                    bind.getId(),
+                    SystemNoticeFacadeService.ITEM_VERIFIED,
+                    userItem.getId(),
+                    "道具被核销",
+                    "你的道具【" + StrUtil.blankToDefault(userItem.getName(), "道具") + "】已被核销",
+                    java.util.Collections.singletonMap("itemId", userItem.getId())
+            );
+        } catch (Exception ignored) {
+        }
 
         return Result.success("核销成功").toJson();
     }

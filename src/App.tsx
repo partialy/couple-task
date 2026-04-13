@@ -39,6 +39,11 @@ import {
   disconnectChatWebSocket,
   setChatHomeActiveTab,
 } from '@/ws/chatWebSocketClient';
+import {
+  connectSystemNoticeWebSocket,
+  disconnectSystemNoticeWebSocket,
+  hydrateSystemNoticeState,
+} from '@/ws/systemNoticeWebSocketClient';
 import AndroidPadding from './components/ui/AndroidPadding';
 
 
@@ -161,11 +166,15 @@ export default function App() {
   useEffect(() => {
     if (isLoggedIn && currentUser?.id) {
       connectChatWebSocket();
+      connectSystemNoticeWebSocket();
+      void hydrateSystemNoticeState();
       return () => {
         disconnectChatWebSocket();
+        disconnectSystemNoticeWebSocket();
       };
     }
     disconnectChatWebSocket();
+    disconnectSystemNoticeWebSocket();
     return () => {};
   }, [isLoggedIn, currentUser?.id, bindUser?.id]);
 

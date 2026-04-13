@@ -62,6 +62,7 @@ public class TaskServiceImplements {
     private final ItemTransactionsService itemTransactionsService;
     private final UserFavoritesService userFavoritesService;
     private final MomentsServiceImplements momentsServiceImplements;
+    private final SystemNoticeFacadeService systemNoticeFacadeService;
 
     /**
      * 发布新任务
@@ -171,6 +172,12 @@ public class TaskServiceImplements {
         } catch (Exception e) {
             log.warn("auto moment on task create failed", e);
         }
+        try {
+            publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_PUBLISH, "对方发布了新任务",
+                    "TA 发布了任务【" + task.getTitle() + "】");
+        } catch (Exception e) {
+            log.warn("system notice on task create failed", e);
+        }
         return Result.success("任务发布成功", taskId).toJson();
     }
 
@@ -241,6 +248,12 @@ public class TaskServiceImplements {
             publishTaskAutoMomentOnListing(task);
         } catch (Exception e) {
             log.warn("auto moment on publishListing failed", e);
+        }
+        try {
+            publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_PUBLISH, "对方发布了新任务",
+                    "TA 发布了任务【" + task.getTitle() + "】");
+        } catch (Exception e) {
+            log.warn("system notice on publishListing failed", e);
         }
         return Result.success("已上架").toJson();
     }
@@ -625,6 +638,12 @@ public class TaskServiceImplements {
         } catch (Exception e) {
             log.warn("auto moment on acceptTask failed", e);
         }
+        try {
+            publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_ACCEPT, "对方接取了任务",
+                    "TA 接取了任务【" + task.getTitle() + "】");
+        } catch (Exception e) {
+            log.warn("system notice on acceptTask failed", e);
+        }
 
         return Result.success("接取成功").toJson();
     }
@@ -788,6 +807,11 @@ public class TaskServiceImplements {
         } catch (Exception e) {
             log.warn("auto moment on completeTask failed", e);
         }
+        try {
+            publishTaskCompleteNotice(task, taskId, receiverId);
+        } catch (Exception e) {
+            log.warn("system notice on completeTask failed", e);
+        }
         return Result.success("任务完成").toJson();
     }
 
@@ -846,6 +870,53 @@ public class TaskServiceImplements {
                 MomentsServiceImplements.REMARK_SYSTEM);
     }
 
+    private void publishTaskNoticeToPeer(Tasks task, String senderId, String type, String title, String content) {
+        if (task == null || StrUtil.isBlank(task.getReceiverId()) || StrUtil.isBlank(task.getBelongBindingId())) {
+            return;
+        }
+        String peer = systemNoticeFacadeService.resolvePeerUserId(senderId);
+        if (StrUtil.isBlank(peer)) return;
+        systemNoticeFacadeService.createAndPush(
+                peer,
+                senderId,
+                task.getBelongBindingId(),
+                type,
+                task.getId(),
+                title,
+                content,
+                Collections.singletonMap("taskId", task.getId())
+        );
+    }
+
+    private void publishTaskCompleteNotice(Tasks task, String taskId, String receiverId) {
+        if (task == null || StrUtil.isBlank(task.getBelongBindingId())) {
+            return;
+        }
+        String peer = systemNoticeFacadeService.resolvePeerUserId(receiverId);
+        if (StrUtil.isNotBlank(peer)) {
+            systemNoticeFacadeService.createAndPush(
+                    peer,
+                    receiverId,
+                    task.getBelongBindingId(),
+                    SystemNoticeFacadeService.TASK_COMPLETE,
+                    taskId,
+                    "任务已完成",
+                    "TA 已完成任务【" + task.getTitle() + "】",
+                    Collections.singletonMap("taskId", taskId)
+            );
+        }
+        systemNoticeFacadeService.createAndPush(
+                receiverId,
+                receiverId,
+                task.getBelongBindingId(),
+                SystemNoticeFacadeService.TASK_COMPLETE,
+                taskId,
+                "任务已完成",
+                "我完成了任务【" + task.getTitle() + "】",
+                Collections.singletonMap("taskId", taskId)
+        );
+    }
+
     /**
      * 申请完成任务（接收者）
      */
@@ -870,14 +941,21 @@ public class TaskServiceImplements {
         task.setUpdatedAt(new Date());
         tasksService.updateById(task);
 
-        TaskLogs log = new TaskLogs();
-        log.setTaskId(taskId);
-        log.setUserId(currentUser.getId());
-        log.setAction("apply_complete");
-        log.setPreviousStatus(TaskStatus.IN_PROGRESS.getValue());
-        log.setNewStatus(TaskStatus.APPLYING.getValue());
-        log.setCreatedAt(new Date());
-        taskLogsService.save(log);
+        TaskLogs taskLog = new TaskLogs();
+        taskLog.setTaskId(taskId);
+        taskLog.setUserId(currentUser.getId());
+        taskLog.setAction("apply_complete");
+        taskLog.setPreviousStatus(TaskStatus.IN_PROGRESS.getValue());
+        taskLog.setNewStatus(TaskStatus.APPLYING.getValue());
+        taskLog.setCreatedAt(new Date());
+        taskLogsService.save(taskLog);
+
+        try {
+            publishTaskNoticeToPeer(task, currentUser.getId(), SystemNoticeFacadeService.TASK_APPLY_COMPLETE,
+                    "对方申请完成任务", "TA 申请完成任务【" + task.getTitle() + "】");
+        } catch (Exception e) {
+            log.warn("system notice on applyCompleteTask failed", e);
+        }
 
         return Result.success("已提交完成申请").toJson();
     }

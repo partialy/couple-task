@@ -12,9 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,6 +28,7 @@ public class PointsServiceImplements {
     private final UserItemsService userItemsService;
     private final CardTransactionsService cardTransactionsService;
     private final ItemTransactionsService itemTransactionsService;
+    private final SystemNoticeFacadeService systemNoticeFacadeService;
 
     public String getHistory(String token) {
         Users currentUser = authService.checkToken(token);
@@ -126,6 +125,23 @@ public class PointsServiceImplements {
             }
         }
 
+        try {
+            if (StrUtil.isNotBlank(rewardCode.getCreatorId())) {
+                String bindId = systemNoticeFacadeService.resolveBindId(currentUser.getId());
+                systemNoticeFacadeService.createAndPush(
+                        rewardCode.getCreatorId(),
+                        currentUser.getId(),
+                        bindId,
+                        SystemNoticeFacadeService.REWARD_CODE_USED,
+                        rewardCode.getId(),
+                        "发出的兑换码被使用",
+                        "你发出的兑换码【" + rewardCode.getCode() + "】已被使用",
+                        java.util.Collections.singletonMap("codeId", rewardCode.getId())
+                );
+            }
+        } catch (Exception ignored) {
+        }
+
         return Result.success("兑换成功", rewardCode).toJson();
     }
 
@@ -186,6 +202,23 @@ public class PointsServiceImplements {
         if (shopItem.getStock() != null && shopItem.getStock() > 0) {
             shopItem.setStock(shopItem.getStock() - 1);
             shopItemsService.updateById(shopItem);
+        }
+
+        try {
+            if (StrUtil.isNotBlank(shopItem.getPublishUserId())) {
+                String bindId = shopItem.getBelongBindingId();
+                systemNoticeFacadeService.createAndPush(
+                        shopItem.getPublishUserId(),
+                        currentUser.getId(),
+                        bindId,
+                        SystemNoticeFacadeService.ITEM_REDEEM,
+                        shopItem.getId(),
+                        "对方兑换了物品",
+                        "TA 兑换了你发布的商品【" + shopItem.getName() + "】",
+                        java.util.Collections.singletonMap("itemId", shopItem.getId())
+                );
+            }
+        } catch (Exception ignored) {
         }
 
         return Result.success("兑换成功").toJson();
