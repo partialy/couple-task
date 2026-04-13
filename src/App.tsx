@@ -58,6 +58,12 @@ import {
   hydrateSystemNoticeState,
 } from "@/ws/systemNoticeWebSocketClient";
 import AndroidPadding from "./components/ui/AndroidPadding";
+import scheduleService, { ScheduleItem } from "./api/service/schedule";
+import ScheduleReminderModal from "./components/schedule/ScheduleReminderModal";
+import {
+  getNoRemindScheduleIds,
+  markScheduleNoRemind,
+} from "./components/schedule/reminderStorage";
 
 export default function App() {
   const [view, setView] = useState<
@@ -140,6 +146,9 @@ export default function App() {
   }, []);
 
   const [showBindingPage, setShowBindingPage] = useState(false);
+  const [scheduleReminders, setScheduleReminders] = useState<ScheduleItem[]>([]);
+  const [showScheduleReminderModal, setShowScheduleReminderModal] = useState(false);
+  const scheduleReminderLoadedRef = useRef<string>("");
 
   // Handle browser back button
   useEffect(() => {
@@ -232,6 +241,46 @@ export default function App() {
       void Promise.all([loadSpecialItems("self"), loadSpecialItems("target")]);
     }
   }, [view, isLoggedIn, loadSpecialItems]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !bindingRelations?.id) {
+      scheduleReminderLoadedRef.current = "";
+      setScheduleReminders([]);
+      setShowScheduleReminderModal(false);
+      return;
+    }
+
+    const today = new Date();
+    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const requestKey = `${bindingRelations.id}_${dateKey}`;
+    if (scheduleReminderLoadedRef.current === requestKey) {
+      return;
+    }
+    scheduleReminderLoadedRef.current = requestKey;
+
+    void (async () => {
+      try {
+        const res = await scheduleService.todayReminders(bindingRelations.id, dateKey);
+        if (!res.success || !res.data) {
+          return;
+        }
+        const noRemindIds = getNoRemindScheduleIds();
+        const pending = res.data.filter((item) => !noRemindIds.has(item.id));
+        if (pending.length > 0) {
+          setScheduleReminders(pending);
+          setShowScheduleReminderModal(true);
+        }
+      } catch (error) {
+        console.error("加载日程提醒失败", error);
+      }
+    })();
+  }, [isLoggedIn, bindingRelations?.id]);
+
+  const handleNoRemindSchedules = useCallback(() => {
+    markScheduleNoRemind(scheduleReminders.map((item) => item.id));
+    setShowScheduleReminderModal(false);
+    setScheduleReminders([]);
+  }, [scheduleReminders]);
 
   const navigateTo = useCallback(
     (
@@ -498,6 +547,12 @@ export default function App() {
           </Suspense>
         </div>
       </div>
+      <ScheduleReminderModal
+        isOpen={showScheduleReminderModal}
+        reminders={scheduleReminders}
+        onClose={() => setShowScheduleReminderModal(false)}
+        onNoRemind={handleNoRemindSchedules}
+      />
     </div>
   );
 }

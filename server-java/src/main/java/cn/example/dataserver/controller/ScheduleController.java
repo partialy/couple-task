@@ -73,4 +73,17 @@ public class ScheduleController {
                                   @RequestParam int month) {
         return scheduleServiceImplements.listMonthEvents(token, bindId, year, month);
     }
+
+    /**
+     * 查询当天需要弹窗提醒的日程
+     *
+     * @param bindId 绑定关系ID
+     * @param date   指定日期 yyyy-MM-dd，不传默认当天
+     */
+    @GetMapping("/todayReminders")
+    public String todayReminders(@RequestHeader("Authorization") String token,
+                                 @RequestParam String bindId,
+                                 @RequestParam(required = false) String date) {
+        return scheduleServiceImplements.todayReminders(token, bindId, date);
+    }
 }
