@@ -56,6 +56,15 @@ public class DiaryController {
     }
 
     /**
+     * 检查今天是否写过日记
+     */
+    @GetMapping("/checkToday")
+    public String checkToday(@RequestHeader("Authorization") String token,
+                             @RequestParam String bindId) {
+        return diaryServiceImplements.checkTodayWritten(token, bindId);
+    }
+
+    /**
      * 切换点赞
      */
     @PostMapping("/toggle-like/{id}")

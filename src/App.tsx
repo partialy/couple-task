@@ -66,6 +66,8 @@ import {
   markScheduleNoRemind,
 } from "./components/schedule/reminderStorage";
 import { authService } from "./api/service/auth";
+import diaryService from "./api/service/diary";
+import Modal from "./components/ui/Modal";
 
 const TOKEN_REFRESH_AT_KEY = "token_last_refresh_at";
 const TOKEN_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -156,6 +158,8 @@ export default function App() {
   const [showScheduleReminderModal, setShowScheduleReminderModal] = useState(false);
   const scheduleReminderLoadedRef = useRef<string>("");
   const tokenRefreshCheckedRef = useRef(false);
+  const diaryReminderCheckedRef = useRef(false);
+  const [showDiaryReminder, setShowDiaryReminder] = useState(false);
 
   // Handle browser back button
   useEffect(() => {
@@ -317,6 +321,34 @@ export default function App() {
       }
     })();
   }, [isLoggedIn, bindingRelations?.id]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !bindingRelations?.id || !currentUser?.id) {
+      diaryReminderCheckedRef.current = false;
+      setShowDiaryReminder(false);
+      return;
+    }
+    if (diaryReminderCheckedRef.current) return;
+
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour < 20 || hour > 23) {
+      diaryReminderCheckedRef.current = true;
+      return;
+    }
+
+    diaryReminderCheckedRef.current = true;
+    void (async () => {
+      try {
+        const res = await diaryService.checkToday(bindingRelations.id);
+        if (res.success && !res.data?.written) {
+          setShowDiaryReminder(true);
+        }
+      } catch (error) {
+        console.error("检查日记提醒失败", error);
+      }
+    })();
+  }, [isLoggedIn, bindingRelations?.id, currentUser?.id]);
 
   const handleNoRemindSchedules = useCallback(() => {
     markScheduleNoRemind(scheduleReminders.map((item) => item.id));
@@ -599,6 +631,52 @@ export default function App() {
         onClose={() => setShowScheduleReminderModal(false)}
         onNoRemind={handleNoRemindSchedules}
       />
+      <Modal
+        isOpen={showDiaryReminder}
+        onClose={() => setShowDiaryReminder(false)}
+        title="贴心提醒"
+      >
+        <div className="flex flex-col items-center text-center">
+          <div
+            className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full animate-bounce-slow ${
+              currentUser?.gender === "female"
+                ? "bg-rose-100 text-rose-500 dark:bg-rose-500/20 dark:text-rose-400"
+                : "bg-sky-100 text-sky-500 dark:bg-sky-500/20 dark:text-sky-400"
+            }`}
+          >
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </div>
+          <p className="mb-8 text-[13px] font-bold leading-relaxed text-slate-500 dark:text-slate-400">
+            今天还没有写日记哦，
+            <br />
+            快说说看心情怎么样吧~
+          </p>
+          <div className="flex w-full flex-col gap-3">
+            <button
+              onClick={() => {
+                setShowDiaryReminder(false);
+                sessionStorage.setItem("open_diary_editor_once", "1");
+                navigateTo("diary");
+              }}
+              className={`w-full rounded-[1.25rem] py-3.5 text-[14px] font-extrabold text-white shadow-xl transition-all hover:scale-105 active:scale-95 ${
+                currentUser?.gender === "female"
+                  ? "bg-rose-500 shadow-rose-500/30"
+                  : "bg-sky-500 shadow-sky-500/30"
+              }`}
+            >
+              去写日记
+            </button>
+            <button
+              onClick={() => setShowDiaryReminder(false)}
+              className="w-full rounded-[1.25rem] bg-transparent py-2.5 text-[13px] font-bold text-slate-400 transition-colors hover:bg-slate-100 dark:text-slate-500 dark:hover:bg-slate-800"
+            >
+              稍后再说
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

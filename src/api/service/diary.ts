@@ -44,9 +44,17 @@ export interface DiaryPayload {
   imageUrl?: string;
 }
 
+export interface DiaryTodayCheckResponse {
+  written: boolean;
+}
+
 const diaryService = {
   async list(bindId: string, entryDate?: string): Promise<ApiResponse<DiaryItem[]>> {
     return await request.get('/diary/list', { params: { bindId, entryDate } });
+  },
+
+  async checkToday(bindId: string): Promise<ApiResponse<DiaryTodayCheckResponse>> {
+    return await request.get('/diary/checkToday', { params: { bindId } });
   },
 
   async add(payload: DiaryPayload): Promise<ApiResponse<DiaryItem>> {

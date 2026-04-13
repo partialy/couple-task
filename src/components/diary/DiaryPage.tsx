@@ -75,6 +75,16 @@ export default function DiaryPage({ onBack }: DiaryPageProps) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [editorOpen, selectedId]);
 
+  useEffect(() => {
+    const shouldOpen = sessionStorage.getItem('open_diary_editor_once');
+    if (shouldOpen === '1') {
+      sessionStorage.removeItem('open_diary_editor_once');
+      setCurrentDate(today);
+      setEditing(null);
+      setEditorOpen(true);
+    }
+  }, [today]);
+
   const rows = useMemo(() => items.map(toDiaryRow), [items]);
   const dayStatusMap = useMemo(() => {
     const map: Record<string, 'none' | 'half' | 'full'> = {};

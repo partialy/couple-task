@@ -18,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -189,6 +191,27 @@ public class DiaryServiceImplements {
                 .orderByDesc(DiaryEntries::getCreatedAt)
                 .list();
         return Result.success(list).toJson();
+    }
+
+    /**
+     * 检查今天是否写过日记（当前登录用户）
+     */
+    public String checkTodayWritten(String token, String bindId) {
+        Users user = authService.checkToken(token);
+        BindingRelations bind = resolveAcceptedBinding(user.getId());
+        if (bind == null || !bind.getId().equals(bindId)) {
+            return Result.fail("无权查看此绑定下的数据").toJson();
+        }
+        Date today = parseDateOnly(new java.text.SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+        boolean written = diaryEntriesService.lambdaQuery()
+                .eq(DiaryEntries::getBindId, bindId)
+                .eq(DiaryEntries::getUserId, user.getId())
+                .eq(DiaryEntries::getEntryDate, today)
+                .isNull(DiaryEntries::getDeletedAt)
+                .count() > 0;
+        Map<String, Object> data = new HashMap<>();
+        data.put("written", written);
+        return Result.success(data).toJson();
     }
 
     /**
