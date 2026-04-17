@@ -11,3 +11,4 @@ coverage/
 
 # 仅忽略仓库根目录的示例目录；勿写 `example`，否则会误匹配 Java 包路径 `cn/example/`
 /example/
+admin-example/
