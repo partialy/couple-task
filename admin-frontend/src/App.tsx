@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import ConfirmDialogHost from "@/components/ConfirmDialogHost";
 import AdminLayout from "@/layouts/AdminLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -42,6 +43,7 @@ export default function App() {
         </Route>
       </Routes>
       <Toaster position="top-center" richColors />
+      <ConfirmDialogHost />
     </>
   );
 }

@@ -5,30 +5,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { adminApi } from "@/api/adminApi";
 import PageScaffold from "./PageScaffold";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar } from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
+  const [timeRange, setTimeRange] = useState<"7d" | "30d">("7d");
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [overview, setOverview] = useState<Record<string, unknown>>({});
   const [trends, setTrends] = useState<{ buckets?: string[]; series?: Record<string, number[]> }>({});
   const [distributions, setDistributions] = useState<Record<string, Record<string, number>>>({});
+  const [rankings, setRankings] = useState<Record<string, unknown[]>>({});
+  const [topType, setTopType] = useState<"activeUsersTop" | "taskPublishTop" | "redeemTop">("activeUsersTop");
   const [todos, setTodos] = useState<{ title?: string; count?: number }[]>([]);
   const [alerts, setAlerts] = useState<{ title?: string; count?: number }[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [o, t, d, td, al] = await Promise.all([
+      const [o, t, d, rk, td, al] = await Promise.all([
         adminApi.dashboardOverview(),
         adminApi.dashboardTrends(),
         adminApi.dashboardDistributions(),
+        adminApi.dashboardRankings(),
         adminApi.dashboardTodos(),
         adminApi.dashboardAlerts(),
       ]);
       setOverview(o as Record<string, unknown>);
       setTrends(t as typeof trends);
       setDistributions(d as Record<string, Record<string, number>>);
+      setRankings((rk as Record<string, unknown[]>) || {});
       setTodos((td as { title?: string; count?: number }[]) || []);
       setAlerts((al as { title?: string; count?: number }[]) || []);
     } catch {
@@ -40,21 +46,22 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
+    if (!autoRefresh) return;
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [autoRefresh]);
 
-  const trendRows = useMemo(
-    () =>
-      (trends.buckets || []).map((b: string, i: number) => ({
+  const trendRows = useMemo(() => {
+    const rows = (trends.buckets || []).map((b: string, i: number) => ({
         date: b,
         newUsers: trends.series?.newUsers?.[i] ?? 0,
         activeUsers: trends.series?.activeUsers?.[i] ?? 0,
         taskPublished: trends.series?.taskPublished?.[i] ?? 0,
         taskCompleted: trends.series?.taskCompleted?.[i] ?? 0,
-      })),
-    [trends]
-  );
+      }));
+    if (timeRange === "7d") return rows.slice(-7);
+    return rows.slice(-30);
+  }, [trends, timeRange]);
 
   const statusRows = useMemo(
     () =>
@@ -64,6 +71,18 @@ export default function DashboardPage() {
       })),
     [distributions]
   );
+
+  const rewardCodeRows = useMemo(
+    () =>
+      Object.entries(distributions.rewardCodeStatus || {}).map(([key, value]) => ({
+        name: key,
+        value: value as number,
+      })),
+    [distributions]
+  );
+
+  const topRows = (rankings[topType] || []) as Record<string, unknown>[];
+  const pieColors = ["#4F46E5", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
   const kpiCards = [
     { title: "新增用户", value: overview.newUsers ?? 0, icon: Users, accent: "text-indigo-500" },
@@ -79,9 +98,28 @@ export default function DashboardPage() {
       title="控制台"
       description="核心业务指标与趋势一览"
       actions={
-        <Button variant="outline" size="sm" type="button" onClick={fetchData} disabled={loading} className="input-glass border-[var(--glass-border)]">
-          {loading ? "刷新中…" : "刷新数据"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            className="input-glass h-8 rounded-lg border border-input px-2 text-xs bg-white/50"
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as "7d" | "30d")}
+          >
+            <option value="7d">近7天</option>
+            <option value="30d">近30天</option>
+          </select>
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={() => setAutoRefresh((v) => !v)}
+            className="input-glass border-[var(--glass-border)]"
+          >
+            {autoRefresh ? "自动刷新:开" : "自动刷新:关"}
+          </Button>
+          <Button variant="outline" size="sm" type="button" onClick={fetchData} disabled={loading} className="input-glass border-[var(--glass-border)]">
+            {loading ? "刷新中…" : "刷新数据"}
+          </Button>
+        </div>
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -133,6 +171,55 @@ export default function DashboardPage() {
                 <Bar dataKey="count" fill="#4F46E5" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <Card className="glass-panel border border-[var(--glass-border)]">
+          <CardHeader>
+            <CardTitle className="text-base">兑换码状态占比</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={rewardCodeRows} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                  {rewardCodeRows.map((_, idx) => (
+                    <Cell key={`cell-${idx}`} fill={pieColors[idx % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card className="glass-panel border border-[var(--glass-border)]">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">
+                {topType === "activeUsersTop" ? "活跃用户 Top10" : topType === "taskPublishTop" ? "任务发布 Top10" : "兑换用户 Top10"}
+              </CardTitle>
+              <select
+                className="input-glass h-8 rounded-lg border border-input px-2 text-xs bg-white/50"
+                value={topType}
+                onChange={(e) => setTopType(e.target.value as "activeUsersTop" | "taskPublishTop" | "redeemTop")}
+              >
+                <option value="activeUsersTop">活跃用户</option>
+                <option value="taskPublishTop">任务发布</option>
+                <option value="redeemTop">兑换记录</option>
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topRows.slice(0, 10).map((row, idx) => (
+              <div key={idx} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
+                <span className="text-sm text-[var(--text-muted)]">
+                  {String(row.nickname || row.username || row.id || "-")}
+                </span>
+                <span className="text-xs text-[var(--text-main)]">{String(row.lastLoginAt || row.createdAt || "-")}</span>
+              </div>
+            ))}
+            {topRows.length === 0 && <p className="text-sm text-muted-foreground">暂无排行数据</p>}
           </CardContent>
         </Card>
       </div>
