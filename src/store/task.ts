@@ -15,7 +15,6 @@ interface TaskState {
   loading: boolean;
   configFetched: boolean;
 
-  // Actions
   addTask: (task: UiTask) => void;
   createTask: (taskData: TaskCreateDTO) => Promise<Result<string>>;
   updateTask: (taskId: string, taskData: TaskCreateDTO) => Promise<Result<string>>;

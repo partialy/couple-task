@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { User, Lock, Eye, EyeOff, Check, Heart, MessageCircle, ChevronLeft } from 'lucide-react';
 import { useUserStore } from '@/store';
-
 export default function LoginForm({ onSwitch, onBack, onLogin }: { onSwitch: () => void; onBack: () => void; onLogin: () => void; key?: string }) {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberPassword, setRememberPassword] = useState(false);
   const { login } = useUserStore();
 
   const handleLogin = async () => {
      if (await login(username, password)) {
+      if(rememberPassword) {
+        localStorage.setItem('rememberPassword', 'true');
+        localStorage.setItem('username', username);
+        localStorage.setItem('password', password);
+      } else {
+        localStorage.removeItem('rememberPassword');
+        localStorage.removeItem('username');
+        localStorage.removeItem('password');
+      }
       onLogin();
      }
   };
@@ -21,18 +30,38 @@ export default function LoginForm({ onSwitch, onBack, onLogin }: { onSwitch: () 
     }
   };
 
+  useEffect(() => {
+    if(localStorage.getItem('rememberPassword') === 'true') {
+      setRememberPassword(true);
+      setUsername(localStorage.getItem('username') || '');
+      setPassword(localStorage.getItem('password') || '');
+    }
+  }, []);
+
+  useEffect(() => {
+    if(rememberPassword) {
+      localStorage.setItem('rememberPassword', 'true');
+      localStorage.setItem('username', username);
+      localStorage.setItem('password', password);
+    } else {
+      localStorage.removeItem('rememberPassword');
+      localStorage.removeItem('username');
+      localStorage.removeItem('password');
+    }
+  }, [rememberPassword]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-0 p-8 flex flex-col items-center justify-center h-full"
+      className="absolute inset-0 pt-10 pb-4 px-6 flex flex-col items-center justify-center h-full"
     >
       {/* Back Button */}
       <button 
         onClick={onBack} 
-        className="absolute top-8 left-8 p-2 rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors z-10"
+        className="absolute top-12 left-8 p-2 rounded-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors z-10"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -107,11 +136,13 @@ export default function LoginForm({ onSwitch, onBack, onLogin }: { onSwitch: () 
         {/* Options */}
         <div className="w-full flex items-center justify-between mt-5 mb-8 px-1">
           <label className="flex items-center space-x-2 cursor-pointer group">
+            
             <div className="relative flex items-center justify-center">
-              <input type="checkbox" className="peer sr-only" />
+              <input type="checkbox" className="peer sr-only" onClick={() => setRememberPassword(!rememberPassword)} />
               <div className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-600 peer-checked:bg-cyan-400 peer-checked:border-cyan-400 dark:peer-checked:bg-cyan-500 dark:peer-checked:border-cyan-500 transition-all flex items-center justify-center">
                 <Check className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" strokeWidth={3} />
               </div>
+              
             </div>
             <span className="text-sm text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors font-medium">记住密码</span>
           </label>

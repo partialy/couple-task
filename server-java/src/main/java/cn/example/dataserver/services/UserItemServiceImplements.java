@@ -39,6 +39,7 @@ public class UserItemServiceImplements {
     private final UserItemsService userItemsService;
     private final BindingRelationsService bindingRelationsService;
     private final ItemRedemptionRecordsService itemRedemptionRecordsService;
+    private final SystemNoticeFacadeService systemNoticeFacadeService;
 
     /**
      * 解析当前用户已接受的绑定关系
@@ -70,7 +71,6 @@ public class UserItemServiceImplements {
      */
     public String listMyItems(String token, UserItemQueryDTO query) {
         Users currentUser = authService.checkToken(token);
-
         long pageNo = query.getPage() == null || query.getPage() < 1 ? 1L : query.getPage();
         long pageSize = query.getSize() == null || query.getSize() < 1 ? 10L : Math.min(query.getSize(), 50L);
         String keyword = StrUtil.trimToEmpty(query.getKeyword());
@@ -112,6 +112,23 @@ public class UserItemServiceImplements {
         );
         return Result.success(pageData).toJson();
     }
+
+    /**
+     * 核销前获取道具信息
+     * @param code 核销码
+     * @return 道具信息
+     */
+    public String getItemInfo(String code) {
+        UserItems userItem = userItemsService.lambdaQuery()
+                .eq(UserItems::getCode, code)
+                .eq(UserItems::getStatus, ItemStatus.USABLE.getValue())
+                .one();
+        if (userItem == null) {
+            return Result.fail("核销码无效或已使用").toJson();
+        }
+        return Result.success(userItem).toJson();
+    }
+
 
     /**
      * 绑定对象输入核销码，将对方背包中可用道具置为已使用并记录流水
@@ -161,6 +178,20 @@ public class UserItemServiceImplements {
         record.setRemark(null);
         record.setCreatedAt(new Date());
         itemRedemptionRecordsService.save(record);
+
+        try {
+            systemNoticeFacadeService.createAndPush(
+                    partnerId,
+                    redeemer.getId(),
+                    bind.getId(),
+                    SystemNoticeFacadeService.ITEM_VERIFIED,
+                    userItem.getId(),
+                    "道具被核销",
+                    "你的道具【" + StrUtil.blankToDefault(userItem.getName(), "道具") + "】已被核销",
+                    java.util.Collections.singletonMap("itemId", userItem.getId())
+            );
+        } catch (Exception ignored) {
+        }
 
         return Result.success("核销成功").toJson();
     }

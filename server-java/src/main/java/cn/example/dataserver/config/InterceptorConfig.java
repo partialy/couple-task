@@ -27,6 +27,7 @@ public class InterceptorConfig implements WebMvcConfigurer {
                         "/auth/login",
                         "/auth/register",
                         "/auth/sendCode",
+                        "/admin/**",
                         "/ws/**",
                         "/api/ws/**",
                         "/error"

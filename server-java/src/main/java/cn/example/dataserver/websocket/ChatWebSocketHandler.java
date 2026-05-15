@@ -44,7 +44,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             JSONObject json = JSON.parseObject(message.getPayload());
             String event = json.getString("event");
             if ("ping".equals(event)) {
-                handlePing(session, userId);
+                String peerUserId = null;
+                JSONObject data = json.getJSONObject("data");
+                if (data != null) {
+                    peerUserId = data.getString("peerUserId");
+                }
+                handlePing(session, peerUserId);
             }
         } catch (Exception e) {
             log.warn("解析客户端上行消息失败 userId={}", userId, e);
@@ -54,9 +59,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     /**
      * 处理客户端心跳 ping，回复 pong 并附带伙伴在线状态
      */
-    private void handlePing(WebSocketSession session, String userId) {
-        String peerId = chatPresenceService.findAcceptedPeerUserId(userId);
-        boolean partnerOnline = peerId != null && chatWebSocketSessionRegistry.isOnline(peerId);
+    private void handlePing(WebSocketSession session, String peerUserId) {
+        // 优先使用前端传入的绑定对象 ID，避免心跳时查询数据库
+        boolean partnerOnline = peerUserId != null && !peerUserId.isBlank()
+                && chatWebSocketSessionRegistry.isOnline(peerUserId);
 
         Map<String, Object> data = new HashMap<>(4);
         data.put("partnerOnline", partnerOnline);
@@ -68,7 +74,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         try {
             session.sendMessage(new TextMessage(JSON.toJSONString(payload)));
         } catch (IOException e) {
-            log.error("心跳 pong 发送失败 userId={}", userId, e);
+            log.error("心跳 pong 发送失败", e);
         }
     }
 

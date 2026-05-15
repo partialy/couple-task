@@ -7,6 +7,9 @@ import { mockMessages } from "../../data/messages";
 import { useMessageStore } from "../../store";
 import { useUserStore } from "@/store/user";
 import { fetchChatConversationRows } from "@/utils/chatConversationList";
+import { useSystemNoticeStore } from "@/store/systemNotice";
+import systemNoticeService from "@/api/service/systemNotice";
+import AndroidPadding from "../ui/AndroidPadding";
 
 function formatLastLogin(iso?: string): string {
   if (!iso) return "";
@@ -32,6 +35,10 @@ export default function Messages({
   const currentUser = useUserStore((state) => state.currentUser);
   const bindUser = useUserStore((state) => state.bindUser);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const notices = useSystemNoticeStore((state) => state.notices);
+  const systemUnreadCount = useSystemNoticeStore((state) => state.unreadCount);
+  const setSystemNotices = useSystemNoticeStore((state) => state.setNotices);
+  const setSystemUnreadCount = useSystemNoticeStore((state) => state.setUnreadCount);
 
   const {
     conversations,
@@ -71,6 +78,11 @@ export default function Messages({
   }, [activeConversationId, clearUnreadCount]);
 
   const handleSelectConversation = (id: string) => {
+    if (id === "system" && systemUnreadCount > 0) {
+      void systemNoticeService.readAll();
+      setSystemUnreadCount(0);
+      setSystemNotices(notices.map((n) => ({ ...n, isRead: 1, readAt: n.readAt || new Date().toISOString() })));
+    }
     setActiveConversationId(id);
   };
 
@@ -80,9 +92,29 @@ export default function Messages({
     }
   };
 
-  const activeConversation = conversations.find((c) => c.id === activeConversationId);
+  const mergedConversations = useMemo(() => {
+    const firstNotice = notices[0];
+    return conversations.map((c) => {
+      if (c.kind !== "system") return c;
+      return {
+        ...c,
+        lastMessage: firstNotice?.content || "任务与奖励相关通知",
+        lastMessageTime: firstNotice
+          ? new Date(firstNotice.createdAt).toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "",
+        unreadCount: systemUnreadCount,
+      };
+    });
+  }, [conversations, notices, systemUnreadCount]);
 
-  const partnerConv = conversations.find((c) => c.kind === "partner");
+  const activeConversation = mergedConversations.find((c) => c.id === activeConversationId);
+
+  const partnerConv = mergedConversations.find((c) => c.kind === "partner");
   const lastLoginText = useMemo(
     () => formatLastLogin(partnerConv?.lastLoginAt),
     [partnerConv?.lastLoginAt],
@@ -90,6 +122,7 @@ export default function Messages({
 
   return (
     <div className="w-full h-full relative overflow-hidden flex flex-col">
+      <AndroidPadding />
       <div className="py-2 px-4 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between gap-3">
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white shrink-0">消息</h2>
         {bindUser && onOpenPartnerProfile ? (
@@ -134,7 +167,7 @@ export default function Messages({
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-        <ConversationList conversations={conversations} onSelect={handleSelectConversation} />
+        <ConversationList conversations={mergedConversations} onSelect={handleSelectConversation} />
       </div>
 
       <AnimatePresence>
@@ -142,7 +175,25 @@ export default function Messages({
           <ChatRoom
             key="chatroom"
             conversation={activeConversation}
-            initialMessages={activeConversation.kind === "system" ? mockMessages.system : []}
+            initialMessages={
+              activeConversation.kind === "system"
+                ? (notices.length > 0
+                    ? notices.map((n) => ({
+                        id: n.id,
+                        senderId: "system",
+                        text: n.content,
+                        type: "text",
+                        timestamp: new Date(n.createdAt).toLocaleString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }),
+                        isRead: n.isRead === 1,
+                      }))
+                    : mockMessages.system)
+                : []
+            }
             onBack={handleBackToList}
             onRefreshList={loadConversations}
           />

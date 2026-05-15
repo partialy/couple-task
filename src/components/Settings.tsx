@@ -5,16 +5,14 @@ import ProfileEdit from './profile/ProfileEdit';
 import { useUserStore } from '@/store';
 import eventBus from '@/utils/eventBus';
 import PageHeader from './ui/PageHeader';
+import { androidBridge } from '@/utils/AndroidBridge';
 
 export default function Settings({ onBack }: { onBack: () => void, key?: string }) {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   const clearCache = () => {
-    eventBus.emit('LOGOUT');
-    // @ts-ignore
-    if(window.AndroidBridge) {
-      // @ts-ignore
-      window.AndroidBridge.clearCache();
+    if(androidBridge.isAndroid()) {
+      androidBridge.clearCache();
     }
   };
 

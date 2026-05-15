@@ -35,7 +35,7 @@ export default function TaskHeader({
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 pt-8 bg-gradient-to-b from-black/50 to-transparent">
+    <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-6 pt-8 bg-gradient-to-b from-black/50 to-transparent">
       <button 
         onClick={onClose}
         className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-colors"

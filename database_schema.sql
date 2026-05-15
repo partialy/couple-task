@@ -785,3 +785,34 @@ create index idx_special_item_id
 create index idx_user_id
     on user_special_items (user_id);
 
+create table memorial_days
+(
+    id                varchar(36)                           not null comment '主键，UUID'
+        primary key,
+    bind_id           varchar(36)                           not null comment '所属绑定关系ID',
+    user_id           varchar(36)                           not null comment '创建者用户ID',
+    title             varchar(60)                           not null comment '展示标题',
+    event_type        varchar(20) default 'anniversary'     not null comment 'anniversary | birthday',
+    icon_key          varchar(32) default 'love'            not null comment '预设图标',
+    custom_icon_url   varchar(512)                          null comment '自定义图标 URL',
+    color_theme_id    varchar(32) default 'rose'            not null comment '主题色',
+    custom_category   varchar(60) default '纪念日'           not null comment '分类标签',
+    person_name       varchar(60)                           null comment '生日姓名',
+    is_pinned         tinyint     default 0                 not null comment '置顶',
+    kind              tinyint                               not null comment '1=倒数日 2=纪念日',
+    anchor_date       date                                  not null comment '锚点日期',
+    repeat_yearly     tinyint     default 0                 not null comment '每年重复',
+    note              text                                  null comment '备注',
+    sort_order        int         default 0                 not null comment '排序权重',
+    created_at        datetime    default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_at        datetime    default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    deleted_at        datetime                              null comment '软删除时间'
+)
+    comment '纪念日与倒数日表' collate = utf8mb4_unicode_ci;
+
+create index idx_bind_id
+    on memorial_days (bind_id);
+
+create index idx_deleted_at
+    on memorial_days (deleted_at);
+

@@ -23,6 +23,11 @@ public class AuthController {
         return authService.logout(token);
     }
 
+    @PostMapping("/refresh")
+    public String refresh(@RequestHeader("Authorization") String token) {
+        return authService.refresh(token);
+    }
+
     @PostMapping("/register")
     public String register(@RequestBody Users users, @RequestParam(value = "code", required = false) String code) {
         return authService.register(users, code);

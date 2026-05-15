@@ -19,6 +19,12 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .animate-moment-fade-in-up {
+    animation: momentFadeInUp 0.4s ease-out forwards;
+  }
+  .animate-moment-slide-up {
+    animation: momentSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
   input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
     top: 0;
@@ -37,4 +43,26 @@
   33% { transform: translate(30px, -50px) scale(1.1); }
   66% { transform: translate(-20px, 20px) scale(0.9); }
   100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes momentFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes momentSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

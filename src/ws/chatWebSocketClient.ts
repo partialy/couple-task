@@ -29,6 +29,10 @@ export function setChatHomeActiveTab(tab: string) {
   homeActiveTab = tab;
 }
 
+export function getChatHomeActiveTab() {
+  return homeActiveTab;
+}
+
 let socket: WebSocket | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -59,7 +63,13 @@ function startHeartbeat(ws: WebSocket) {
   clearHeartbeat();
   heartbeatTimer = setInterval(() => {
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ event: "ping" }));
+      const peerUserId = localStorage.getItem('bindUserId') || null;
+      ws.send(
+        JSON.stringify({
+          event: "ping",
+          data: { peerUserId: peerUserId || null },
+        }),
+      );
     }
   }, HEARTBEAT_INTERVAL);
 }
@@ -174,7 +184,7 @@ export function connectChatWebSocket(isReconnect = false) {
         return;
       }
 
-      const bindUser = useUserStore.getState().bindUser;
+      let bindUser = useUserStore.getState().bindUser;
 
       if (o.event === "peerPresence" && bindUser?.id && o.data?.userId === bindUser.id) {
         useMessageStore.getState().setPartnerOnline(!!o.data.online);
@@ -194,17 +204,23 @@ export function connectChatWebSocket(isReconnect = false) {
         eventBus.emit("CHAT_MESSAGE_INCOMING", d);
 
         if (!viewing) {
-          const title =
-            bindUser?.nickname?.trim() || bindUser?.username || "新消息";
-          notification.show({
-            title,
-            content: previewLine(d.content, d.type),
-            position: "center",
-            image: bindUser?.avatar || undefined,
-            onClick: () => {
-              eventBus.emit("OPEN_MESSAGES_TAB");
-            },
-          });
+          void (async () => {
+            if (!bindUser) {
+              await useUserStore.getState().fetchUserDetail();
+              bindUser = useUserStore.getState().bindUser;
+            }
+            const title =
+              bindUser?.nickname?.trim() || bindUser?.username || "新消息";
+            notification.show({
+              title,
+              content: previewLine(d.content, d.type),
+              position: "center",
+              image: bindUser?.avatar || undefined,
+              onClick: () => {
+                eventBus.emit("OPEN_MESSAGES_TAB");
+              },
+            });
+          })();
         }
       }
 

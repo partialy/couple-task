@@ -1,6 +1,7 @@
 import React, { useRef, useCallback } from 'react';
 import { Clock, Compass, MessageCircle, Plus, User } from 'lucide-react';
 import { useMessageStore } from '@/store/message';
+import { useSystemNoticeStore } from '@/store/systemNotice';
 
 /** 触屏上几乎不触发 dblclick，用两次点击间隔判断双击更可靠 */
 const DOUBLE_TAP_MS = 350;
@@ -21,6 +22,8 @@ export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPu
   const messageUnreadTotal = useMessageStore((s) =>
     s.conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0),
   );
+  const systemUnreadCount = useSystemNoticeStore((s) => s.unreadCount);
+  const totalUnread = messageUnreadTotal + systemUnreadCount;
 
   const handleSquareTabClick = useCallback(() => {
     const now = Date.now();
@@ -64,7 +67,7 @@ export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPu
       <div className="relative -top-4">
         <button
           onClick={isLoggedIn ? onPublish : onLoginPrompt}
-          className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-400 to-rose-400 dark:from-pink-500 dark:to-rose-500 text-white shadow-lg shadow-pink-300/40 dark:shadow-pink-900/40 flex items-center justify-center hover:scale-105 transition-transform border-4 border-white/50 dark:border-slate-800/50 backdrop-blur-md"
+          className="w-12 h-12 rounded-full bg-linear-to-r from-pink-400 to-rose-400 dark:from-pink-500 dark:to-rose-500 text-white shadow-lg shadow-pink-300/40 dark:shadow-pink-900/40 flex items-center justify-center hover:scale-105 transition-transform border-4 border-white/50 dark:border-slate-800/50 backdrop-blur-md"
         >
           <Plus className="w-6 h-6" />
         </button>
@@ -78,13 +81,13 @@ export default function BottomTabBar({ activeTab, setActiveTab, isLoggedIn, onPu
             ? 'text-blue-500 dark:text-blue-400'
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
         }`}
-        aria-label={messageUnreadTotal > 0 ? `消息，${messageUnreadTotal} 条未读` : '消息'}
+        aria-label={totalUnread > 0 ? `消息，${totalUnread} 条未读` : '消息'}
       >
         <span className="relative">
           <MessageCircle className="w-6 h-6" strokeWidth={activeTab === 'messages' ? 2.5 : 2} />
-          {messageUnreadTotal > 0 && (
+          {totalUnread > 0 && (
             <span className="absolute -right-1.5 -top-1 min-w-[18px] rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-[18px] text-white border-2 border-white dark:border-slate-900">
-              {messageUnreadTotal > 99 ? '99+' : messageUnreadTotal}
+              {totalUnread > 99 ? '99+' : totalUnread}
             </span>
           )}
         </span>

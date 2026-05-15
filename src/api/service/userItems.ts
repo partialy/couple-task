@@ -31,6 +31,11 @@ const userItemsService = {
     return await request.get('/user-items/page', { params: query });
   },
 
+  /** 核销前获取道具信息 */
+  async info(code: string): Promise<ApiResponse<UserItemRecord>> {
+    return await request.get('/user-items/info', { params: { code } });
+  },
+
   /** 绑定对象核销对方背包道具（核销码 trim + 大写） */
   async verifyByCode(code: string): Promise<ApiResponse<string>> {
     const normalized = code.trim().toUpperCase();

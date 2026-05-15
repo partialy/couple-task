@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Sun, Cloud, CloudRain, Loader2 } from 'lucide-react';
 
+const LOCATION_WEATHER_CACHE_TTL_MS = 30_000;
+
+type LocationWeatherSnapshot = {
+  location: string;
+  weather: { temp: string; condition: string };
+  at: number;
+};
+
+let locationWeatherCache: LocationWeatherSnapshot | null = null;
+let pendingLocationWeatherPromise: Promise<LocationWeatherSnapshot> | null = null;
+
 export default function LocationWeather() {
   const [location, setLocation] = useState('定位中...');
   const [weather, setWeather] = useState({ temp: '--', condition: 'sunny' });
@@ -9,7 +20,7 @@ export default function LocationWeather() {
   useEffect(() => {
     let isMounted = true;
 
-    const fetchLocationAndWeather = async (lat: number, lon: number) => {
+    const fetchLocationAndWeather = async (lat: number, lon: number): Promise<LocationWeatherSnapshot> => {
       try {
         // 1. Fetch Location Name (Reverse Geocoding via BigDataCloud free API)
         let city = '未知位置';
@@ -35,38 +46,78 @@ export default function LocationWeather() {
         if (code >= 1 && code <= 3) condition = 'cloudy';
         if (code >= 51) condition = 'rainy';
 
-        if (isMounted) {
-          setLocation(city);
-          setWeather({ temp, condition });
-          setIsLoading(false);
-        }
+        const snapshot: LocationWeatherSnapshot = {
+          location: city,
+          weather: { temp, condition },
+          at: Date.now(),
+        };
+        locationWeatherCache = snapshot;
+        return snapshot;
       } catch (error) {
         console.error("Failed to fetch location/weather", error);
-        if (isMounted) {
-          setLocation('定位失败');
-          setIsLoading(false);
-        }
+        return {
+          location: '定位失败',
+          weather: { temp: '--', condition: 'sunny' },
+          at: Date.now(),
+        };
       }
     };
 
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchLocationAndWeather(position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          if (isMounted) {
-            setLocation('未授权定位');
-            setIsLoading(false);
-          }
-        },
-        { timeout: 10000 }
-      );
-    } else {
-      setLocation('不支持定位');
+    const applySnapshot = (snapshot: LocationWeatherSnapshot) => {
+      if (!isMounted) return;
+      setLocation(snapshot.location);
+      setWeather(snapshot.weather);
       setIsLoading(false);
-    }
+    };
+
+    const load = async () => {
+      const now = Date.now();
+      if (locationWeatherCache && now - locationWeatherCache.at < LOCATION_WEATHER_CACHE_TTL_MS) {
+        applySnapshot(locationWeatherCache);
+        return;
+      }
+      if (pendingLocationWeatherPromise) {
+        const snapshot = await pendingLocationWeatherPromise;
+        applySnapshot(snapshot);
+        return;
+      }
+
+      if ('geolocation' in navigator) {
+        pendingLocationWeatherPromise = new Promise<LocationWeatherSnapshot>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              void fetchLocationAndWeather(position.coords.latitude, position.coords.longitude)
+                .then(resolve)
+                .finally(() => {
+                  pendingLocationWeatherPromise = null;
+                });
+            },
+            (error) => {
+              console.error("Geolocation error:", error);
+              const fallback: LocationWeatherSnapshot = {
+                location: '未授权定位',
+                weather: { temp: '--', condition: 'sunny' },
+                at: Date.now(),
+              };
+              resolve(fallback);
+              pendingLocationWeatherPromise = null;
+            },
+            { timeout: 10000 }
+          );
+        });
+        const snapshot = await pendingLocationWeatherPromise;
+        locationWeatherCache = snapshot;
+        applySnapshot(snapshot);
+      } else {
+        applySnapshot({
+          location: '不支持定位',
+          weather: { temp: '--', condition: 'sunny' },
+          at: Date.now(),
+        });
+      }
+    };
+
+    void load();
 
     return () => {
       isMounted = false;

@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCw, Download } from "lucide-react";
+import { androidBridge } from "@/utils/AndroidBridge";
 
 const SCALE_STEP = 10;
 const SCALE_MIN = 10;
@@ -60,6 +61,31 @@ export default function ImagePreview({
 
   const rotateCw = () => {
     setRotationDeg((d) => (d + 90) % 360);
+  };
+
+  const downloadImage = async () => {
+    if (!src) return;
+    try {
+
+      if(androidBridge.isAndroid()) {
+        androidBridge.download(src);
+        return;
+      }
+      const res = await fetch(src, { mode: "cors" });
+      const blob = await res.blob();
+      const ext = src.split(".").pop()?.split("?")[0] || "png";
+      const fileName = `image_${Date.now()}.${ext}`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(src, "_blank");
+    }
   };
 
   const show = isOpen && !!src?.trim();
@@ -160,6 +186,16 @@ export default function ImagePreview({
                 title="旋转 90°"
               >
                 <RotateCw className="h-5 w-5" />
+              </button>
+              <div className="mx-1 h-6 w-px bg-white/25" aria-hidden />
+              <button
+                type="button"
+                onClick={downloadImage}
+                className="rounded-full p-2.5 transition-colors hover:bg-white/15"
+                aria-label="下载图片"
+                title="下载图片"
+              >
+                <Download className="h-5 w-5" />
               </button>
             </div>
           </div>
