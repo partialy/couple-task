@@ -1,11 +1,11 @@
 server:
-    port: 38080
+    port: 58080
 spring:
     datasource:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/allset-v1?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        url: jdbc:mysql://localhost:3306/yutask?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
         username: root
-        password: root
+        password: your_db_password
         hikari:
             maximum-pool-size: 30
             keepalive-time: 30000
@@ -21,11 +21,18 @@ spring:
             # 可选：延迟解析
             resolve-lazily: false
 mybatis-plus:
-    mapper-locations: classpath:mapper/**/*.xml
+    mapper-locations: classpath*:mapper/**/*.xml
+qiniu:
+    access-key: your_qiniu_access_key
+    secret-key: your_qiniu_secret_key
+    bucket: your_bucket_name
+    domain: //your-qiniu-domain.example.com
+    cdn-domain: //your-cdn-domain.example.com
+    upload-url: https://upload.qiniup.com
 aes:
-    key: 1234567890abcdef1234567890abcdef
+    key: your_32_char_aes_key_here_______
 jwt:
-    secret: xianyuSecretKeyForJwtToken
+    secret: your_jwt_secret_key
     expiration: 604800 # 7 days in seconds
 
 # 文件上传配置
