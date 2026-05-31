@@ -21,6 +21,10 @@ export interface UserLoginResponse {
     bindingRelations: BindingRelations;
 }
 
+export interface TokenRefreshResponse {
+    token: string;
+}
+
 export interface UserInitResponse {
     bindingRelations: BindingRelations;
     isBinding: boolean;

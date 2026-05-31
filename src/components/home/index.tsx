@@ -20,6 +20,7 @@ import useScrollCollapse from './hooks/useScrollCollapse';
 import { Users } from '@/api/sql_models';
 import { UiTask } from '@/types/task';
 import type { PublishTaskInitialData } from '@/mappers/task';
+import AndroidPadding from '../ui/AndroidPadding';
 
 interface HomeProps {
   key?: string;
@@ -39,6 +40,10 @@ interface HomeProps {
   onOpenPartnerProfile?: () => void;
   onOpenCheckinManage?: () => void;
   onOpenSchedule?: () => void;
+  onOpenMemorial?: () => void;
+  onOpenWish?: () => void;
+  onOpenMoments?: () => void;
+  onOpenDiary?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isLoggedIn?: boolean;
@@ -64,6 +69,10 @@ export default function Home({
   onOpenPartnerProfile,
   onOpenCheckinManage,
   onOpenSchedule,
+  onOpenMemorial,
+  onOpenWish,
+  onOpenMoments,
+  onOpenDiary,
   activeTab,
   setActiveTab,
   isLoggedIn,
@@ -86,8 +95,8 @@ export default function Home({
     deleteTask,
   } = useTaskStore();
   const { collapsed: isSquareHeaderCollapsed } = useScrollCollapse(scrollRef, {
-    collapseThresholdPx: 120,
-    expandThresholdPx: 80,
+    collapseThresholdPx: 200,
+    expandThresholdPx: 100,
   });
 
   // Handle back button for modal
@@ -142,6 +151,7 @@ export default function Home({
             className="absolute inset-0 flex flex-col"
           >
             {/* 顶部区域：任务广场/天气固定显示 */}
+            <AndroidPadding />
             <div className="shrink-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
               <div className="px-3 pt-3 pb-4">
                 {/* 标题/天气固定 */}
@@ -165,6 +175,10 @@ export default function Home({
                     onOpenTemplates={onOpenTemplates}
                     onOpenAchievements={onOpenAchievements}
                     onOpenSchedule={onOpenSchedule}
+                    onOpenMemorial={onOpenMemorial}
+                    onOpenWish={onOpenWish}
+                    onOpenMoments={onOpenMoments}
+                    onOpenDiary={onOpenDiary}
                   />
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import request from "../request";
-import { ApiResponse, UserLoginResponse } from "../types";
+import { ApiResponse, TokenRefreshResponse, UserLoginResponse } from "../types";
 import { Users } from "../sql_models";
 
 export const authService = {
@@ -26,6 +26,13 @@ export const authService = {
      */
     logout: async () : Promise<ApiResponse<null>> => {
         return request.post('/auth/logout');
+    },
+
+    /**
+     * 刷新 token
+     */
+    refresh: async (): Promise<ApiResponse<TokenRefreshResponse>> => {
+        return request.post('/auth/refresh');
     },
 
     /**

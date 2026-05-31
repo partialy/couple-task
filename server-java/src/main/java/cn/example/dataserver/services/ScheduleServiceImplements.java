@@ -244,6 +244,36 @@ public class ScheduleServiceImplements {
         return Result.success(dates).toJson();
     }
 
+    /**
+     * 查询当天需要弹窗提醒的日程
+     *
+     * @param bindId 绑定关系ID
+     * @param date   指定日期 yyyy-MM-dd，不传默认当天
+     */
+    public String todayReminders(String token, String bindId, String date) {
+        Users user = authService.checkToken(token);
+
+        BindingRelations bind = resolveAcceptedBinding(user.getId());
+        if (bind == null || !bind.getId().equals(bindId)) {
+            return Result.fail("无权查看此绑定下的日程").toJson();
+        }
+
+        String targetDate = StrUtil.isBlank(date) ? new SimpleDateFormat("yyyy-MM-dd").format(new Date()) : date;
+        Date start = parseDate(targetDate);
+        Date end = parseDateEndOfDay(targetDate);
+
+        List<Schedules> list = schedulesService.lambdaQuery()
+                .eq(Schedules::getBindId, bindId)
+                .eq(Schedules::getPopupRemind, 1)
+                .isNull(Schedules::getDeletedAt)
+                .ge(Schedules::getEventTime, start)
+                .le(Schedules::getEventTime, end)
+                .orderByAsc(Schedules::getEventTime)
+                .list();
+
+        return Result.success(list).toJson();
+    }
+
     // ==================== 工具方法 ====================
 
     /**

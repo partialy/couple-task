@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
+import AndroidPadding from './AndroidPadding';
 
 interface PageHeaderProps {
   /** 页面标题 */
@@ -13,6 +14,8 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, onBack, rightSlot, className }: PageHeaderProps) {
   return (
+    <>
+    <AndroidPadding />
     <div
       className={`px-2 py-2 h-[60px] flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 shrink-0 ${className || ''}`}
     >
@@ -29,5 +32,6 @@ export default function PageHeader({ title, onBack, rightSlot, className }: Page
       <h2 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h2>
       {rightSlot || <div className="w-10 h-10" />}
     </div>
+    </>
   );
 }

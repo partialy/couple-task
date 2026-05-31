@@ -54,6 +54,11 @@ const scheduleService = {
   async monthEvents(bindId: string, year: number, month: number): Promise<ApiResponse<string[]>> {
     return await request.get('/schedule/monthEvents', { params: { bindId, year, month } });
   },
+
+  /** 查询当天需要提醒的日程 */
+  async todayReminders(bindId: string, date?: string): Promise<ApiResponse<ScheduleItem[]>> {
+    return await request.get('/schedule/todayReminders', { params: { bindId, date } });
+  },
 };
 
 export default scheduleService;

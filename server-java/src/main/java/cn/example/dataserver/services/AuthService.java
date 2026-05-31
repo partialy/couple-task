@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -119,6 +120,14 @@ public class AuthService {
     public String logout(String token) {
         checkToken(token);
         return Result.success().toJson();
+    }
+
+    public String refresh(String token) {
+        Users user = checkToken(token);
+        String newToken = JwtUtil.createToken(user.getId(), JWT_EXPIRATION * 1000L);
+        Map<String, String> data = new HashMap<>();
+        data.put("token", newToken);
+        return Result.success("token刷新成功", data).toJson();
     }
 
     @Transactional(rollbackFor = Exception.class)

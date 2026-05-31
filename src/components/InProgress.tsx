@@ -11,6 +11,7 @@ import WeekCalendar from "./in-progress/WeekCalendar";
 import StatusTabs from "./in-progress/StatusTabs";
 import TimelineList from "./in-progress/TimelineList";
 import { useUserStore } from "@/store";
+import AndroidPadding from "./ui/AndroidPadding";
 
 export default function InProgress({
   tasks,
@@ -112,7 +113,8 @@ export default function InProgress({
 
   return (
     <div className="flex-1 h-full bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
-      <div className="shrink-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10">
+      <AndroidPadding />
+      <div className="shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10">
         <RoleSwitch value={roleTab} onChange={setRoleTab} />
       </div>
 

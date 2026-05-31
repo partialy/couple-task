@@ -1,5 +1,6 @@
 import { chatService, type ConversationVO } from "@/api/service/chat";
 import type { Conversation } from "@/data/messages";
+import systemAvatar from "@/assets/icon_128.png";
 
 export function formatListTime(iso?: string): string {
   if (!iso) return "";
@@ -63,7 +64,7 @@ export function buildConversationRows(
     kind: "system",
     userId: "system",
     userName: "系统通知",
-    userAvatar: "",
+    userAvatar: systemAvatar,
     lastMessage: "任务与奖励相关通知",
     lastMessageTime: "",
     unreadCount: 0,

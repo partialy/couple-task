@@ -95,6 +95,7 @@ export const useUserStore = create<UserState>()(
             isLoggedIn: true, 
             bindUser: res.data.bindUser
           });
+          localStorage.setItem('bindUserId', res.data.bindUser?.id || '');
         }
       },
     })

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.example.dataserver.mapper.MemorialDaysMapper">
+
+    <resultMap id="BaseResultMap" type="cn.example.dataserver.entity.MemorialDays">
+        <id property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="bindId" column="bind_id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="eventType" column="event_type" jdbcType="VARCHAR"/>
+        <result property="iconKey" column="icon_key" jdbcType="VARCHAR"/>
+        <result property="customIconUrl" column="custom_icon_url" jdbcType="VARCHAR"/>
+        <result property="colorThemeId" column="color_theme_id" jdbcType="VARCHAR"/>
+        <result property="customCategory" column="custom_category" jdbcType="VARCHAR"/>
+        <result property="personName" column="person_name" jdbcType="VARCHAR"/>
+        <result property="isPinned" column="is_pinned" jdbcType="TINYINT"/>
+        <result property="kind" column="kind" jdbcType="TINYINT"/>
+        <result property="anchorDate" column="anchor_date" jdbcType="DATE"/>
+        <result property="repeatYearly" column="repeat_yearly" jdbcType="TINYINT"/>
+        <result property="note" column="note" jdbcType="VARCHAR"/>
+        <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+        <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
+        <result property="deletedAt" column="deleted_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,bind_id,user_id,title,event_type,icon_key,custom_icon_url,color_theme_id,custom_category,person_name,is_pinned,kind,anchor_date,repeat_yearly,note,sort_order,created_at,updated_at,deleted_at
+    </sql>
+</mapper>

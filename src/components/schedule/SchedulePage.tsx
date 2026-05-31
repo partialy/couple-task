@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, Trash2, CalendarDays } 
 import PageHeader from '@/components/ui/PageHeader';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import ImagePreview from '@/components/ui/ImagePreview';
+import Modal from '@/components/ui/Modal';
 import AddScheduleModal from './AddScheduleModal';
 import scheduleService, { ScheduleItem } from '@/api/service/schedule';
 import { useUserStore } from '@/store/user';
@@ -51,6 +52,7 @@ export default function SchedulePage({ onBack }: SchedulePageProps) {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ScheduleItem | null>(null);
+  const [detailTarget, setDetailTarget] = useState<ScheduleItem | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // 加载当月有事件的日期
@@ -265,7 +267,8 @@ export default function SchedulePage({ onBack }: SchedulePageProps) {
                     key={ev.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50"
+                    onClick={() => setDetailTarget(ev)}
+                    className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 cursor-pointer hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -287,7 +290,10 @@ export default function SchedulePage({ onBack }: SchedulePageProps) {
                         )}
                       </div>
                       <button
-                        onClick={() => setDeleteTarget(ev)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget(ev);
+                        }}
                         className="ml-2 p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -297,7 +303,14 @@ export default function SchedulePage({ onBack }: SchedulePageProps) {
                     {imgs.length > 0 && (
                       <div className="flex gap-2 mt-3">
                         {imgs.map((url, idx) => (
-                          <button key={idx} onClick={() => setPreviewImage(url)} className="shrink-0">
+                          <button
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImage(url);
+                            }}
+                            className="shrink-0"
+                          >
                             <img src={url} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-600 hover:opacity-80 transition-opacity" />
                           </button>
                         ))}
@@ -337,6 +350,58 @@ export default function SchedulePage({ onBack }: SchedulePageProps) {
         confirmText="删除"
         confirmColor="bg-rose-500 hover:bg-rose-600"
       />
+
+      {/* 日程详情弹窗 */}
+      <Modal
+        isOpen={!!detailTarget}
+        onClose={() => setDetailTarget(null)}
+        title={detailTarget?.type || '日程详情'}
+      >
+        {detailTarget && (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+              <span className="font-semibold">时间：</span>
+              {detailTarget.eventTime?.replace('T', ' ').slice(0, 16)}
+            </div>
+            {detailTarget.location && (
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 break-all">
+                <span className="font-semibold">地点：</span>
+                {detailTarget.location}
+              </div>
+            )}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+              <span className="font-semibold">提醒：</span>
+              {detailTarget.popupRemind === 1 ? '当天弹窗提醒已开启' : '当天弹窗提醒已关闭'}
+            </div>
+            {detailTarget.description && (
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap wrap-break-word">
+                <span className="font-semibold">描述：</span>
+                {detailTarget.description}
+              </div>
+            )}
+            {parseImages(detailTarget.images).length > 0 && (
+              <div>
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">图片</div>
+                <div className="flex gap-2 flex-wrap">
+                  {parseImages(detailTarget.images).map((url, idx) => (
+                    <button key={idx} onClick={() => {
+                      setDetailTarget(null)
+                      setShowAddModal(false)
+                      setPreviewImage(url)
+                    }} className="shrink-0">
+                      <img
+                        src={url}
+                        alt=""
+                        className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-600 hover:opacity-80 transition-opacity"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* 图片全屏预览 */}
       <ImagePreview

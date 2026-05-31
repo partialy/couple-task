@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { Bell } from "lucide-react";
 import { Conversation } from "../../data/messages";
 
 interface ConversationItemProps {
@@ -18,17 +17,13 @@ export default function ConversationItem({ conversation, onClick }: Conversation
       className="w-full flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800/50 last:border-none"
     >
       <div className="relative shrink-0">
-        {conversation.userAvatar && !isSystem ? (
+        {conversation.userAvatar ? (
           <img
             src={conversation.userAvatar}
             alt={conversation.userName}
             className="w-12 h-12 rounded-full object-cover"
             referrerPolicy="no-referrer"
           />
-        ) : isSystem ? (
-          <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
-            <Bell className="w-6 h-6" aria-hidden />
-          </div>
         ) : (
           <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-sm font-bold text-indigo-700 dark:text-indigo-200">
             {conversation.userName.slice(0, 1)}

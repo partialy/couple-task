@@ -9,7 +9,6 @@ import cn.example.dataserver.enums.BindingRelation;
 import cn.example.dataserver.service.BindingRelationsService;
 import cn.example.dataserver.service.ShopItemsService;
 import cn.hutool.core.util.StrUtil;
-import com.google.zxing.common.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +29,7 @@ public class ShopItemsServiceImplements {
     private final AuthService authService;
     private final BindingRelationsService bindingRelationsService;
     private final ShopItemsService shopItemsService;
+    private final SystemNoticeFacadeService systemNoticeFacadeService;
 
     private BindingRelations resolveAcceptedBinding(String userId) {
         return bindingRelationsService.lambdaQuery()
@@ -133,6 +133,19 @@ public class ShopItemsServiceImplements {
         item.setSortOrder(0);
 
         shopItemsService.save(item);
+        try {
+            systemNoticeFacadeService.createAndPush(
+                    partnerId,
+                    user.getId(),
+                    bind.getId(),
+                    SystemNoticeFacadeService.SHOP_ITEM_PUBLISH,
+                    item.getId(),
+                    "对方向商城发布了新商品",
+                    "TA 发布了新商品【" + item.getName() + "】",
+                    java.util.Collections.singletonMap("itemId", item.getId())
+            );
+        } catch (Exception ignored) {
+        }
         return Result.success(item).toJson();
     }
 
