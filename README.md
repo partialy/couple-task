@@ -1,10 +1,6 @@
 
 
-# Couple Task - 情侣任务管理应用
-
-[![License](https://img.shields.io/github/license/partialy/couple-task)](https://gitee.com/partialy/couple-task)
-
-情侣任务管理应用是一套面向情侣群体的任务协同、奖励激励、日常打卡、情感记录的综合解决方案。包含用户端应用和管理后台，支持积分兑换、道具商城、实时聊天、签到成就等功能。
+# Couple Task - 双人任务协作系统
 
 ## 技术栈
 
