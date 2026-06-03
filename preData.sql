@@ -1,1 +1,0 @@
-alter table tasks add COLUMN list_status  varchar(20) default 'published'       not null comment 'draft|published|unpublished'
