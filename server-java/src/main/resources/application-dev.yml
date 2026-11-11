@@ -5,7 +5,7 @@ spring:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://localhost:3306/yutask?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
         username: root
-        password: root
+        password: ${YUTASK_DB_PASSWORD}
         hikari:
             maximum-pool-size: 30
             keepalive-time: 30000
@@ -23,16 +23,16 @@ spring:
 mybatis-plus:
     mapper-locations: classpath*:mapper/**/*.xml
 qiniu:
-    access-key: QTQ0T2Q6FaDGTXn1K8-2iLNR4X4BVoeik4DVeKhJ
-    secret-key: 4z_c6h8KVYAcjqUtombnlzQQ8CLKrqp8GAKwoUMf
+    access-key: ${YUTASK_QINIU_ACCESS_KEY}
+    secret-key: ${YUTASK_QINIU_SECRET_KEY}
     bucket: oss-qiniu-partialy
     domain: //partialy.qiniu.partialy.cn
     cdn-domain: //cdn-partialy-qiniu.partialy.cn
     upload-url: https://upload.qiniup.com
 aes:
-    key: 1234567890abcdef1234567890abcdef
+    key: ${YUTASK_AES_KEY}
 jwt:
-    secret: xianyuSecretKeyForJwtToken
+    secret: ${YUTASK_JWT_SECRET}
     expiration: 604800 # 7 days in seconds
 
 # 文件上传配置
